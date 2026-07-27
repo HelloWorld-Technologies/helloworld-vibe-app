@@ -3,14 +3,17 @@ import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import { getKbCategories, postCreateTicket } from '@/api/tickets';
+import { getUploadedAttachmentUrls } from '@/components/support/ticket-attachments-field';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTenantProfile } from '@/stores/tenant-store';
+import type { PendingTicketAttachment } from '@/types/ticket';
 
 export type RaiseSupportRequestPayload = {
   category: string;
   subCategory: string;
   subCategoryId?: string;
   description: string;
+  attachments?: PendingTicketAttachment[];
 };
 
 export function useRaiseSupportRequest() {
@@ -54,6 +57,7 @@ export function useRaiseSupportRequest() {
         city: selectedCity ?? profile.propertyInfo?.locality,
         bookingId: profile.bookingId,
         propertyId: profile.propertyInfo?.propertyId,
+        attachments: getUploadedAttachmentUrls(payload.attachments ?? []),
       });
 
       if (!result.success || !result.ticketNumber) {

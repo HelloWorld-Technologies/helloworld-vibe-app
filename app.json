@@ -15,9 +15,12 @@
       "bundleIdentifier": "org.HelloWorldTechnologiesIndiaPvtLtd.react.native.HelloWorld",
       "buildNumber": "151",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "appleTeamId": "FY57RG66TM"
-    },
-    "android": {
+      "appleTeamId": "FY57RG66TM",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow HelloWorld to access your photos so you can attach images to support tickets.",
+        "NSPhotoLibraryAddUsageDescription": "Allow HelloWorld to save images related to your support tickets."
+      }
+    },    "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -78,6 +81,14 @@
           "fonts": [
             "./assets/fonts/Satoshi-Variable.ttf"
           ]
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow HelloWorld to access your photos so you can attach images to support tickets.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       "expo-video"

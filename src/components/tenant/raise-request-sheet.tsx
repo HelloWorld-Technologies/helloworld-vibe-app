@@ -10,6 +10,12 @@ import {
   type ColorValue,
 } from 'react-native';
 
+import {
+  getUploadedAttachmentUrls,
+  hasFailedAttachments,
+  hasUploadingAttachments,
+  TicketAttachmentsField,
+} from '@/components/support/ticket-attachments-field';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
@@ -17,7 +23,11 @@ import { Typography } from '@/components/ui/typography';
 import type { RaiseSupportRequestPayload } from '@/hooks/use-raise-support-request';
 import palette from '@/constants/palette';
 import { useKbCategories } from '@/queries/use-kb-categories';
-import type { TicketCategory, TicketCategoryChild } from '@/types/ticket';
+import type {
+  PendingTicketAttachment,
+  TicketCategory,
+  TicketCategoryChild,
+} from '@/types/ticket';
 import { getSupportCategoryIcon, getVisibleSubcategories } from '@/utils/support-category-icons';
 import { Radius } from '@/constants/theme';
 
@@ -96,6 +106,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
   const [selectedCategory, setSelectedCategory] = useState<SelectedCategory | null>(null);
   const [subCategory, setSubCategory] = useState<TicketCategoryChild | null>(null);
   const [description, setDescription] = useState('');
+  const [attachments, setAttachments] = useState<PendingTicketAttachment[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string | null>(null);
@@ -117,6 +128,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
     setSelectedCategory(null);
     setSubCategory(null);
     setDescription('');
+    setAttachments([]);
     setError('');
     setLoading(false);
     setTicketNumber(null);
@@ -171,6 +183,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
         subCategory: subCategory.name,
         subCategoryId: subCategory.id,
         description: description.trim(),
+        attachments,
       });
       if (number) {
         setTicketNumber(number);
@@ -306,6 +319,12 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
               style={styles.textArea}
             />
 
+            <TicketAttachmentsField
+              attachments={attachments}
+              onChange={setAttachments}
+              disabled={loading}
+            />
+
             {error ? (
               <Typography variant="label" color={palette.error}>
                 {error}
@@ -326,7 +345,13 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
                 label="Submit"
                 loading={loading}
                 onPress={handleSubmit}
-                disabled={!subCategory || !description.trim()}
+                disabled={
+                  !subCategory ||
+                  !description.trim() ||
+                  loading ||
+                  hasUploadingAttachments(attachments) ||
+                  hasFailedAttachments(attachments)
+                }
                 style={styles.actionButton}
               />
             </View>

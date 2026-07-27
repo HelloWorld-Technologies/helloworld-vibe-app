@@ -13,6 +13,11 @@ import {
 } from 'react-native';
 
 import { getTicketConversations, postTicketComment, reopenSupportTicket } from '@/api/tickets';
+import {
+  getUploadedAttachmentUrls,
+  hasFailedAttachments,
+  hasUploadingAttachments,
+} from '@/components/support/ticket-attachments-field';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { TicketConversationMessage } from '@/components/tenant/ticket-conversation-message';
 import { TicketReopenBar } from '@/components/tenant/ticket-reopen-bar';
@@ -20,7 +25,7 @@ import { dismissTicketReplyKeyboard, TicketReplyBar } from '@/components/tenant/
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import type { TicketConversation } from '@/types/ticket';
+import type { PendingTicketAttachment, TicketConversation } from '@/types/ticket';
 import { formatDisplayDate, isActiveTicket } from '@/utils/tenant-format';
 import { getVisibleConversations } from '@/utils/ticket-format';
 
@@ -48,6 +53,7 @@ export function TicketDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState('');
+  const [attachments, setAttachments] = useState<PendingTicketAttachment[]>([]);
   const [sending, setSending] = useState(false);
   const [reopening, setReopening] = useState(false);
 
@@ -90,10 +96,19 @@ export function TicketDetailsScreen() {
 
   async function handleSend() {
     const trimmed = message.trim();
-    if (!trimmed || !id) return;
+    const uploadedUrls = getUploadedAttachmentUrls(attachments);
+    if ((!trimmed && uploadedUrls.length === 0) || !id) return;
+    if (hasUploadingAttachments(attachments)) {
+      Alert.alert('Please wait', 'Attachments are still uploading.');
+      return;
+    }
+    if (hasFailedAttachments(attachments)) {
+      Alert.alert('Upload failed', 'Remove or retry failed attachments before sending.');
+      return;
+    }
 
     setSending(true);
-    const result = await postTicketComment(id, trimmed);
+    const result = await postTicketComment(id, trimmed, uploadedUrls);
     setSending(false);
 
     if (!result.success) {
@@ -102,6 +117,7 @@ export function TicketDetailsScreen() {
     }
 
     setMessage('');
+    setAttachments([]);
     dismissTicketReplyKeyboard();
     await loadConversations();
     setTimeout(() => {
@@ -196,6 +212,8 @@ export function TicketDetailsScreen() {
           <TicketReplyBar
             value={message}
             onChange={setMessage}
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
             onSend={handleSend}
             sending={sending}
           />

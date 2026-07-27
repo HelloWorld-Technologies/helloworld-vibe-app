@@ -42,7 +42,7 @@ import { useInvoicePayment } from '@/hooks/use-invoice-payment';
 import { useMoveInPayment } from '@/hooks/use-move-in-payment';
 import { useUpcomingEvents } from '@/queries/use-events';
 import { useBookingStatus } from '@/queries/use-booking-status';
-import { useSupportTickets } from '@/queries/use-support-tickets';
+import { useDashboardSupportTickets } from '@/queries/use-support-tickets';
 import { useTenantInvoices } from '@/queries/use-tenant-invoices';
 import { getPropertyManagerByBookingId } from '@/api/user';
 import { useTenantProfile } from '@/stores/tenant-store';
@@ -60,7 +60,7 @@ export function TenantDashboardScreen() {
   const profile = useTenantProfile();
   const { data: bookingStatus } = useBookingStatus();
   const { data: invoices, isLoading: invoicesLoading, refetch: refetchInvoices } = useTenantInvoices();
-  const { data: tickets, refetch: refetchTickets } = useSupportTickets();
+  const { data: tickets, refetch: refetchTickets } = useDashboardSupportTickets();
   const { data: events, isLoading: eventsLoading, refetch: refetchEvents } = useUpcomingEvents();
   const { sheetVisible, openRaiseRequest, closeRaiseRequest, submitRaiseRequest } =
     useRaiseSupportRequest();

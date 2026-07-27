@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Platform,
+  Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -20,60 +21,116 @@ import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { TAB_SCREEN_EXTRA_PADDING } from '@/constants/tab-bar';
 import { useRaiseSupportRequest } from '@/hooks/use-raise-support-request';
-import { useSupportTickets } from '@/queries/use-support-tickets';
-import { isActiveTicket } from '@/utils/tenant-format';
+import { useSupportTicketsInfinite } from '@/queries/use-support-tickets';
+import type { SupportTicket } from '@/types/ticket';
 
 type SupportTab = 'active' | 'resolved';
 
 const SUPPORT_TABS: SupportTab[] = ['active', 'resolved'];
 const FAB_HEIGHT = 52;
 const FAB_GAP = 12;
-/** Native tab bar chrome only — excludes home-indicator (handled by safe-area inset). */
 const NATIVE_TAB_BAR_HEIGHT = Platform.select({ ios: 0, android: 56, default: 56 }) ?? 56;
+
+function SupportTicketList({
+  tabId,
+  bottomPadding,
+}: {
+  tabId: SupportTab;
+  bottomPadding: number;
+}) {
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useSupportTicketsInfinite(tabId);
+
+  const tickets = useMemo(
+    () => (data?.pages ?? []).flatMap((page) => page.data ?? []),
+    [data],
+  );
+
+  function renderTicket({ item }: { item: SupportTicket }) {
+    return <SupportTicketCard ticket={item} />;
+  }
+
+  function renderFooter() {
+    if (!hasNextPage && !isFetchingNextPage) return null;
+    return (
+      <View style={styles.footer}>
+        {isFetchingNextPage ? (
+          <ActivityIndicator color={palette.lime[700]} />
+        ) : (
+          <Pressable onPress={() => void fetchNextPage()} style={styles.loadMore}>
+            <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
+              Load more
+            </Typography>
+          </Pressable>
+        )}
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return <ActivityIndicator color={palette.lime[700]} style={styles.loader} />;
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.centered}>
+        <Typography variant="body" color={palette.textSecondary} style={styles.errorText}>
+          Unable to load tickets right now.
+        </Typography>
+        <Button label="Try again" onPress={() => void refetch()} style={styles.retry} />
+      </View>
+    );
+  }
+
+  if (tickets.length === 0) {
+    return (
+      <EmptyState
+        title={tabId === 'active' ? 'No active tickets yet' : 'No resolved tickets yet'}
+        subtitle={
+          tabId === 'active'
+            ? 'Raise a request and our team will help you out.'
+            : 'Resolved tickets will appear here once closed.'
+        }
+      />
+    );
+  }
+
+  return (
+    <FlatList
+      data={tickets}
+      keyExtractor={(item) => String(item.id)}
+      renderItem={renderTicket}
+      ListFooterComponent={renderFooter}
+      contentContainerStyle={[styles.list, { paddingBottom: bottomPadding }]}
+      showsVerticalScrollIndicator={false}
+      onEndReached={() => {
+        if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+      }}
+      onEndReachedThreshold={0.4}
+      refreshControl={
+        <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />
+      }
+    />
+  );
+}
 
 export function TenantSupportScreen() {
   const insets = useSafeAreaInsets();
-  const { data: tickets, isLoading, refetch, isRefetching } = useSupportTickets();
   const { sheetVisible, openRaiseRequest, closeRaiseRequest, submitRaiseRequest } =
     useRaiseSupportRequest();
   const [tab, setTab] = useState<SupportTab>('active');
 
-  // Native tabs: iOS draws over the scene; Android already insets the screen above the bar.
   const fabBottom =
     Platform.OS === 'ios' ? insets.bottom + NATIVE_TAB_BAR_HEIGHT + FAB_GAP : FAB_GAP;
   const scrollBottomPadding = fabBottom + FAB_HEIGHT + TAB_SCREEN_EXTRA_PADDING;
-
-  function renderTabContent(tabId: SupportTab) {
-    const filteredTickets = (tickets ?? []).filter((ticket) =>
-      tabId === 'active' ? isActiveTicket(ticket.status) : !isActiveTicket(ticket.status),
-    );
-
-    return (
-      <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: scrollBottomPadding }]}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
-        showsVerticalScrollIndicator={false}>
-        {isLoading ? (
-          <ActivityIndicator color={palette.lime[700]} style={styles.loader} />
-        ) : filteredTickets.length > 0 ? (
-          <View style={styles.list}>
-            {filteredTickets.map((ticket) => (
-              <SupportTicketCard key={ticket.id} ticket={ticket} />
-            ))}
-          </View>
-        ) : (
-          <EmptyState
-            title={tabId === 'active' ? 'No active tickets yet' : 'No resolved tickets yet'}
-            subtitle={
-              tabId === 'active'
-                ? 'Raise a request and our team will help you out.'
-                : 'Resolved tickets will appear here once closed.'
-            }
-          />
-        )}
-      </ScrollView>
-    );
-  }
 
   return (
     <View style={styles.root}>
@@ -97,7 +154,7 @@ export function TenantSupportScreen() {
       </View>
 
       <SwipeableTabPager tabs={SUPPORT_TABS} value={tab} onChange={setTab}>
-        {renderTabContent}
+        {(tabId) => <SupportTicketList tabId={tabId} bottomPadding={scrollBottomPadding} />}
       </SwipeableTabPager>
 
       <View style={[styles.fabWrap, { bottom: fabBottom }]}>
@@ -130,16 +187,34 @@ const styles = StyleSheet.create({
     gap: 16,
     backgroundColor: palette.gray[50],
   },
-  scroll: {
+  list: {
     paddingHorizontal: 20,
     paddingTop: 4,
-    flexGrow: 1,
-  },
-  list: {
     gap: 12,
   },
   loader: {
     marginTop: 24,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    gap: 12,
+  },
+  errorText: {
+    textAlign: 'center',
+  },
+  retry: {
+    minWidth: 140,
+  },
+  footer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  loadMore: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   fabWrap: {
     position: 'absolute',

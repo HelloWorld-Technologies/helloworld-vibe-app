@@ -59,6 +59,11 @@ export function getInvoiceDueLabel(invoice: TenantInvoice) {
 }
 
 export function isActiveTicket(status?: string) {
-  const normalized = (status ?? '').toLowerCase();
-  return !['closed', 'resolved', 'solved'].includes(normalized);
+  const normalized = (status ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
+
+  if (!normalized) return true;
+  return !['CLOSED', 'RESOLVED', 'SOLVED'].includes(normalized);
 }

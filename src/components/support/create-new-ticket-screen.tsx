@@ -14,6 +14,12 @@ import { SymbolView } from 'expo-symbols';
 
 import { getCategoryDescription, postCreateTicket } from '@/api/tickets';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import {
+  getUploadedAttachmentUrls,
+  hasFailedAttachments,
+  hasUploadingAttachments,
+  TicketAttachmentsField,
+} from '@/components/support/ticket-attachments-field';
 import { TicketCreatedView } from '@/components/support/ticket-created-view';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
@@ -26,7 +32,7 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTenantProfile } from '@/stores/tenant-store';
-import type { TicketCategoryFaq } from '@/types/ticket';
+import type { PendingTicketAttachment, TicketCategoryFaq } from '@/types/ticket';
 
 function FaqAccordionItem({
   title,
@@ -82,6 +88,7 @@ export function CreateNewTicketScreen() {
   const [faqs, setFaqs] = useState<TicketCategoryFaq[] | null>(null);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [description, setDescription] = useState('');
+  const [attachments, setAttachments] = useState<PendingTicketAttachment[]>([]);
   const [loading, setLoading] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string | null>(null);
 
@@ -109,7 +116,18 @@ export function CreateNewTicketScreen() {
       return;
     }
 
+    if (hasUploadingAttachments(attachments)) {
+      Alert.alert('Please wait', 'Attachments are still uploading.');
+      return;
+    }
+
+    if (hasFailedAttachments(attachments)) {
+      Alert.alert('Upload failed', 'Remove or retry failed attachments before creating the ticket.');
+      return;
+    }
+
     setLoading(true);
+
     const result = await postCreateTicket({
       category,
       subCategory,
@@ -119,6 +137,7 @@ export function CreateNewTicketScreen() {
       city: selectedCity ?? profile.propertyInfo?.locality,
       bookingId: profile.bookingId,
       propertyId: profile.propertyInfo?.propertyId,
+      attachments: getUploadedAttachmentUrls(attachments),
     });
     setLoading(false);
 
@@ -194,11 +213,22 @@ export function CreateNewTicketScreen() {
             style={styles.textArea}
           />
 
+          <TicketAttachmentsField
+            attachments={attachments}
+            onChange={setAttachments}
+            disabled={loading}
+          />
+
           <Button
             label="Create Ticket"
             onPress={handleSubmit}
             loading={loading}
-            disabled={!description.trim()}
+            disabled={
+              !description.trim() ||
+              loading ||
+              hasUploadingAttachments(attachments) ||
+              hasFailedAttachments(attachments)
+            }
           />
         </View>
       </ScrollView>
