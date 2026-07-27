@@ -34,7 +34,7 @@ function resolveMediaType(mediaType?: string, url?: string): HdpMomentMediaType 
   return 'image';
 }
 
-function resolveMomentLabel(moment: HdpApiMoment, index: number): string {
+function resolveMomentLabel(moment: HdpApiMoment, _index: number): string {
   const caption = moment.caption?.trim();
   if (caption) return caption;
 
@@ -43,7 +43,8 @@ function resolveMomentLabel(moment: HdpApiMoment, index: number): string {
     : undefined;
   if (tag) return tag;
 
-  return DEFAULT_MOMENT_LABELS[index % DEFAULT_MOMENT_LABELS.length];
+  // Prefer empty over placeholder copy for feed/story captions.
+  return '';
 }
 
 function resolvePreviewUri(moment: HdpApiMoment, mediaType: HdpMomentMediaType): string {

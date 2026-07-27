@@ -135,7 +135,9 @@ export function AddMateSheet({ visible, inType, bookingId, onClose, onSuccess }:
 
 const styles = StyleSheet.create({
   content: {
-    paddingBottom: 24,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 32,
     gap: 16,
   },
   title: {

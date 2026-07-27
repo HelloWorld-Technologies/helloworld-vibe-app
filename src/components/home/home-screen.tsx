@@ -41,12 +41,14 @@ import type { PropertyListing } from '@/types/property';
 function SectionTitle({
   prefix,
   highlight,
+  centered = false,
 }: {
   prefix: string;
   highlight: string;
+  centered?: boolean;
 }) {
   return (
-    <View style={styles.sectionTitleRow}>
+    <View style={[styles.sectionTitleRow, centered && styles.sectionTitleCentered]}>
       <Typography variant="text" size="xl" weight="medium">
         {prefix}
       </Typography>
@@ -59,7 +61,9 @@ function SectionTitle({
 
 const ITEM_GAP = 12;
 const PROPERTY_CAROUSEL_HEIGHT = 540;
-const FEED_CARD_WIDTH = 160;
+const FEED_CARD_WIDTH = 172;
+const FEED_CARD_HEIGHT = 268;
+const FEED_CARD_GAP = 16;
 const FEEDBACK_BANNER_HEIGHT = 44;
 const FEEDBACK_BANNER_GAP = 12;
 const HEADER_SHADOW_THRESHOLD = 8;
@@ -75,10 +79,8 @@ export function HomeScreen() {
   const { data: srpData, isLoading: isLoadingProperties } = useSrpProperties(city);
   const { data: feedData, isLoading: isLoadingFeed } = useMomentsFeed();
   const properties = srpData?.listings ?? [];
-  const feedMoments = feedData?.moments ?? [];
-  const [selectedVibes, setSelectedVibes] = useState<string[]>(
-    VIBE_OPTIONS.map((tag) => tag.id),
-  );
+  const feedMoments = (feedData?.moments ?? []).slice(0, 8);
+  const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [showFeedback, setShowFeedback] = useState(true);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [feedStoryOpen, setFeedStoryOpen] = useState(false);
@@ -88,7 +90,7 @@ export function HomeScreen() {
 
   const cardWidth = width - 48;
   const slideWidth = cardWidth + ITEM_GAP;
-  const feedSlideWidth = FEED_CARD_WIDTH + ITEM_GAP;
+  const feedSlideWidth = FEED_CARD_WIDTH + FEED_CARD_GAP;
   const stickyHeaderHeight = insets.top + 8 + 56 + 12;
   const gradientHeight = Math.max(380, height * 0.52);
 
@@ -243,45 +245,52 @@ export function HomeScreen() {
 
           {(isLoadingFeed || feedMoments.length > 0) ? (
             <>
-              <SectionTitle prefix="Straight from the " highlight="Feed!" />
+              <SectionTitle prefix="Straight from the " highlight="Feed!" centered />
               {isLoadingFeed ? (
                 <View style={styles.feedLoader}>
                   <ActivityIndicator color={palette.helloLime} />
                 </View>
               ) : (
-                <HwParallaxCarousel
+                <HwCarousel
                   data={feedMoments}
                   width={feedSlideWidth}
-                  height={220}
-                  style={styles.carouselWrap}
-                  modeConfig={{
-                    parallaxScrollingScale: 0.9,
-                    parallaxScrollingOffset: 32,
-                    parallaxAdjacentItemScale: 0.82,
-                  }}
-                  renderItem={({ item, index, animationValue }) => (
+                  height={FEED_CARD_HEIGHT + 12}
+                  style={styles.feedCarouselWrap}
+                  renderItem={({ item, index }) => (
                     <Pressable
                       onPress={() => {
                         setFeedStoryIndex(index);
                         setFeedStoryOpen(true);
                       }}
-                      style={[styles.feedCard, { width: FEED_CARD_WIDTH }]}>
-                      <ParallaxLayer animationValue={animationValue} style={styles.feedImageWrap}>
+                      style={[styles.feedCard, { width: FEED_CARD_WIDTH }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={item.label || 'Watch moment'}>
+                      <View style={styles.feedCardInner}>
                         <Image
                           source={{ uri: item.imageUri }}
                           style={styles.feedImage}
                           contentFit="cover"
                         />
-                      </ParallaxLayer>
-                      <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.6)']}
-                        style={styles.feedOverlay}>
-                        <Typography variant="text" size="sm" weight="bold" color={palette.white}>
-                          {item.label}
-                        </Typography>
-                      </LinearGradient>
-                      <View style={styles.videoBadge}>
-                        <SymbolView name="play.fill" size={10} tintColor={palette.white} />
+                        <LinearGradient
+                          colors={['transparent', 'rgba(0,0,0,0.55)']}
+                          style={styles.feedOverlay}>
+                          {item.label ? (
+                            <Typography
+                              variant="text"
+                              size="md"
+                              weight="bold"
+                              color={palette.white}
+                              numberOfLines={2}
+                              style={styles.feedCaption}>
+                              {item.label}
+                            </Typography>
+                          ) : null}
+                        </LinearGradient>
+                        {item.mediaType === 'video' ? (
+                          <View style={styles.videoBadge} pointerEvents="none">
+                            <SymbolView name="video.fill" size={14} tintColor={palette.white} />
+                          </View>
+                        ) : null}
                       </View>
                     </Pressable>
                   )}
@@ -442,9 +451,10 @@ const styles = StyleSheet.create({
   body: {
     paddingTop: 32,
     paddingHorizontal: 20,
-    gap: 12,
+    paddingBottom: 24,
+    gap: 28,
     flex: 1,
-    overflow: 'hidden',
+    overflow: 'visible',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
   },
@@ -452,13 +462,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'baseline',
-    marginBottom: 4,
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  sectionTitleCentered: {
+    justifyContent: 'center',
+    marginBottom: 16,
+    marginTop: 8,
   },
   sectionHighlight: {
     fontStyle: 'italic',
   },
   carouselWrap: {
     marginHorizontal: -4,
+    marginBottom: 8,
+  },
+  feedCarouselWrap: {
+    marginHorizontal: -4,
+    marginBottom: 16,
   },
   propertiesLoader: {
     height: PROPERTY_CAROUSEL_HEIGHT,
@@ -466,7 +487,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   feedLoader: {
-    height: 220,
+    height: FEED_CARD_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -479,9 +500,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
   },
   neighborhoodImage: {
-    width: '110%',
+    // Extra horizontal bleed so ParallaxLayer translateX doesn't clip the photo.
+    width: '130%',
     height: '100%',
-    marginLeft: '-5%',
+    marginLeft: '-15%',
   },
   neighborhoodOverlay: {
     position: 'absolute',
@@ -497,36 +519,42 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   feedCard: {
-    height: 220,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    position: 'relative',
+    height: FEED_CARD_HEIGHT,
+    borderRadius: 20,
+    backgroundColor: palette.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    elevation: 6,
+    alignSelf: 'flex-start',
   },
-  feedImageWrap: {
-    ...StyleSheet.absoluteFill,
+  feedCardInner: {
+    flex: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: palette.gray[200],
   },
   feedImage: {
-    width: '110%',
-    height: '100%',
-    marginLeft: '-5%',
+    ...StyleSheet.absoluteFill,
   },
   feedOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingBottom: 16,
+    paddingTop: 40,
+    justifyContent: 'flex-end',
+  },
+  feedCaption: {
+    textAlign: 'center',
   },
   videoBadge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    top: 12,
+    right: 12,
   },
   feedbackBanner: {
     position: 'absolute',

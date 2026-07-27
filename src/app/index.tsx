@@ -51,7 +51,7 @@ export default function SplashScreen() {
   return (
     <LinearGradient
       colors={[...SPLASH_GRADIENT]}
-      start={{ x: 0.5, y: 0 }}
+      start={{ x: 1, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={styles.gradient}>
       <StatusBar style="light" />
@@ -60,7 +60,7 @@ export default function SplashScreen() {
           <View style={styles.logoWrap}>
             <HwLottie source={LottieAssets.loginLogo} style={styles.lottie} loop />
           </View>
-          <Typography variant="heading" weight="medium" color={palette.white} style={styles.tagline}>
+          <Typography variant='heading' weight="medium" color={palette.white} style={styles.tagline}>
             Find your Vibe!
           </Typography>
         </View>
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     height: 280,
   },
   tagline: {
-    marginTop: 8,
+    marginTop: -58,
     textAlign: 'center',
   },
 });

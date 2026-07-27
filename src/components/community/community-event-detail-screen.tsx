@@ -1,5 +1,7 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,16 +15,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { getHwEventDetail, postBookEvent } from '@/api/community';
+import { WhosAttendingCard } from '@/components/community/whos-attending-card';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
-import { getHwEventDetail, postBookEvent } from '@/api/community';
 import { EVENT_FALLBACK_IMAGE } from '@/constants/community';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import type { CommunityEventDetailResponse } from '@/types/community';
-import { priceFormatter } from '@/utils/tenant-format';
+import { useAuthStore } from '@/stores/auth-store';
 import { useTenantProfile } from '@/stores/tenant-store';
+import type { CommunityEventDetailResponse } from '@/types/community';
+import { normalizeGender } from '@/utils/form-prefill';
+import { priceFormatter } from '@/utils/tenant-format';
 
 function formatEventDateTime(value?: string) {
   if (!value) return '—';
@@ -42,7 +47,9 @@ function isEventEnded(endDate?: string) {
 export function CommunityEventDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const profile = useTenantProfile();
+  const authMobile = useAuthStore((state) => state.mobile);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [event, setEvent] = useState<CommunityEventDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +82,8 @@ export function CommunityEventDetailScreen() {
 
   async function handleRegister() {
     if (!event?.details || !profile?.userInfo) return;
-    const { email, mobile, name } = profile.userInfo;
+    const { email, mobile: profileMobile, name } = profile.userInfo;
+    const mobile = profileMobile || authMobile;
     if (!email || !mobile || !name) {
       Alert.alert('Complete your profile before registering');
       return;
@@ -92,6 +100,7 @@ export function CommunityEventDetailScreen() {
     setRegistering(false);
 
     if (success) {
+      void queryClient.invalidateQueries({ queryKey: ['community-events'] });
       router.push({
         pathname: '/community-registration-confirmed',
         params: {
@@ -130,114 +139,129 @@ export function CommunityEventDetailScreen() {
   const start = formatEventDateTime(details.event_start_date ?? details.start_date);
   const ended = isEventEnded(details.event_end_date);
   const amount = event.paymentData?.total ?? details.amount ?? 0;
-  const attendees = details.people_attending ?? details.attendees_count ?? 0;
+  const totalRegistration =
+    details.total_registration ?? details.people_attending ?? details.attendees_count ?? 0;
+  const femaleCount = details.female_count ?? 0;
+  const propertyCount = details.property_count ?? details.hw_properties_count;
+  const showFemaleCount = normalizeGender(profile?.userInfo?.gender) === 'Female';
   const venue = [details.location?.propertyName, details.location?.street].filter(Boolean).join(', ');
+  const footerHeight = ended ? 0 : 132 + insets.bottom;
+  const heroImageUri = details.display_image?.trim() || EVENT_FALLBACK_IMAGE;
 
   return (
     <View style={styles.root}>
-      <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <Image
-            source={{ uri: details.display_image || EVENT_FALLBACK_IMAGE }}
-            style={styles.heroImage}
-            contentFit="cover"
-          />
-          <View style={styles.heroHeader}>
-            <TenantScreenHeader title="" onBack={() => router.back()} style={styles.transparentHeader} />
+      <ScrollView
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={{ paddingBottom: footerHeight + 24 }}>
+        {/* One compositing parent so rounded sheet corners reveal the hero, not the root bg. */}
+        <View style={styles.heroCluster} collapsable={false}>
+          <View style={styles.hero}>
+            <Image
+              source={{ uri: heroImageUri }}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+            <View style={[styles.heroHeader, { paddingTop: insets.top + 8 }]}>
+              <Pressable
+                onPress={() => router.back()}
+                style={styles.backButton}
+                accessibilityRole="button"
+                accessibilityLabel="Go back">
+                <SymbolView name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[900]} />
+              </Pressable>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.body}>
-          <Typography variant="text" size="xl" weight="medium">
-            {details.name}
-          </Typography>
-
-          <View style={styles.card}>
-            <Typography variant="label" size="xs" color={palette.gray[500]} style={styles.cardLabel}>
-              Event Details
+          <View style={styles.bodySheet}>
+            <Typography variant="text" size="xl" weight="bold" style={styles.title}>
+              {details.name}
             </Typography>
-            <View style={styles.dateRow}>
-              {typeof start !== 'string' ? (
-                <>
-                  <View style={styles.dateBadge}>
-                    <Typography variant="text" size="lg" weight="medium">
-                      {new Date(details.event_start_date ?? details.start_date ?? '').getDate()
-                        .toString()
-                        .padStart(2, '0')}
-                    </Typography>
-                    <Typography variant="label" size="xs" color={palette.gray[500]}>
-                      {new Date(details.event_start_date ?? details.start_date ?? '')
-                        .toLocaleDateString('en-IN', { month: 'short' })
-                        .toUpperCase()}
-                    </Typography>
-                  </View>
-                  <View style={styles.dateCopy}>
-                    <Typography variant="text" size="sm" weight="medium">
-                      {start.day}
-                    </Typography>
-                    <Typography variant="text" size="sm" color={palette.gray[600]}>
-                      {start.time}
-                    </Typography>
-                  </View>
-                </>
+
+            <View style={styles.card}>
+              <Typography variant="label" size="xs" color={palette.gray[500]} style={styles.cardLabel}>
+                Event Details
+              </Typography>
+              <View style={styles.dateRow}>
+                {typeof start !== 'string' ? (
+                  <>
+                    <View style={styles.dateBadge}>
+                      <Typography variant="text" size="lg" weight="medium">
+                        {new Date(details.event_start_date ?? details.start_date ?? '').getDate()
+                          .toString()
+                          .padStart(2, '0')}
+                      </Typography>
+                      <Typography variant="label" size="xs" color={palette.gray[500]}>
+                        {new Date(details.event_start_date ?? details.start_date ?? '')
+                          .toLocaleDateString('en-IN', { month: 'short' })
+                          .toUpperCase()}
+                      </Typography>
+                    </View>
+                    <View style={styles.dateCopy}>
+                      <Typography variant="text" size="sm" weight="medium">
+                        {start.day}
+                      </Typography>
+                      <Typography variant="text" size="sm" color={palette.gray[600]}>
+                        {start.time}
+                      </Typography>
+                    </View>
+                  </>
+                ) : null}
+              </View>
+              {venue ? (
+                <View style={styles.venueBlock}>
+                  <Typography variant="label" size="xs" color={palette.gray[500]}>
+                    Venue
+                  </Typography>
+                  <Typography variant="text" size="sm" weight="medium">
+                    {venue}
+                  </Typography>
+                  {details.location?.lat ? (
+                    <Pressable onPress={openMaps} accessibilityRole="link">
+                      <Typography variant="text" size="sm" color={palette.blue[700]}>
+                        Show on Google Maps
+                      </Typography>
+                    </Pressable>
+                  ) : null}
+                </View>
               ) : null}
             </View>
-            {venue ? (
-              <View style={styles.venueBlock}>
-                <Typography variant="label" size="xs" color={palette.gray[500]}>
-                  Venue
+
+            {details.description ? (
+              <View style={styles.card}>
+                <Typography variant="label" size="xs" color={palette.gray[500]} style={styles.cardLabel}>
+                  About the Event
                 </Typography>
-                <Typography variant="text" size="sm" weight="medium">
-                  {venue}
+                <Typography variant="text" size="sm" color={palette.gray[700]} style={styles.description}>
+                  {details.description}
                 </Typography>
-                {details.location?.lat ? (
-                  <Pressable onPress={openMaps} accessibilityRole="link">
-                    <Typography variant="text" size="sm" color={palette.blue[700]}>
-                      Show on Google Maps
-                    </Typography>
-                  </Pressable>
-                ) : null}
+              </View>
+            ) : null}
+
+            <WhosAttendingCard
+              totalRegistration={totalRegistration}
+              femaleCount={femaleCount}
+              propertyCount={propertyCount}
+              showFemaleCount={showFemaleCount}
+            />
+
+            {details.what_to_bring ? (
+              <View style={styles.card}>
+                <Typography variant="label" size="xs" color={palette.gray[500]} style={styles.cardLabel}>
+                  What to bring
+                </Typography>
+                <Typography variant="text" size="sm" color={palette.gray[700]}>
+                  {details.what_to_bring}
+                </Typography>
               </View>
             ) : null}
           </View>
-
-          {details.description ? (
-            <View style={styles.card}>
-              <Typography variant="label" size="xs" color={palette.gray[500]} style={styles.cardLabel}>
-                About the Event
-              </Typography>
-              <Typography variant="text" size="sm" color={palette.gray[700]} style={styles.description}>
-                {details.description}
-              </Typography>
-            </View>
-          ) : null}
-
-          {attendees > 0 ? (
-            <View style={styles.card}>
-              <Typography variant="label" size="xs" color={palette.gray[500]} style={styles.cardLabel}>
-                Who's Attending
-              </Typography>
-              <Typography variant="text" size="sm" weight="medium">
-                {attendees} attending
-              </Typography>
-            </View>
-          ) : null}
-
-          {details.what_to_bring ? (
-            <View style={styles.card}>
-              <Typography variant="label" size="xs" color={palette.gray[500]} style={styles.cardLabel}>
-                What to bring
-              </Typography>
-              <Typography variant="text" size="sm" color={palette.gray[700]}>
-                {details.what_to_bring}
-              </Typography>
-            </View>
-          ) : null}
         </View>
       </ScrollView>
 
       {!ended ? (
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
           <View style={styles.feeRow}>
             <Typography variant="text" size="sm" color={palette.gray[600]}>
               Event Registration Fee
@@ -256,7 +280,12 @@ export function CommunityEventDetailScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: palette.gray[50],
+    // Match hero so any corner bleed blends with the image area, not a white strip.
+    backgroundColor: palette.gray[100],
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   centered: {
     flex: 1,
@@ -264,9 +293,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: palette.gray[50],
   },
+  heroCluster: {
+    backgroundColor: 'transparent',
+  },
   hero: {
-    height: 280,
+    height: 260,
     backgroundColor: palette.gray[100],
+    overflow: 'hidden',
   },
   heroImage: {
     width: '100%',
@@ -277,15 +310,37 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    paddingHorizontal: 20,
   },
-  transparentHeader: {
-    backgroundColor: 'transparent',
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: palette.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  body: {
-    marginTop: -24,
-    paddingHorizontal: 24,
-    paddingBottom: 140,
+  bodySheet: {
+    marginTop: -28,
+    backgroundColor: palette.gray[50],
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 24,
     gap: 16,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { borderCurve: 'continuous' },
+      default: {},
+    }),
+  },
+  title: {
+    paddingHorizontal: 4,
   },
   card: {
     backgroundColor: palette.white,
@@ -334,7 +389,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: palette.gray[200],
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 14,
     gap: 12,
   },
   feeRow: {

@@ -1,5 +1,5 @@
-import { SymbolView } from 'expo-symbols';
 import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';

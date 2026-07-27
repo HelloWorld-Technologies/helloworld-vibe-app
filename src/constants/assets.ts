@@ -79,6 +79,18 @@ export const EmptyStateAssets = {
   default: require('../../assets/bundled/empty-state/empty-state.png'),
 } as const;
 
+export const ErrorStateAssets = {
+  error500: require('../../assets/bundled/error-states/error-500.png'),
+} as const;
+
+export const CommunityAssets = {
+  registrationConfirmed: require('../../assets/bundled/community/pagloo-confirmed-bouncer.png'),
+} as const;
+
+export const LogoAssets = {
+  helloWorld: require('../../assets/bundled/logos/hello-world-logo.svg').default,
+} as const;
+
 export const DashboardIcons = {
   sos: require('../../assets/bundled/dashboard/sos.svg').default,
   visitor: require('../../assets/bundled/dashboard/visitor.svg').default,

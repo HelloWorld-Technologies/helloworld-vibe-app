@@ -8,8 +8,9 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Alert } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
+import { Snackbar } from '@/components/ui/snackbar';
 import {
   addWishlistProperty,
   fetchWishlistPropertyIds,
@@ -34,6 +35,17 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [revision, setRevision] = useState(0);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+
+  const showSnackbar = useCallback((message: string) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
+  }, []);
+
+  const dismissSnackbar = useCallback(() => {
+    setSnackbarVisible(false);
+  }, []);
 
   const refreshWishlist = useCallback(async () => {
     if (!isAuthenticated) {
@@ -58,7 +70,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   );
 
   const applyWishlistChange = useCallback(
-    async (propertyId: number, shouldSave: boolean) => {
+    async (propertyId: number, shouldSave: boolean, propertyName?: string) => {
       setWishlistIds((current) => {
         const next = new Set(current);
         if (shouldSave) {
@@ -83,17 +95,28 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
           }
           return next;
         });
-        Alert.alert('Wishlist', 'Could not update your wishlist. Please try again.');
+        showSnackbar('Could not update wishlist. Please try again.');
         return;
       }
 
       setRevision((current) => current + 1);
+
+      const label = propertyName?.trim();
+      showSnackbar(
+        shouldSave
+          ? label
+            ? `${label} added to wishlist`
+            : 'Added to wishlist'
+          : label
+            ? `${label} removed from wishlist`
+            : 'Removed from wishlist',
+      );
     },
-    [],
+    [showSnackbar],
   );
 
   const toggleWishlist = useCallback(
-    async (propertyId: number, _propertyName?: string) => {
+    async (propertyId: number, propertyName?: string) => {
       if (!isAuthenticated) {
         Alert.alert('Sign in to save', 'Log in to add properties to your wishlist.', [
           { text: 'Cancel', style: 'cancel' },
@@ -102,7 +125,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      await applyWishlistChange(propertyId, !wishlistIds.has(propertyId));
+      await applyWishlistChange(propertyId, !wishlistIds.has(propertyId), propertyName);
     },
     [applyWishlistChange, isAuthenticated, router, wishlistIds],
   );
@@ -118,7 +141,18 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     [isLoading, isWishlisted, refreshWishlist, revision, toggleWishlist],
   );
 
-  return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
+  return (
+    <WishlistContext.Provider value={value}>
+      <View style={styles.root}>
+        {children}
+        <Snackbar
+          message={snackbarMessage}
+          visible={snackbarVisible}
+          onDismiss={dismissSnackbar}
+        />
+      </View>
+    </WishlistContext.Provider>
+  );
 }
 
 export function useWishlist() {
@@ -132,3 +166,9 @@ export function useWishlist() {
 export function useOptionalWishlist() {
   return useContext(WishlistContext);
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

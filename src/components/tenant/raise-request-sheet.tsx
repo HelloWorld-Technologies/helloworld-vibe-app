@@ -360,6 +360,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 24,
     gap: 16,
   },

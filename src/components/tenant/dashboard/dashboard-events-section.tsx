@@ -13,6 +13,7 @@ import { formatDisplayDate } from '@/utils/tenant-format';
 
 const EVENT_FALLBACK_IMAGE =
   'https://hello-assets-items.s3.ap-south-1.amazonaws.com/images/coming-soon.jpg';
+const EVENT_CARD_GAP = 12;
 
 type DashboardEventsSectionProps = {
   events: CommunityEvent[];
@@ -21,7 +22,9 @@ type DashboardEventsSectionProps = {
 
 function EventCard({ event, width }: { event: CommunityEvent; width: number }) {
   const router = useRouter();
-  const attendees = event.people_attending ?? event.attendees_count ?? 0;
+  const attendees =
+    event.total_registration ?? event.people_attending ?? event.attendees_count ?? 0;
+  const dateValue = event.event_start_date ?? event.start_date;
 
   return (
     <Pressable
@@ -42,9 +45,11 @@ function EventCard({ event, width }: { event: CommunityEvent; width: number }) {
         <Typography variant="text" size="md" weight="medium" numberOfLines={2}>
           {event.name}
         </Typography>
-        <Typography variant="text" size="sm" color={palette.gray[600]}>
-          {formatDisplayDate(event.start_date)}
-        </Typography>
+        {dateValue ? (
+          <Typography variant="text" size="sm" color={palette.gray[600]}>
+            {formatDisplayDate(dateValue)}
+          </Typography>
+        ) : null}
         <View style={styles.attendeesRow}>
           <Typography variant="label" size="xs" color={palette.gray[500]}>
             {attendees} People attending
@@ -59,6 +64,7 @@ export function DashboardEventsSection({ events, isLoading }: DashboardEventsSec
   const router = useRouter();
   const { width } = useWindowDimensions();
   const cardWidth = width - 72;
+  const slideWidth = cardWidth + EVENT_CARD_GAP;
   const carouselHeight = 280;
 
   return (
@@ -75,9 +81,11 @@ export function DashboardEventsSection({ events, isLoading }: DashboardEventsSec
       ) : events.length > 0 ? (
         <HwCarousel
           data={events}
-          width={cardWidth}
+          width={slideWidth}
           height={carouselHeight}
-          renderItem={({ item }) => <EventCard event={item} width={cardWidth} />}
+          renderItem={({ item }) => (
+            <EventCard event={item} width={cardWidth} />
+          )}
         />
       ) : (
         <EmptyState

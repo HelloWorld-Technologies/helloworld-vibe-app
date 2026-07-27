@@ -11,11 +11,20 @@ import { formatDisplayDate } from '@/utils/tenant-format';
 type CommunityEventCardProps = {
   event: CommunityEvent;
   onPress: () => void;
+  onCancel?: () => void;
+  cancelLoading?: boolean;
 };
 
-export function CommunityEventCard({ event, onPress }: CommunityEventCardProps) {
-  const attendees = event.people_attending ?? event.attendees_count ?? 0;
-  const dateValue = event.start_date ?? event.event_start_date;
+export function CommunityEventCard({
+  event,
+  onPress,
+  onCancel,
+  cancelLoading = false,
+}: CommunityEventCardProps) {
+  const attendees =
+    event.total_registration ?? event.people_attending ?? event.attendees_count ?? 0;
+  const dateValue = event.event_start_date ?? event.start_date;
+  const showCancel = Boolean(onCancel && event.registrationId);
 
   return (
     <Pressable style={styles.card} onPress={onPress} accessibilityRole="button">
@@ -28,11 +37,6 @@ export function CommunityEventCard({ event, onPress }: CommunityEventCardProps) 
         <Typography variant="text" size="sm" weight="medium" numberOfLines={2}>
           {event.name}
         </Typography>
-        {event.city ? (
-          <Typography variant="text" size="xs" color={palette.gray[500]} numberOfLines={1}>
-            {event.city}
-          </Typography>
-        ) : null}
         {dateValue ? (
           <Typography variant="label" size="xs" color={palette.gray[500]}>
             {formatDisplayDate(dateValue)}
@@ -42,6 +46,26 @@ export function CommunityEventCard({ event, onPress }: CommunityEventCardProps) 
           <Typography variant="label" size="xs" color={palette.gray[500]}>
             {attendees} attending
           </Typography>
+        ) : null}
+        {showCancel ? (
+          <Pressable
+            onPress={(eventPress) => {
+              eventPress.stopPropagation();
+              onCancel?.();
+            }}
+            disabled={cancelLoading}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel registration"
+            style={styles.cancelButton}>
+            <Typography
+              variant="label"
+              size="xs"
+              weight="bold"
+              color={cancelLoading ? palette.gray[400] : palette.red[600]}>
+              {cancelLoading ? 'Cancelling…' : 'Cancel registration'}
+            </Typography>
+          </Pressable>
         ) : null}
       </View>
     </Pressable>
@@ -66,5 +90,9 @@ const styles = StyleSheet.create({
   copy: {
     padding: 12,
     gap: 4,
+  },
+  cancelButton: {
+    marginTop: 4,
+    alignSelf: 'flex-start',
   },
 });

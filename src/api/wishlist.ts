@@ -1,9 +1,12 @@
 import { http } from '@/api/http';
 import type {
   WishlistApiResponse,
+  WishlistCardsPage,
   WishlistPropertyCard,
   WishlistPropertyId,
 } from '@/types/wishlist';
+
+export const WISHLIST_PAGE_SIZE = 10;
 
 function parseWishlistIds(data: unknown): WishlistPropertyId[] {
   if (!Array.isArray(data)) return [];
@@ -24,15 +27,36 @@ export async function fetchWishlistPropertyIds(): Promise<WishlistPropertyId[]> 
   }
 }
 
-export async function fetchWishlistPropertyCards(): Promise<WishlistPropertyCard[]> {
+export async function fetchWishlistPropertyCards(params: {
+  page: number;
+  page_size?: number;
+}): Promise<WishlistCardsPage> {
   try {
     const { data } = await http.get<WishlistApiResponse<WishlistPropertyCard[]>>('user/wishlist', {
-      params: { srp: false },
+      params: {
+        srp: false,
+        page: params.page,
+        page_size: params.page_size ?? WISHLIST_PAGE_SIZE,
+      },
     });
-    if (!data?.success || !Array.isArray(data.data)) return [];
-    return data.data;
+
+    if (!data?.success) {
+      return {
+        success: false,
+        data: [],
+        pageInfo: data?.pageInfo,
+        message: data?.message,
+      };
+    }
+
+    return {
+      success: true,
+      data: Array.isArray(data.data) ? data.data : [],
+      pageInfo: data.pageInfo,
+      message: data.message,
+    };
   } catch {
-    return [];
+    return { success: false, data: [] };
   }
 }
 

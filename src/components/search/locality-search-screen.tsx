@@ -18,6 +18,11 @@ import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { useLocalitySearch } from '@/queries/use-locality-search';
 import { useAuthStore, useSelectedCity } from '@/stores/auth-store';
+import {
+  useSearchHistory,
+  useSearchHistoryStore,
+  type SearchHistoryItem,
+} from '@/stores/search-history-store';
 import type { SearchPropertyResult } from '@/types/search';
 
 const RESULT_ENTER_MS = 220;
@@ -26,7 +31,7 @@ const RESULT_STAGGER_MS = 45;
 type SearchResultRowProps = {
   index: number;
   label: string;
-  icon: 'mappin.and.ellipse' | 'building.2';
+  icon: 'mappin.and.ellipse' | 'building.2' | 'clock';
   onPress: () => void;
   accessibilityLabel: string;
 };
@@ -58,6 +63,8 @@ export function LocalitySearchScreen() {
   const router = useRouter();
   const city = useSelectedCity();
   const setSelectedLocality = useAuthStore((state) => state.setSelectedLocality);
+  const addSearch = useSearchHistoryStore((state) => state.addSearch);
+  const history = useSearchHistory(city);
 
   const [keyword, setKeyword] = useState('');
   const { data, isFetching, isFetched } = useLocalitySearch(keyword, city);
@@ -65,15 +72,24 @@ export function LocalitySearchScreen() {
   const results = data?.success ? data.data : null;
   const localities = results?.locality ?? [];
   const properties = results?.properties ?? [];
-  const hasKeyword = keyword.trim().length >= 3;
+  const trimmedKeyword = keyword.trim();
+  const hasInput = trimmedKeyword.length > 0;
+  const hasKeyword = trimmedKeyword.length >= 3;
+  const showHistory = !hasInput && history.length > 0;
   const showNoLocality =
     hasKeyword && isFetched && !isFetching && localities.length === 0;
   const showEmptyState =
     showNoLocality && properties.length === 0;
-  const resultSetKey = `${city}-${keyword.trim().toLowerCase()}`;
+  const resultSetKey = `${city}-${trimmedKeyword.toLowerCase()}`;
 
   function handleSelectLocality(locality: string) {
     Keyboard.dismiss();
+    addSearch(city, {
+      type: 'locality',
+      id: `locality:${locality.trim().toLowerCase()}`,
+      label: locality,
+      locality,
+    });
     setSelectedLocality(locality);
     router.replace('/srp');
   }
@@ -86,9 +102,28 @@ export function LocalitySearchScreen() {
 
   function handleSelectProperty(property: SearchPropertyResult) {
     Keyboard.dismiss();
+    addSearch(city, {
+      type: 'property',
+      id: `property:${property.id}`,
+      label: property.name,
+      propertyId: property.id,
+      propertyName: property.name,
+    });
     router.replace({
       pathname: '/hdp',
       params: { id: String(property.id), name: property.name },
+    });
+  }
+
+  function handleSelectHistory(item: SearchHistoryItem) {
+    if (item.type === 'locality') {
+      handleSelectLocality(item.locality);
+      return;
+    }
+
+    handleSelectProperty({
+      id: item.propertyId,
+      name: item.propertyName,
     });
   }
 
@@ -136,7 +171,27 @@ export function LocalitySearchScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.results}
         showsVerticalScrollIndicator={false}>
-        {localities.length > 0 ? (
+        {showHistory ? (
+          <View style={styles.section}>
+            <Animated.View entering={FadeIn.duration(180)}>
+              <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
+                Recent searches
+              </Typography>
+            </Animated.View>
+            {history.map((item, index) => (
+              <SearchResultRow
+                key={item.id}
+                index={index}
+                label={item.label}
+                icon="clock"
+                onPress={() => handleSelectHistory(item)}
+                accessibilityLabel={`Open recent search ${item.label}`}
+              />
+            ))}
+          </View>
+        ) : null}
+
+        {hasKeyword && localities.length > 0 ? (
           <View key={`localities-${resultSetKey}`} style={styles.section}>
             <Animated.View entering={FadeIn.duration(180)}>
               <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
@@ -156,7 +211,7 @@ export function LocalitySearchScreen() {
           </View>
         ) : null}
 
-        {properties.length > 0 ? (
+        {hasKeyword && properties.length > 0 ? (
           <View key={`properties-${resultSetKey}`} style={styles.section}>
             <Animated.View entering={FadeIn.duration(180)}>
               <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
@@ -184,14 +239,14 @@ export function LocalitySearchScreen() {
               </Typography>
             ) : (
               <Typography variant="text" size="sm" color={palette.textSecondary} style={styles.empty}>
-                No matching locality found for "{keyword.trim()}".
+                No matching locality found for &quot;{trimmedKeyword}&quot;.
               </Typography>
             )}
             <Button label="Show all properties" onPress={handleShowAllProperties} />
           </Animated.View>
         ) : null}
 
-        {!hasKeyword ? (
+        {!hasInput && !showHistory ? (
           <Typography variant="text" size="sm" color={palette.textSecondary} style={styles.empty}>
             Type at least 3 characters to search localities, offices, or colleges.
           </Typography>

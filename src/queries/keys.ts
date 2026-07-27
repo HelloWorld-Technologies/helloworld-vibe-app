@@ -14,4 +14,8 @@ export const queryKeys = {
   vibesList: ['vibes', 'list'] as const,
   userVibes: ['vibes', 'user'] as const,
   momentsFeed: ['moments', 'feed', 'video'] as const,
+  communityEvents: (tab: string, city: string) =>
+    ['community-events', tab, city] as const,
+  communityRegisteredEvents: (mobile: string) =>
+    ['community-events', 'registered', mobile] as const,
 };

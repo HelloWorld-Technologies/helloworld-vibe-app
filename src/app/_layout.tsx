@@ -1,12 +1,22 @@
-import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ServerErrorScreen } from '@/components/error/server-error-screen';
 import { FontAssets } from '@/constants/fonts';
 import { AppProviders } from '@/providers/app-providers';
 
 SplashScreen.preventAutoHideAsync();
+
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <SafeAreaProvider>
+      <ServerErrorScreen onRetry={retry} />
+    </SafeAreaProvider>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FontAssets);
@@ -72,6 +82,7 @@ export default function RootLayout() {
           options={{ animation: 'slide_from_right' }}
         />
         <Stack.Screen name="component-showcase" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="server-error" options={{ animation: 'fade', gestureEnabled: false }} />
       </Stack>
     </AppProviders>
   );

@@ -1,6 +1,6 @@
 export type CommunityEventLocation = {
-  lat?: number;
-  long?: number;
+  lat?: number | string;
+  long?: number | string;
   propertyName?: string;
   street?: string;
 };
@@ -17,6 +17,11 @@ export type CommunityEventDetail = {
   location?: CommunityEventLocation;
   people_attending?: number;
   attendees_count?: number;
+  total_registration?: number;
+  current_count?: number;
+  female_count?: number;
+  property_count?: number;
+  hw_properties_count?: number;
   what_to_bring?: string;
   is_registered?: boolean;
 };

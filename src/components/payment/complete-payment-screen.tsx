@@ -1,8 +1,9 @@
 import { postInitiatePayment, postVerifyPayment } from '@/api/checkout';
 import config from '@/config';
-import { PaymentErrorView } from '@/components/payment/payment-error-view';
 import { BookingPaymentFailedView } from '@/components/booking/booking-payment-failed-view';
+import { PaymentErrorView } from '@/components/payment/payment-error-view';
 import { PaymentSuccessView } from '@/components/payment/payment-success-view';
+import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
@@ -329,11 +330,14 @@ export function CompletePaymentScreen() {
 
   if (status === 'loading') {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={palette.lime[700]} />
-        <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.loadingText}>
-          Processing payment...
-        </Typography>
+      <View style={styles.loadingRoot}>
+        <TenantScreenHeader title="Complete Payment" onBack={() => router.back()} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={palette.lime[700]} />
+          <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.loadingText}>
+            Processing payment...
+          </Typography>
+        </View>
       </View>
     );
   }
@@ -376,6 +380,10 @@ export function CompletePaymentScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingRoot: {
+    flex: 1,
+    backgroundColor: palette.white,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -92,6 +92,8 @@ export function HdpVisitDetailsForm({
 const styles = StyleSheet.create({
   wrap: {
     gap: 16,
+    paddingTop: 4,
+    paddingBottom: 8,
   },
   summaryCard: {
     flexDirection: 'row',
@@ -107,6 +109,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cta: {
-    marginTop: 4,
+    marginTop: 8,
   },
 });

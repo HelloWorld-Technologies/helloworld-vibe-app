@@ -13,7 +13,7 @@ export type HwParallaxCarouselRenderInfo<T> = {
 };
 
 export type HwParallaxModeConfig = {
-parallaxScrollingOffset?: number;
+  parallaxScrollingOffset?: number;
   parallaxScrollingScale?: number;
   parallaxAdjacentItemScale?: number;
 };

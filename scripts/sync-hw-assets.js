@@ -16,6 +16,39 @@ function copyFile(src, dest) {
   fs.copyFileSync(src, dest);
 }
 
+function copyWhiteLogoLottie(src, dest) {
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  const raw = fs.readFileSync(src, 'utf8');
+  const data = JSON.parse(raw);
+
+  function walk(node) {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+
+    const color = node.c;
+    if (
+      color &&
+      typeof color === 'object' &&
+      color.a === 0 &&
+      Array.isArray(color.k) &&
+      color.k.length === 4 &&
+      color.k[0] === 0 &&
+      color.k[1] === 0 &&
+      color.k[2] === 0
+    ) {
+      color.k = [1, 1, 1, 1];
+    }
+
+    Object.values(node).forEach(walk);
+  }
+
+  walk(data);
+  fs.writeFileSync(dest, JSON.stringify(data));
+}
+
 function copyTabBarSvg(src, dest) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   const svg = fs
@@ -35,7 +68,11 @@ function main() {
     const src = path.join(sourceRoot, file);
     if (!fs.statSync(src).isFile()) continue;
     if (/\.(svg|json|png)$/i.test(file)) {
-      copyFile(src, path.join(targetRoot, file));
+      if (file === 'Logo Animation_White.json') {
+        copyWhiteLogoLottie(src, path.join(targetRoot, file));
+      } else {
+        copyFile(src, path.join(targetRoot, file));
+      }
     }
   }
 
@@ -184,6 +221,31 @@ function main() {
   if (fs.existsSync(emptyStateSrc)) {
     copyFile(emptyStateSrc, path.join(emptyStateTarget, 'empty-state.png'));
     console.log(`[sync-hw-assets] Synced empty state assets to ${emptyStateTarget}`);
+  }
+
+  const errorStatesTarget = path.join(__dirname, '..', 'assets', 'bundled', 'error-states');
+  const error500Src = path.join(profileSource, 'Error States_ Pagloo', 'Error 500_server error.png');
+  if (fs.existsSync(error500Src)) {
+    copyFile(error500Src, path.join(errorStatesTarget, 'error-500.png'));
+    console.log(`[sync-hw-assets] Synced error state assets to ${errorStatesTarget}`);
+  }
+
+  const communityTarget = path.join(__dirname, '..', 'assets', 'bundled', 'community');
+  const registrationConfirmedSrc = path.join(
+    profileSource,
+    'Community Events Flow- App',
+    'Pagloo_confirmed_bouncer.png',
+  );
+  if (fs.existsSync(registrationConfirmedSrc)) {
+    copyFile(registrationConfirmedSrc, path.join(communityTarget, 'pagloo-confirmed-bouncer.png'));
+    console.log(`[sync-hw-assets] Synced community assets to ${communityTarget}`);
+  }
+
+  const logosTarget = path.join(__dirname, '..', 'assets', 'bundled', 'logos');
+  const logoSrc = path.join(profileSource, 'Logos', 'Gardient+ black.svg');
+  if (fs.existsSync(logoSrc)) {
+    copyFile(logoSrc, path.join(logosTarget, 'hello-world-logo.svg'));
+    console.log(`[sync-hw-assets] Synced logo assets to ${logosTarget}`);
   }
 
   const moveOutTarget = path.join(__dirname, '..', 'assets', 'bundled', 'move-out');

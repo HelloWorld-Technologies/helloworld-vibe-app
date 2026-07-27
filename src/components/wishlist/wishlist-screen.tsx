@@ -1,5 +1,13 @@
+import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabScreen } from '@/components/navigation/tab-screen';
@@ -13,6 +21,7 @@ import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { useWishlist } from '@/providers/wishlist-provider';
 import { useWishlistProperties } from '@/queries/use-wishlist-properties';
 import { useIsAuthenticated } from '@/stores/auth-store';
+import type { PropertyListing } from '@/types/property';
 import { mapWishlistCardToListing } from '@/utils/map-wishlist-card';
 
 type WishlistScreenProps = {
@@ -25,13 +34,34 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
   const insets = useSafeAreaInsets();
   const isAuthenticated = useIsAuthenticated();
   const { refreshWishlist } = useWishlist();
-  const { data: cards = [], isLoading, isError, refetch, isRefetching } = useWishlistProperties();
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useWishlistProperties();
 
-  const properties = cards.map(mapWishlistCardToListing);
+  const properties = useMemo(
+    () =>
+      (data?.pages ?? []).flatMap((page) =>
+        (page?.data ?? []).map(mapWishlistCardToListing),
+      ),
+    [data],
+  );
+  const totalCount = data?.pages?.[0]?.pageInfo?.total ?? properties.length;
   const bottomPadding = variant === 'tab' ? tabBarInset : Math.max(insets.bottom, 16);
 
   function handleRefresh() {
     void Promise.all([refetch(), refreshWishlist()]);
+  }
+
+  function handleEndReached() {
+    if (!hasNextPage || isFetchingNextPage) return;
+    void fetchNextPage();
   }
 
   function openProperty(propertyId: string, name: string, imageUri?: string) {
@@ -43,6 +73,55 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
         image: imageUri,
       },
     });
+  }
+
+  function renderHeader() {
+    return (
+      <View style={variant === 'tab' ? styles.header : styles.stackSubtitle}>
+        {variant === 'tab' ? (
+          <Typography variant="heading" weight="bold">
+            Wishlist
+          </Typography>
+        ) : null}
+        <Typography variant="text" size="sm" color={palette.textSecondary}>
+          {properties.length > 0
+            ? `${totalCount} saved ${totalCount === 1 ? 'property' : 'properties'}`
+            : 'Saved properties will appear here.'}
+        </Typography>
+      </View>
+    );
+  }
+
+  function renderFooter() {
+    if (!hasNextPage && !isFetchingNextPage) return null;
+
+    return (
+      <View style={styles.footer}>
+        {isFetchingNextPage ? (
+          <ActivityIndicator color={palette.helloLime} />
+        ) : (
+          <Pressable onPress={() => void fetchNextPage()} style={styles.loadMore}>
+            <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
+              Load more
+            </Typography>
+          </Pressable>
+        )}
+      </View>
+    );
+  }
+
+  function renderProperty({ item: property }: { item: PropertyListing }) {
+    const imageUri =
+      typeof property.images[0] === 'object' && property.images[0] && 'uri' in property.images[0]
+        ? property.images[0].uri
+        : undefined;
+
+    return (
+      <PropertyCard
+        property={property}
+        onPress={() => openProperty(property.id, property.name, imageUri)}
+      />
+    );
   }
 
   function renderContent() {
@@ -62,38 +141,33 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
       );
     }
 
-    return (
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingBottom: bottomPadding }]}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
-        }>
-        <View style={variant === 'tab' ? styles.header : styles.stackSubtitle}>
-          {variant === 'tab' ? (
-            <Typography variant="heading" weight="bold">
-              Wishlist
-            </Typography>
-          ) : null}
-          <Typography variant="text" size="sm" color={palette.textSecondary}>
-            {properties.length > 0
-              ? `${properties.length} saved ${properties.length === 1 ? 'property' : 'properties'}`
-              : 'Saved properties will appear here.'}
-          </Typography>
-        </View>
-
-        {isLoading ? (
+    if (isLoading) {
+      return (
+        <View style={styles.flex}>
+          {renderHeader()}
           <ActivityIndicator color={palette.helloLime} style={styles.loader} />
-        ) : isError ? (
+        </View>
+      );
+    }
+
+    if (isError) {
+      return (
+        <View style={styles.flex}>
+          {renderHeader()}
           <View style={styles.centered}>
             <Typography variant="body" color={palette.textSecondary} style={styles.subtitle}>
               Unable to load your wishlist right now.
             </Typography>
             <Button label="Try again" onPress={handleRefresh} style={styles.cta} />
           </View>
-        ) : properties.length === 0 ? (
+        </View>
+      );
+    }
+
+    if (properties.length === 0) {
+      return (
+        <View style={styles.flex}>
+          {renderHeader()}
           <EmptyState
             fill
             title="Your wishlist is empty"
@@ -101,27 +175,24 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
             actionLabel="Browse Properties"
             onAction={() => router.push('/')}
           />
-        ) : (
-          <View style={styles.list}>
-            {properties.map((property) => {
-              const imageUri =
-                typeof property.images[0] === 'object' &&
-                property.images[0] &&
-                'uri' in property.images[0]
-                  ? property.images[0].uri
-                  : undefined;
+        </View>
+      );
+    }
 
-              return (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  onPress={() => openProperty(property.id, property.name, imageUri)}
-                />
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
+    return (
+      <FlatList
+        data={properties}
+        keyExtractor={(item) => item.id}
+        renderItem={renderProperty}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
+        contentContainerStyle={[styles.list, { paddingBottom: bottomPadding }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.4}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />}
+      />
     );
   }
 
@@ -133,11 +204,7 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
     );
   }
 
-  return (
-    <TabScreen contentStyle={styles.screen}>
-      {renderContent()}
-    </TabScreen>
-  );
+  return <TabScreen contentStyle={styles.screen}>{renderContent()}</TabScreen>;
 }
 
 const styles = StyleSheet.create({
@@ -146,6 +213,9 @@ const styles = StyleSheet.create({
   },
   stackBody: {
     paddingHorizontal: 0,
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     paddingHorizontal: 20,
@@ -171,17 +241,20 @@ const styles = StyleSheet.create({
     minWidth: 160,
     marginTop: 8,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scroll: {
-    flexGrow: 1,
-  },
   loader: {
     marginTop: 32,
   },
   list: {
     paddingHorizontal: 20,
     gap: 20,
+  },
+  footer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadMore: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
 });

@@ -28,6 +28,7 @@ type BottomSheetProps = {
 };
 
 const ANIMATION_MS = 280;
+const SHEET_TOP_RADIUS = 28;
 
 export function BottomSheet({
   visible,
@@ -76,7 +77,13 @@ export function BottomSheet({
   }
 
   return (
-    <Modal transparent visible animationType="none" onRequestClose={requestClose}>
+    <Modal
+      transparent
+      visible
+      animationType="none"
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      onRequestClose={requestClose}>
       <View style={styles.root}>
         <Pressable
           style={styles.backdropPress}
@@ -95,8 +102,9 @@ export function BottomSheet({
           </Pressable>
         ) : null}
 
+        {/* Transform stays on the outer view; radius/clip on the inner so corners render reliably. */}
         <Animated.View style={[styles.sheet, sheetStyle]}>
-          <View style={styles.sheetSurface}>
+          <View style={styles.sheetSurface} collapsable={false}>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
               keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
@@ -113,6 +121,7 @@ export function BottomSheet({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   backdropPress: {
     flex: 1,
@@ -133,11 +142,13 @@ const styles = StyleSheet.create({
   },
   sheet: {
     maxHeight: '88%',
+    width: '100%',
   },
   sheetSurface: {
+    width: '100%',
     backgroundColor: palette.white,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: SHEET_TOP_RADIUS,
+    borderTopRightRadius: SHEET_TOP_RADIUS,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -147,15 +158,7 @@ const styles = StyleSheet.create({
     }),
   },
   keyboardAvoid: {
+    width: '100%',
     maxHeight: '100%',
-    overflow: 'hidden',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    ...Platform.select({
-      ios: {
-        borderCurve: 'continuous',
-      },
-      default: {},
-    }),
   },
 });
