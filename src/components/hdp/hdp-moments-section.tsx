@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer';
 import { HwCarousel } from '@/components/ui/carousel';
 import { GradientText } from '@/components/ui/gradient-text';
 import { Typography } from '@/components/ui/typography';
@@ -26,14 +28,18 @@ function MomentCard({
 }: {
   moment: HdpMomentItem;
   cardWidth: number;
-  onPress?: () => void;
+  onPress: () => void;
 }) {
+  const isVideo = moment.mediaType === 'video';
+
   return (
     <Pressable
       onPress={onPress}
-      disabled={!onPress}
       style={[styles.card, { width: cardWidth }]}
-      accessibilityRole={onPress ? 'button' : 'image'}>
+      accessibilityRole="button"
+      accessibilityLabel={
+        isVideo ? `Open story video: ${moment.label}` : `Open story: ${moment.label}`
+      }>
       <Image source={{ uri: moment.imageUri }} style={styles.cardImage} contentFit="cover" />
       <LinearGradient
         colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.75)']}
@@ -42,25 +48,30 @@ function MomentCard({
           {moment.label}
         </Typography>
       </LinearGradient>
+
+      {isVideo ? (
+        <View style={styles.playBadge} pointerEvents="none">
+          <View style={styles.playCircle}>
+            <SymbolView
+              name="play.fill"
+              size={22}
+              tintColor={palette.white}
+              style={styles.playIcon}
+            />
+          </View>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
 
 export function HdpMomentsSection({ propertyName, moments, carouselWidth }: HdpMomentsSectionProps) {
-  const router = useRouter();
+  const [storyIndex, setStoryIndex] = useState<number | null>(null);
   const cardWidth = carouselWidth - CARD_GAP;
   const slideWidth = cardWidth + CARD_GAP;
 
   if (moments.length === 0) {
     return null;
-  }
-
-  function handleMomentPress(moment: HdpMomentItem) {
-    if (!moment.eventId) return;
-    router.push({
-      pathname: '/community-event',
-      params: { id: String(moment.eventId) },
-    });
   }
 
   return (
@@ -86,13 +97,21 @@ export function HdpMomentsSection({ propertyName, moments, carouselWidth }: HdpM
         height={CARD_HEIGHT + 36}
         showPagination={moments.length > 1}
         style={styles.carousel}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <MomentCard
             moment={item}
             cardWidth={cardWidth}
-            onPress={item.eventId ? () => handleMomentPress(item) : undefined}
+            onPress={() => setStoryIndex(index)}
           />
         )}
+      />
+
+      <HdpMomentsStoryViewer
+        visible={storyIndex !== null}
+        moments={moments}
+        initialIndex={storyIndex ?? 0}
+        propertyName={propertyName}
+        onClose={() => setStoryIndex(null)}
       />
     </View>
   );
@@ -135,5 +154,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 48,
     paddingBottom: 16,
+  },
+  playBadge: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: 3,
+  },
+  playIcon: {
+    width: 22,
+    height: 22,
   },
 });

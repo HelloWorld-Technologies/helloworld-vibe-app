@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabScreen } from '@/components/navigation/tab-screen';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
+import { useWishlist } from '@/providers/wishlist-provider';
 import { useWishlistProperties } from '@/queries/use-wishlist-properties';
 import { useIsAuthenticated } from '@/stores/auth-store';
 import { mapWishlistCardToListing } from '@/utils/map-wishlist-card';
@@ -23,10 +24,15 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
   const tabBarInset = useTabBarInset(0);
   const insets = useSafeAreaInsets();
   const isAuthenticated = useIsAuthenticated();
-  const { data: cards = [], isLoading, isError, refetch } = useWishlistProperties();
+  const { refreshWishlist } = useWishlist();
+  const { data: cards = [], isLoading, isError, refetch, isRefetching } = useWishlistProperties();
 
   const properties = cards.map(mapWishlistCardToListing);
   const bottomPadding = variant === 'tab' ? tabBarInset : Math.max(insets.bottom, 16);
+
+  function handleRefresh() {
+    void Promise.all([refetch(), refreshWishlist()]);
+  }
 
   function openProperty(propertyId: string, name: string, imageUri?: string) {
     router.push({
@@ -57,7 +63,14 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
     }
 
     return (
-      <>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scroll, { paddingBottom: bottomPadding }]}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
+        }>
         <View style={variant === 'tab' ? styles.header : styles.stackSubtitle}>
           {variant === 'tab' ? (
             <Typography variant="heading" weight="bold">
@@ -72,15 +85,13 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
         </View>
 
         {isLoading ? (
-          <View style={styles.loader}>
-            <ActivityIndicator color={palette.helloLime} />
-          </View>
+          <ActivityIndicator color={palette.helloLime} style={styles.loader} />
         ) : isError ? (
           <View style={styles.centered}>
             <Typography variant="body" color={palette.textSecondary} style={styles.subtitle}>
               Unable to load your wishlist right now.
             </Typography>
-            <Button label="Try again" onPress={() => refetch()} style={styles.cta} />
+            <Button label="Try again" onPress={handleRefresh} style={styles.cta} />
           </View>
         ) : properties.length === 0 ? (
           <EmptyState
@@ -91,10 +102,7 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
             onAction={() => router.push('/')}
           />
         ) : (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[styles.list, { paddingBottom: bottomPadding }]}
-            keyboardShouldPersistTaps="handled">
+          <View style={styles.list}>
             {properties.map((property) => {
               const imageUri =
                 typeof property.images[0] === 'object' &&
@@ -111,9 +119,9 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
                 />
               );
             })}
-          </ScrollView>
+          </View>
         )}
-      </>
+      </ScrollView>
     );
   }
 
@@ -163,10 +171,14 @@ const styles = StyleSheet.create({
     minWidth: 160,
     marginTop: 8,
   },
-  loader: {
+  scrollView: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  },
+  scroll: {
+    flexGrow: 1,
+  },
+  loader: {
+    marginTop: 32,
   },
   list: {
     paddingHorizontal: 20,

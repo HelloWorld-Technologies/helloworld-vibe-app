@@ -22,7 +22,7 @@ import { HdpAmenityPills } from '@/components/hdp/hdp-amenity-pills';
 import { HdpFaqList } from '@/components/hdp/hdp-faq-list';
 import { HdpFooterBar } from '@/components/hdp/hdp-footer-bar';
 import { HdpVisitSheet } from '@/components/hdp/hdp-visit-sheet';
-import { HdpHeroCarousel } from '@/components/hdp/hdp-hero-carousel';
+import { HdpHeroMedia, HDP_HERO_TOTAL_HEIGHT } from '@/components/hdp/hdp-hero-media';
 import { HdpPropertyHeader } from '@/components/hdp/hdp-property-header';
 import { HdpRatingCard } from '@/components/hdp/hdp-rating-card';
 import { HdpReviewsSection } from '@/components/hdp/hdp-reviews-section';
@@ -42,15 +42,18 @@ import { usePropertyDetail } from '@/queries/use-property-detail';
 import { usePropertyCategories } from '@/queries/use-property-categories';
 import { useWishlist } from '@/providers/wishlist-provider';
 import { useSelectedCity } from '@/stores/auth-store';
-import { formatPropertyImageUrl, getPropertyImageKeys } from '@/utils/images';
+import {
+  extractPropertyPhotos,
+  extractPropertyVideos,
+  momentsToHeroSlides,
+} from '@/utils/hdp-media';
 import { extractNearByFromDetail, mapNearByToDayCards } from '@/utils/hdp-nearby';
 import { extractMomentsFromHdp } from '@/utils/hdp-moments';
 import { shareProperty } from '@/utils/share-property';
 
-const SHEET_OVERLAP = 40;
+const SHEET_OVERLAP = 48;
 const FOOTER_HEIGHT = 96;
-const HERO_HEIGHT = 400;
-const HEADER_REVEAL_THRESHOLD = HERO_HEIGHT - SHEET_OVERLAP;
+const HEADER_REVEAL_THRESHOLD = HDP_HERO_TOTAL_HEIGHT - SHEET_OVERLAP;
 
 function formatRent(amount?: number) {
   if (!amount || amount <= 0) return '₹—';
@@ -199,17 +202,25 @@ export function HdpScreen() {
   const description =
     property?.nearby_description?.trim() || property?.description?.trim() || '';
 
-  const imageKeys = getPropertyImageKeys(property);
-  const carouselImages = useMemo(() => {
-    const uris =
-      imageKeys.length > 0
-        ? imageKeys.map((key) => ({ uri: formatPropertyImageUrl(key, 'hdp') }))
-        : typeof image === 'string' && image.length > 0
-          ? [{ uri: image }]
-          : [];
-
-    return uris;
-  }, [image, imageKeys]);
+  const moments = useMemo(
+    () => extractMomentsFromHdp(data?.moments, property, { fallbackToGallery: false }),
+    [data?.moments, property],
+  );
+  const propertyVideos = useMemo(
+    () => extractPropertyVideos(data?.media),
+    [data?.media],
+  );
+  const photos = useMemo(
+    () =>
+      extractPropertyPhotos(
+        data?.media,
+        property,
+        typeof image === 'string' ? image : undefined,
+      ),
+    [data?.media, property, image],
+  );
+  const momentSlides = useMemo(() => momentsToHeroSlides(moments), [moments]);
+  const coverImageUri = photos[0]?.imageUri ?? momentSlides[0]?.imageUri;
 
   const rent = formatRent(
     property?.min_rent ?? property?.starting_rent ?? property?.price ?? property?.rent,
@@ -235,10 +246,6 @@ export function HdpScreen() {
   const dayFromHereCards = useMemo(
     () => mapNearByToDayCards(extractNearByFromDetail(data, property)),
     [data, property],
-  );
-  const moments = useMemo(
-    () => extractMomentsFromHdp(data?.events, property),
-    [data?.events, property],
   );
 
   const propertyCity =
@@ -320,7 +327,13 @@ export function HdpScreen() {
             scrollEventThrottle={16}
             contentContainerStyle={{ paddingBottom: FOOTER_HEIGHT + 32 }}>
             <View ref={scrollContentRef} collapsable={false}>
-            <HdpHeroCarousel images={carouselImages} />
+            <HdpHeroMedia
+              propertyVideos={propertyVideos}
+              momentSlides={momentSlides}
+              photos={photos}
+              moments={moments}
+              propertyName={displayName}
+            />
 
             <View style={styles.sheet}>
               <HdpPropertyHeader
@@ -455,11 +468,7 @@ export function HdpScreen() {
             propertyName={displayName}
             property={property}
             propertyLocation={address || locality}
-            imageUri={
-              typeof carouselImages[0] === 'object' && carouselImages[0] && 'uri' in carouselImages[0]
-                ? carouselImages[0].uri
-                : undefined
-            }
+            imageUri={coverImageUri}
             rentLabel={rent}
             depositLabel={deposit}
             startingRent={typeof startingRent === 'number' ? startingRent : undefined}

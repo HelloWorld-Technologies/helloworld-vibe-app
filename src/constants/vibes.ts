@@ -53,3 +53,35 @@ export type PropertyVibeOption = (typeof PROPERTY_VIBE_OPTIONS)[number];
 
 /** Teal → purple gradient used on selected vibe chip borders. */
 export const VIBE_CHIP_GRADIENT = ['#38BFF8', '#6941C6'] as const;
+
+/** Emoji fallbacks for API vibe `code` values (GET /vibes/list). */
+export const VIBE_CODE_EMOJI: Record<string, string> = {
+  foodie: '🍔',
+  sports: '⚽',
+  coder: '👩‍💻',
+  coders: '👩‍💻',
+  fitness: '🏋️',
+  'board-games': '🎲',
+  board_games: '🎲',
+  boardgames: '🎲',
+  movies: '🎬',
+  music: '🎵',
+  travel: '✈️',
+  networking: '🤝',
+  reading: '📚',
+  reader: '📚',
+  chill: '😎',
+  creative: '🎨',
+  gaming: '🎮',
+  gamer: '🎮',
+};
+
+export function emojiForVibeCode(code: string, fallback = '✨') {
+  const normalized = code.trim().toLowerCase().replace(/\s+/g, '-');
+  return (
+    VIBE_CODE_EMOJI[normalized] ??
+    VIBE_CODE_EMOJI[normalized.replace(/-/g, '_')] ??
+    VIBE_CODE_EMOJI[normalized.replace(/_/g, '')] ??
+    fallback
+  );
+}

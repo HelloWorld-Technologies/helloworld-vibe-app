@@ -112,6 +112,7 @@ export function ScrollRevealHeader({
 
     return {
       backgroundColor: palette.white,
+      borderRadius: 22,
       borderColor: `rgba(213, 215, 218, ${progress * 0.65})`,
       borderWidth: interpolate(progress, [0, 1], [0, StyleSheet.hairlineWidth]),
       shadowOpacity: interpolate(progress, [0, 1], [0.14, 0.04]),
@@ -143,7 +144,7 @@ export function ScrollRevealHeader({
       style={[styles.bar, { paddingTop: insets.top + 8, paddingBottom: 12 }, barStyle]}
       pointerEvents="box-none">
       <View style={styles.row} pointerEvents="box-none">
-        <Animated.View style={iconButtonShellStyle}>
+        <Animated.View style={[styles.iconButtonShell, iconButtonShellStyle]}>
           <Pressable
             onPress={onBack}
             style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
@@ -176,7 +177,7 @@ export function ScrollRevealHeader({
         )}
 
         {showRightAction ? (
-          <Animated.View style={iconButtonShellStyle}>
+          <Animated.View style={[styles.iconButtonShell, iconButtonShellStyle]}>
             <Pressable
               onPress={onRightPress}
               style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
@@ -242,6 +243,14 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     textTransform: 'capitalize',
+  },
+  iconButtonShell: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
+    shadowColor: '#101828',
+    shadowOffset: { width: 0, height: 4 },
   },
   iconButton: {
     width: 44,

@@ -23,8 +23,6 @@ import type { SearchPropertyResult } from '@/types/search';
 const RESULT_ENTER_MS = 220;
 const RESULT_STAGGER_MS = 45;
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 type SearchResultRowProps = {
   index: number;
   label: string;
@@ -41,17 +39,18 @@ function SearchResultRow({
   accessibilityLabel,
 }: SearchResultRowProps) {
   return (
-    <AnimatedPressable
-      entering={FadeInDown.duration(RESULT_ENTER_MS).delay(index * RESULT_STAGGER_MS)}
-      onPress={onPress}
-      style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}>
-      <SymbolView name={icon} size={20} tintColor={palette.gray[700]} />
-      <Typography variant="text" size="md" style={styles.resultLabel}>
-        {label}
-      </Typography>
-    </AnimatedPressable>
+    <Animated.View entering={FadeInDown.duration(RESULT_ENTER_MS).delay(index * RESULT_STAGGER_MS)}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}>
+        <SymbolView name={icon} size={20} tintColor={palette.gray[700]} style={styles.resultIcon} />
+        <Typography variant="text" size="md" style={styles.resultLabel} numberOfLines={2}>
+          {label}
+        </Typography>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -117,6 +116,7 @@ export function LocalitySearchScreen() {
             returnKeyType="search"
             autoCorrect={false}
             autoCapitalize="none"
+            autoFocus
             containerStyle={styles.searchInput}
           />
         </View>
@@ -257,6 +257,11 @@ const styles = StyleSheet.create({
   },
   resultRowPressed: {
     opacity: 0.7,
+  },
+  resultIcon: {
+    width: 20,
+    height: 20,
+    flexShrink: 0,
   },
   resultLabel: {
     flex: 1,

@@ -29,6 +29,7 @@ import { queryKeys } from '@/queries/keys';
 import { usePropertyVisitSlots } from '@/queries/use-property-visit-slots';
 import { useAuthStore } from '@/stores/auth-store';
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
+import { useTenantProfile } from '@/stores/tenant-store';
 import type { BookingDraft } from '@/types/booking-payment';
 import type { OccupancyType, OccupantDetails, PropertyCategory } from '@/types/booking';
 import {
@@ -48,6 +49,11 @@ import {
     type VisitDateOption,
     type VisitTimeSlot,
 } from '@/utils/visit-dates';
+import {
+  buildOccupantPrefill,
+  buildVisitContactPrefill,
+  normalizeMobile,
+} from '@/utils/form-prefill';
 import {
     buildPropertyMapUrl,
     findSlotDay,
@@ -199,28 +205,6 @@ function VisitConfirmedContent({
   );
 }
 
-function normalizeMobile(mobile?: string | null) {
-  return mobile?.replace(/\D/g, '').slice(-10) ?? '';
-}
-
-function createDefaultOccupantDetails(mobile?: string | null): OccupantDetails {
-  return {
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: normalizeMobile(mobile),
-    gender: 'Male',
-    moveInDate: getDefaultMoveInDate(),
-  };
-}
-
-function createDefaultVisitContact(): VisitContactDetails {
-  return {
-    name: '',
-    email: '',
-  };
-}
-
 function occupancyFromDraft(draft: BookingDraft): OccupancyType {
   const label = draft.occupancyLabel.toLowerCase();
   if (label.includes('private')) return 'private';
@@ -264,7 +248,12 @@ export function HdpVisitSheet({
   const queryClient = useQueryClient();
   const setBookingDraft = useBookingDraftStore((state) => state.setDraft);
   const storedMobile = useAuthStore((state) => state.mobile);
+  const profile = useTenantProfile();
   const insets = useSafeAreaInsets();
+  const formPrefillSource = useMemo(
+    () => ({ profile, mobile: storedMobile }),
+    [profile, storedMobile],
+  );
   const fallbackDates = useMemo(() => buildVisitDateOptions(), []);
   const occupancyOptions = useMemo(() => buildOccupancyOptions(roomTypes), [roomTypes]);
 
@@ -278,7 +267,9 @@ export function HdpVisitSheet({
   const [bookStep, setBookStep] = useState<BookStep>('rooms');
   const [selectedDate, setSelectedDate] = useState<VisitDateOption>(fallbackDates[0]);
   const [selectedTime, setSelectedTime] = useState<VisitTimeSlot>(DEFAULT_VISIT_TIME_SLOTS[0]);
-  const [visitContact, setVisitContact] = useState<VisitContactDetails>(createDefaultVisitContact);
+  const [visitContact, setVisitContact] = useState<VisitContactDetails>(() =>
+    buildVisitContactPrefill({ mobile: storedMobile }),
+  );
   const [visitErrors, setVisitErrors] = useState<Partial<Record<keyof VisitContactDetails, string>>>({});
   const [visitSubmitError, setVisitSubmitError] = useState('');
   const [occupantErrors, setOccupantErrors] = useState<OccupantFormErrors>({});
@@ -286,9 +277,7 @@ export function HdpVisitSheet({
   const [creatingVisit, setCreatingVisit] = useState(false);
   const [selectedOccupancy, setSelectedOccupancy] = useState<OccupancyType>(occupancyOptions[0]);
   const [selectedRoomId, setSelectedRoomId] = useState('1');
-  const [occupantDetails, setOccupantDetails] = useState(() =>
-    createDefaultOccupantDetails(storedMobile),
-  );
+  const [occupantDetails, setOccupantDetails] = useState(() => buildOccupantPrefill({ mobile: storedMobile }));
 
   const hasApiSlots = slotDays.length > 0;
   const visitDates = useMemo(
@@ -358,7 +347,7 @@ export function HdpVisitSheet({
 
     setSelectedDate(fallbackDates[0]);
     setSelectedTime(DEFAULT_VISIT_TIME_SLOTS[0]);
-    setVisitContact(createDefaultVisitContact());
+    setVisitContact(buildVisitContactPrefill(formPrefillSource));
     setVisitErrors({});
     setVisitSubmitError('');
     setOccupantErrors({});
@@ -367,17 +356,17 @@ export function HdpVisitSheet({
     setSelectedOccupancy(resolvedOccupancy);
     setSelectedRoomId(editDraft?.roomId ?? defaultRoomId);
     setOccupantDetails(
-      editDraft ? occupantFromDraft(editDraft) : createDefaultOccupantDetails(storedMobile),
+      editDraft ? occupantFromDraft(editDraft) : buildOccupantPrefill(formPrefillSource),
     );
   }, [
     bookOnly,
     categories,
     editDraft,
     fallbackDates,
+    formPrefillSource,
     initialTab,
     occupancyOptions,
     startingRent,
-    storedMobile,
     visible,
     visitOnly,
   ]);

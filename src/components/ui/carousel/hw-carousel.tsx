@@ -1,5 +1,6 @@
 import { useCallback, useRef, type ReactNode, type RefObject } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import type { PanGesture } from 'react-native-gesture-handler';
 import Carousel, { type ICarouselInstance } from 'react-native-reanimated-carousel';
 import { useSharedValue, type SharedValue } from 'react-native-reanimated';
 
@@ -25,6 +26,8 @@ export type HwCarouselProps<T> = {
   onSnapToItem?: (index: number) => void;
   enabled?: boolean;
   carouselRef?: RefObject<ICarouselInstance | null>;
+  /** Extra pan configuration (chained after the default horizontal setup). */
+  onConfigurePanGesture?: (gesture: PanGesture) => void;
 };
 
 export function HwCarousel<T extends object>({
@@ -40,6 +43,7 @@ export function HwCarousel<T extends object>({
   onSnapToItem,
   enabled = true,
   carouselRef,
+  onConfigurePanGesture,
 }: HwCarouselProps<T>) {
   const internalRef = useRef<ICarouselInstance>(null);
   const resolvedRef = carouselRef ?? internalRef;
@@ -48,6 +52,14 @@ export function HwCarousel<T extends object>({
   const handlePaginationPress = useCallback((index: number) => {
     resolvedRef.current?.scrollTo({ index, animated: true });
   }, [resolvedRef]);
+
+  const handleConfigurePanGesture = useCallback(
+    (gesture: PanGesture) => {
+      configureCarouselPanGesture(gesture);
+      onConfigurePanGesture?.(gesture);
+    },
+    [onConfigurePanGesture],
+  );
 
   return (
     <View style={style}>
@@ -61,7 +73,7 @@ export function HwCarousel<T extends object>({
         snapEnabled
         enabled={enabled}
         overscrollEnabled
-        onConfigurePanGesture={configureCarouselPanGesture}
+        onConfigurePanGesture={handleConfigurePanGesture}
         onProgressChange={progress}
         onSnapToItem={onSnapToItem}
         style={styles.carousel}

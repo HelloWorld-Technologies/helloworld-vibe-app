@@ -42,7 +42,7 @@ export function HdpPropertyHeader({
 
       {genderLabel ? (
         <View style={styles.badge}>
-          <Typography variant="text" size="xs" weight="medium" color={palette.gray[800]}>
+          <Typography variant="text" size="xs" weight="medium" color={palette.red[600]}>
             {genderLabel}
           </Typography>
         </View>
@@ -60,7 +60,7 @@ export function HdpPropertyHeader({
 
       <View style={styles.pricingRow}>
         <View style={styles.pricingCol}>
-          <Typography variant="text" size="sm" color={palette.gray[900]} style={styles.pricingLabel}>
+          <Typography variant="text" size="sm" color={palette.gray[500]}>
             Rent Starting From
           </Typography>
           <Typography variant="text" size="xl" weight="bold" color={palette.lime[700]}>
@@ -71,7 +71,7 @@ export function HdpPropertyHeader({
         <View style={styles.divider} />
 
         <View style={styles.pricingCol}>
-          <Typography variant="text" size="sm" color={palette.gray[900]} style={styles.pricingLabel}>
+          <Typography variant="text" size="sm" color={palette.gray[500]}>
             Security Deposit
           </Typography>
           <Typography variant="text" size="xl" weight="bold" color={palette.gray[900]}>
@@ -110,9 +110,8 @@ const styles = StyleSheet.create({
     gap: 4,
     alignSelf: 'flex-start',
     borderBottomWidth: 1,
-    borderBottomColor: palette.lime[700],
-    borderStyle: 'dashed',
-    paddingBottom: 2,
+    borderBottomColor: palette.lime[600],
+    paddingBottom: 1,
   },
   location: {
     flexShrink: 1,
@@ -127,13 +126,10 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  pricingLabel: {
-    opacity: 0.5,
-  },
   divider: {
     width: 1,
     height: 54,
-    backgroundColor: palette.gray[300],
+    backgroundColor: palette.gray[200],
     marginHorizontal: 16,
   },
 });

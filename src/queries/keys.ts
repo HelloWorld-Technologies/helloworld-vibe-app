@@ -11,4 +11,7 @@ export const queryKeys = {
   propertyCategories: (id: string) => ['property-categories', id] as const,
   propertyVisitSlots: (id: string) => ['property-visit-slots', id] as const,
   visits: ['visits'] as const,
+  vibesList: ['vibes', 'list'] as const,
+  userVibes: ['vibes', 'user'] as const,
+  momentsFeed: ['moments', 'feed', 'video'] as const,
 };

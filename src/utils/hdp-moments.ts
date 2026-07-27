@@ -1,5 +1,5 @@
 import { COMING_SOON_IMAGE_URI, formatPropertyImageUrl, getPropertyImageKeys } from '@/utils/images';
-import type { HdpApiEvent, HdpMomentItem } from '@/types/hdp-moments';
+import type { HdpApiMoment, HdpMomentItem, HdpMomentMediaType } from '@/types/hdp-moments';
 
 const DEFAULT_MOMENT_LABELS = [
   'Community Lounge',
@@ -12,26 +12,75 @@ const DEFAULT_MOMENT_LABELS = [
   'Common Area',
 ] as const;
 
-function isHdpEvent(value: unknown): value is HdpApiEvent {
-  return (
-    Boolean(value) &&
-    typeof value === 'object' &&
-    typeof (value as HdpApiEvent).name === 'string' &&
-    (value as HdpApiEvent).name!.trim().length > 0
-  );
+function isHdpApiMoment(value: unknown): value is HdpApiMoment {
+  if (!value || typeof value !== 'object') return false;
+  const moment = value as HdpApiMoment;
+  return typeof moment.url === 'string' && moment.url.trim().length > 0;
 }
 
-function mapEventsToMoments(events: HdpApiEvent[]): HdpMomentItem[] {
-  return events
-    .filter((event) => event.name?.trim())
-    .map((event) => ({
-      id: `event-${event.id ?? event.name}`,
-      label: event.name!.trim(),
-      imageUri: event.display_image
-        ? formatPropertyImageUrl(event.display_image, 'hdp')
-        : COMING_SOON_IMAGE_URI,
-      eventId: typeof event.id === 'number' ? event.id : undefined,
-    }));
+function resolveMediaType(mediaType?: string, url?: string): HdpMomentMediaType {
+  const normalized = mediaType?.trim().toLowerCase();
+  if (normalized === 'video' || normalized === 'videos') return 'video';
+  if (normalized === 'image' || normalized === 'images' || normalized === 'photo' || normalized === 'photos') {
+    return 'image';
+  }
+
+  // Fallback when API omits media_type — infer from URL.
+  const lowerUrl = url?.trim().toLowerCase() ?? '';
+  if (/\.(mp4|mov|m4v|webm|mkv)(\?|$)/.test(lowerUrl) || lowerUrl.includes('/videos/')) {
+    return 'video';
+  }
+
+  return 'image';
+}
+
+function resolveMomentLabel(moment: HdpApiMoment, index: number): string {
+  const caption = moment.caption?.trim();
+  if (caption) return caption;
+
+  const tag = Array.isArray(moment.tags)
+    ? moment.tags.find((item) => typeof item === 'string' && item.trim().length > 0)?.trim()
+    : undefined;
+  if (tag) return tag;
+
+  return DEFAULT_MOMENT_LABELS[index % DEFAULT_MOMENT_LABELS.length];
+}
+
+function resolvePreviewUri(moment: HdpApiMoment, mediaType: HdpMomentMediaType): string {
+  const thumb = moment.thumbnail_url?.trim();
+  const url = moment.url?.trim();
+
+  if (mediaType === 'video') {
+    if (thumb) return formatPropertyImageUrl(thumb, 'hdp');
+    return COMING_SOON_IMAGE_URI;
+  }
+
+  // Image moments use the media URL as the preview.
+  if (url) return formatPropertyImageUrl(url, 'hdp');
+  if (thumb) return formatPropertyImageUrl(thumb, 'hdp');
+  return COMING_SOON_IMAGE_URI;
+}
+
+export function mapApiMomentsToItems(moments: HdpApiMoment[]): HdpMomentItem[] {
+  return [...moments]
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    .map((moment, index) => {
+      const url = moment.url?.trim() || undefined;
+      const mediaType = resolveMediaType(moment.media_type, url);
+      return {
+        id: String(moment.id ?? `${mediaType}-${index}`),
+        label: resolveMomentLabel(moment, index),
+        imageUri: resolvePreviewUri(moment, mediaType),
+        mediaType,
+        mediaUrl: url,
+        propertyId:
+          typeof moment.property_id === 'number' ? moment.property_id : undefined,
+      };
+    });
+}
+
+function mapApiMoments(moments: HdpApiMoment[]): HdpMomentItem[] {
+  return mapApiMomentsToItems(moments);
 }
 
 function mapGalleryToMoments(property?: Record<string, unknown> | null): HdpMomentItem[] {
@@ -42,18 +91,29 @@ function mapGalleryToMoments(property?: Record<string, unknown> | null): HdpMome
     id: `gallery-${index}`,
     label: DEFAULT_MOMENT_LABELS[index % DEFAULT_MOMENT_LABELS.length],
     imageUri: formatPropertyImageUrl(key, 'hdp'),
+    mediaType: 'image' as const,
+    mediaUrl: formatPropertyImageUrl(key, 'hdp'),
   }));
 }
 
+/**
+ * Prefer `moments` from `v2/hello/house`. Optionally falls back to property gallery
+ * images when the property has no curated moments yet.
+ */
 export function extractMomentsFromHdp(
-  events: unknown,
+  moments: unknown,
   property?: Record<string, unknown> | null,
+  options?: { fallbackToGallery?: boolean },
 ): HdpMomentItem[] {
-  if (Array.isArray(events)) {
-    const fromEvents = mapEventsToMoments(events.filter(isHdpEvent));
-    if (fromEvents.length > 0) {
-      return fromEvents;
+  if (Array.isArray(moments)) {
+    const fromApi = mapApiMoments(moments.filter(isHdpApiMoment));
+    if (fromApi.length > 0) {
+      return fromApi;
     }
+  }
+
+  if (options?.fallbackToGallery === false) {
+    return [];
   }
 
   return mapGalleryToMoments(property);

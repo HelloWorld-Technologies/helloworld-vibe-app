@@ -61,6 +61,10 @@ export type PropertyDetailResponse = {
   data?: Record<string, unknown>;
   googleData?: { google_rating?: number };
   events?: unknown[];
+  /** Curated property moments (image/video) from `v2/hello/house`. */
+  moments?: unknown[];
+  /** Property gallery media (images + property videos) from `v2/hello/house`. */
+  media?: unknown[];
   similarProperties?: ApiProperty[];
   similar_properties?: ApiProperty[];
   similar?: ApiProperty[];

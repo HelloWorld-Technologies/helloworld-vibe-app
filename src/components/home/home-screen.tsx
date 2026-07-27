@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HwIcon } from '@/components/hw-icon';
+import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer';
 import { LocalityCardImage } from '@/components/locality/locality-card-image';
 import { PropertyCard } from '@/components/property/property-card';
 import { HwCarousel, HwParallaxCarousel, ParallaxLayer } from '@/components/ui/carousel';
@@ -24,9 +25,7 @@ import { GradientText } from '@/components/ui/gradient-text';
 import { SearchInput } from '@/components/ui/search-input';
 import { Typography } from '@/components/ui/typography';
 import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
-import { ImageAssets } from '@/constants/assets';
 import {
-  FEED_ITEMS,
   HOME_BACKGROUND_GRADIENT,
   NEIGHBORHOODS,
 } from '@/constants/home';
@@ -34,15 +33,10 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { VIBE_OPTIONS } from '@/constants/vibes';
 import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
+import { useMomentsFeed } from '@/queries/use-moments-feed';
 import { useSrpProperties } from '@/queries/use-srp-properties';
 import { useSelectedCity, useSelectedLocality } from '@/stores/auth-store';
 import type { PropertyListing } from '@/types/property';
-
-type ImageKey = keyof typeof ImageAssets;
-
-function resolveImage(key: ImageKey) {
-  return ImageAssets[key];
-}
 
 function SectionTitle({
   prefix,
@@ -79,12 +73,16 @@ export function HomeScreen() {
   const city = useSelectedCity();
   const locality = useSelectedLocality();
   const { data: srpData, isLoading: isLoadingProperties } = useSrpProperties(city);
+  const { data: feedData, isLoading: isLoadingFeed } = useMomentsFeed();
   const properties = srpData?.listings ?? [];
+  const feedMoments = feedData?.moments ?? [];
   const [selectedVibes, setSelectedVibes] = useState<string[]>(
     VIBE_OPTIONS.map((tag) => tag.id),
   );
   const [showFeedback, setShowFeedback] = useState(true);
   const [headerScrolled, setHeaderScrolled] = useState(false);
+  const [feedStoryOpen, setFeedStoryOpen] = useState(false);
+  const [feedStoryIndex, setFeedStoryIndex] = useState(0);
   const scrollBottomPadding =
     tabBarInset + (showFeedback ? FEEDBACK_BANNER_HEIGHT + FEEDBACK_BANNER_GAP : 0);
 
@@ -243,39 +241,54 @@ export function HomeScreen() {
             />
           )}
 
-          <SectionTitle prefix="Straight from the " highlight="Feed!" />
-          <HwParallaxCarousel
-            data={[...FEED_ITEMS]}
-            width={feedSlideWidth}
-            height={220}
-            style={styles.carouselWrap}
-            modeConfig={{
-              parallaxScrollingScale: 0.9,
-              parallaxScrollingOffset: 32,
-              parallaxAdjacentItemScale: 0.82,
-            }}
-            renderItem={({ item, animationValue }) => (
-              <View style={[styles.feedCard, { width: FEED_CARD_WIDTH }]}>
-                <ParallaxLayer animationValue={animationValue} style={styles.feedImageWrap}>
-                  <Image
-                    source={resolveImage(item.image)}
-                    style={styles.feedImage}
-                    contentFit="cover"
-                  />
-                </ParallaxLayer>
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.6)']}
-                  style={styles.feedOverlay}>
-                  <Typography variant="text" size="sm" weight="bold" color={palette.white}>
-                    {item.caption}
-                  </Typography>
-                </LinearGradient>
-                <View style={styles.videoBadge}>
-                  <SymbolView name="play.fill" size={10} tintColor={palette.white} />
+          {(isLoadingFeed || feedMoments.length > 0) ? (
+            <>
+              <SectionTitle prefix="Straight from the " highlight="Feed!" />
+              {isLoadingFeed ? (
+                <View style={styles.feedLoader}>
+                  <ActivityIndicator color={palette.helloLime} />
                 </View>
-              </View>
-            )}
-          />
+              ) : (
+                <HwParallaxCarousel
+                  data={feedMoments}
+                  width={feedSlideWidth}
+                  height={220}
+                  style={styles.carouselWrap}
+                  modeConfig={{
+                    parallaxScrollingScale: 0.9,
+                    parallaxScrollingOffset: 32,
+                    parallaxAdjacentItemScale: 0.82,
+                  }}
+                  renderItem={({ item, index, animationValue }) => (
+                    <Pressable
+                      onPress={() => {
+                        setFeedStoryIndex(index);
+                        setFeedStoryOpen(true);
+                      }}
+                      style={[styles.feedCard, { width: FEED_CARD_WIDTH }]}>
+                      <ParallaxLayer animationValue={animationValue} style={styles.feedImageWrap}>
+                        <Image
+                          source={{ uri: item.imageUri }}
+                          style={styles.feedImage}
+                          contentFit="cover"
+                        />
+                      </ParallaxLayer>
+                      <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.6)']}
+                        style={styles.feedOverlay}>
+                        <Typography variant="text" size="sm" weight="bold" color={palette.white}>
+                          {item.label}
+                        </Typography>
+                      </LinearGradient>
+                      <View style={styles.videoBadge}>
+                        <SymbolView name="play.fill" size={10} tintColor={palette.white} />
+                      </View>
+                    </Pressable>
+                  )}
+                />
+              )}
+            </>
+          ) : null}
           </View>
         </View>
       </ScrollView>
@@ -331,6 +344,14 @@ export function HomeScreen() {
           </Pressable>
         </View>
       ) : null}
+
+      <HdpMomentsStoryViewer
+        visible={feedStoryOpen}
+        moments={feedMoments}
+        initialIndex={feedStoryIndex}
+        propertyName="HelloWorld"
+        onClose={() => setFeedStoryOpen(false)}
+      />
     </View>
   );
 }
@@ -367,7 +388,7 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     paddingHorizontal: 20,
-    paddingBottom: 28,
+    paddingBottom: 50,
   },
   headerTop: {
     flexDirection: 'row',
@@ -441,6 +462,11 @@ const styles = StyleSheet.create({
   },
   propertiesLoader: {
     height: PROPERTY_CAROUSEL_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feedLoader: {
+    height: 220,
     alignItems: 'center',
     justifyContent: 'center',
   },
