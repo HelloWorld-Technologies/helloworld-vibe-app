@@ -24,6 +24,7 @@ import { usePropertyCategories } from '@/queries/use-property-categories';
 import { usePropertyDetail } from '@/queries/use-property-detail';
 import { useAuthStore } from '@/stores/auth-store';
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
+import { useIsTenant } from '@/stores/tenant-store';
 import { useBookingPayment } from '@/hooks/use-booking-payment';
 import type { AppliedDiscount, BookingChargeId } from '@/types/booking-payment';
 import {
@@ -37,6 +38,7 @@ import {
   mapPaymentDetailsRow,
   type BookingPricingDetails,
 } from '@/utils/booking-pricing';
+import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
 const DEFAULT_SELECTED: Record<BookingChargeId, boolean> = {
   token: true,
@@ -59,6 +61,7 @@ function formatDepositLabel(months?: number) {
 export function BookingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isTenant = useIsTenant();
   const draft = useBookingDraftStore((state) => state.draft);
   const { startBookingPayment } = useBookingPayment();
 
@@ -123,9 +126,9 @@ export function BookingScreen() {
 
   useEffect(() => {
     if (!draft) {
-      router.replace('/(tabs)/home');
+      router.replace(getExploreHomeRoute(isTenant));
     }
-  }, [draft, router]);
+  }, [draft, isTenant, router]);
 
   useEffect(() => {
     if (!draft) return;

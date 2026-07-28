@@ -35,9 +35,10 @@ function useSelectionBounce(selected: boolean) {
       return;
     }
 
+    // Keep the bounce subtle so borders aren't clipped by the horizontal ScrollView.
     scale.value = withSequence(
-      withSpring(1.06, { damping: 11, stiffness: 380, mass: 0.6 }),
-      withSpring(1, { damping: 14, stiffness: 280, mass: 0.7 }),
+      withSpring(1.03, { damping: 14, stiffness: 320, mass: 0.65 }),
+      withSpring(1, { damping: 16, stiffness: 260, mass: 0.7 }),
     );
   }, [scale, selected]);
 
@@ -107,7 +108,7 @@ function VisitDateCard({
       entering={
         animateOnMount ? FadeInDown.duration(ITEM_ENTER_MS).delay(index * ITEM_STAGGER_MS) : undefined
       }
-      style={animatedStyle}>
+      style={[styles.dateCardShell, animatedStyle]}>
       <Pressable
         onPress={() => onSelect(date)}
         style={[style, selected && styles.dateCardSelected]}
@@ -249,13 +250,19 @@ const styles = StyleSheet.create({
   },
   dateRow: {
     gap: 8,
-    paddingVertical: 2,
+    // Extra room so the selection bounce + border aren't clipped by ScrollView.
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  dateCardShell: {
+    // Keep transform origin clear of neighbors during scale bounce.
+    marginHorizontal: 1,
   },
   dateCard: {
     width: 68,
     minHeight: 110,
     borderRadius: Radius.sm,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: palette.gray[200],
     backgroundColor: palette.white,
     alignItems: 'center',
@@ -267,7 +274,7 @@ const styles = StyleSheet.create({
     width: 64,
     minHeight: 72,
     borderRadius: Radius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: palette.gray[200],
     backgroundColor: palette.white,
     alignItems: 'center',
@@ -276,12 +283,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   dateCardSelected: {
+    borderWidth: 1.5,
     borderColor: palette.blue[300],
     backgroundColor: palette.blue[50],
   },
   timeRow: {
     gap: 8,
-    paddingVertical: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 2,
   },
   timePill: {
     borderRadius: Radius.full,

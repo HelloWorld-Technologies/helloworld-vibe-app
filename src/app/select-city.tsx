@@ -10,16 +10,19 @@ import { LottieAssets } from '@/constants/assets';
 import { CITIES, type CityOption } from '@/constants/cities';
 import palette from '@/constants/palette';
 import { useAuthStore } from '@/stores/auth-store';
+import { useIsTenant } from '@/stores/tenant-store';
+import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
 const NUM_COLUMNS = 4;
 
 export default function SelectCityScreen() {
   const router = useRouter();
+  const isTenant = useIsTenant();
   const setSelectedCity = useAuthStore((state) => state.setSelectedCity);
 
   function handleSelectCity(city: CityOption) {
     setSelectedCity(city.name);
-    router.replace('/(tabs)/home');
+    router.replace(getExploreHomeRoute(isTenant));
   }
 
   return (

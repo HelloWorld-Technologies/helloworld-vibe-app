@@ -6,6 +6,13 @@ export function getVisitId(visit: PropertyVisit) {
   return String(visit.id);
 }
 
+export function getCrmVisitId(visit: PropertyVisit) {
+  const raw =
+    visit.crmVisitId ?? visit.crm_visit_id ?? visit.Crm_Visit_Id ?? visit.id;
+  if (raw == null || raw === '') return null;
+  return String(raw);
+}
+
 export function getVisitPropertyId(visit: PropertyVisit) {
   const raw = visit.Property_Id ?? visit.property_id;
   if (raw == null || raw === '') return null;

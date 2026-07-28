@@ -75,8 +75,6 @@ export function CommunityEventCard({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    minWidth: '46%',
-    maxWidth: '50%',
     backgroundColor: palette.white,
     borderRadius: Radius.md,
     borderWidth: 1,

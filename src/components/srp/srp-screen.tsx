@@ -30,7 +30,9 @@ import { VIBE_OPTIONS } from '@/constants/vibes';
 import { usePropertyList } from '@/queries/use-property-list';
 import { useSrpFiltersStore } from '@/stores/srp-filters-store';
 import { useSelectedCity, useSelectedLocality } from '@/stores/auth-store';
+import { useIsTenant } from '@/stores/tenant-store';
 import { countActiveSrpFilters } from '@/utils/build-srp-api-payload';
+import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
 const HERO_HEIGHT = 398;
 const SHEET_OVERLAP = 45;
@@ -40,6 +42,7 @@ const HEADER_REVEAL_THRESHOLD = HERO_HEIGHT - SHEET_OVERLAP + 16;
 export function SrpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isTenant = useIsTenant();
   const city = useSelectedCity();
   const locality = useSelectedLocality();
   const isCityOnly = !locality;
@@ -243,7 +246,7 @@ export function SrpScreen() {
           if (router.canGoBack()) {
             router.back();
           } else {
-            router.replace('/');
+            router.replace(getExploreHomeRoute(isTenant));
           }
         }}
         inlineSearch={{

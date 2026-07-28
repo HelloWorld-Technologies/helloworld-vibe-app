@@ -201,6 +201,8 @@ export function RateVisitSheet({ visible, visit, onClose, onSubmitted }: RateVis
 const styles = StyleSheet.create({
   content: {
     gap: 24,
+    paddingHorizontal: 24,
+    paddingTop: 20,
     paddingBottom: 8,
   },
   headerRow: {

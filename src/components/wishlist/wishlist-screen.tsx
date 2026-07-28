@@ -21,8 +21,10 @@ import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { useWishlist } from '@/providers/wishlist-provider';
 import { useWishlistProperties } from '@/queries/use-wishlist-properties';
 import { useIsAuthenticated } from '@/stores/auth-store';
+import { useIsTenant } from '@/stores/tenant-store';
 import type { PropertyListing } from '@/types/property';
 import { mapWishlistCardToListing } from '@/utils/map-wishlist-card';
+import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
 type WishlistScreenProps = {
   variant?: 'tab' | 'stack';
@@ -33,6 +35,7 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
   const tabBarInset = useTabBarInset(0);
   const insets = useSafeAreaInsets();
   const isAuthenticated = useIsAuthenticated();
+  const isTenant = useIsTenant();
   const { refreshWishlist } = useWishlist();
   const {
     data,
@@ -173,7 +176,7 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
             title="Your wishlist is empty"
             subtitle="Tap the heart on any property to save it here."
             actionLabel="Browse Properties"
-            onAction={() => router.push('/')}
+            onAction={() => router.push(getExploreHomeRoute(isTenant))}
           />
         </View>
       );

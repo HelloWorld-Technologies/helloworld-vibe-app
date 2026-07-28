@@ -20,6 +20,31 @@ export type CommunityEvent = {
 
 export type EventListType = 'all' | 'previous' | 'upcoming';
 
+export type EventPageInfo = {
+  nextPage?: number | boolean | null;
+  total?: number;
+  count?: number;
+  page?: number;
+  pageSize?: number;
+};
+
+export type EventsListParams = {
+  city?: string;
+  type?: EventListType;
+  page?: number;
+  pageSize?: number;
+};
+
+export type EventsListResult = {
+  success: boolean;
+  data: CommunityEvent[];
+  pageInfo?: EventPageInfo;
+  message?: string;
+};
+
+export const EVENTS_PAGE_SIZE = 10;
+export const DASHBOARD_EVENTS_PAGE_SIZE = 5;
+
 type ApiSuccessMessage = {
   success?: boolean;
   message?: string;
@@ -34,6 +59,95 @@ function asEventList(data: unknown): CommunityEvent[] {
       typeof (item as CommunityEvent).id === 'number' &&
       typeof (item as CommunityEvent).name === 'string',
   );
+}
+
+function parseEventPageInfo(payload: unknown): EventPageInfo | undefined {
+  if (!payload || typeof payload !== 'object') return undefined;
+  const record = payload as Record<string, unknown>;
+  const raw = (record.pagination ?? record.pageInfo ?? record.meta ?? record) as Record<
+    string,
+    unknown
+  >;
+
+  if (!raw || typeof raw !== 'object') return undefined;
+
+  const nextPage =
+    raw.nextPage ??
+    raw.next_page ??
+    (typeof raw.hasMore === 'boolean'
+      ? raw.hasMore
+      : typeof raw.has_next === 'boolean'
+        ? raw.has_next
+        : typeof raw.hasNextPage === 'boolean'
+          ? raw.hasNextPage
+          : undefined);
+
+  const total =
+    typeof raw.total === 'number'
+      ? raw.total
+      : typeof raw.totalCount === 'number'
+        ? raw.totalCount
+        : undefined;
+
+  const count =
+    typeof raw.count === 'number'
+      ? raw.count
+      : typeof raw.pageSize === 'number'
+        ? raw.pageSize
+        : undefined;
+
+  const page =
+    typeof raw.page === 'number'
+      ? raw.page
+      : typeof raw.currentPage === 'number'
+        ? raw.currentPage
+        : undefined;
+
+  const pageSize =
+    typeof raw.pageSize === 'number'
+      ? raw.pageSize
+      : typeof raw.page_size === 'number'
+        ? raw.page_size
+        : undefined;
+
+  if (
+    nextPage === undefined &&
+    total === undefined &&
+    count === undefined &&
+    page === undefined &&
+    pageSize === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    nextPage: nextPage as EventPageInfo['nextPage'],
+    total,
+    count,
+    page,
+    pageSize,
+  };
+}
+
+export function resolveNextEventsPage(
+  pageInfo: EventPageInfo | undefined,
+  lastPageParam: number,
+  lastPageCount: number,
+  pageSize: number,
+): number | undefined {
+  const next = pageInfo?.nextPage;
+  if (next === false || next === null) return undefined;
+  if (typeof next === 'number' && next > lastPageParam) return next;
+  if (next === true) return lastPageParam + 1;
+
+  if (typeof pageInfo?.total === 'number' && pageInfo.total >= 0) {
+    const loaded = lastPageParam * pageSize;
+    if (loaded < pageInfo.total) return lastPageParam + 1;
+    return undefined;
+  }
+
+  if (lastPageCount >= pageSize) return lastPageParam + 1;
+  return undefined;
 }
 
 function resolveRegistrationId(item: Record<string, unknown>): number | undefined {
@@ -90,17 +204,33 @@ function normalizeRegisteredEvent(item: unknown): CommunityEvent | null {
 }
 
 export async function getEventsList(
-  city = '',
+  cityOrParams: string | EventsListParams = '',
   type: EventListType = 'upcoming',
-): Promise<{ success: boolean; data: CommunityEvent[] }> {
+): Promise<EventsListResult> {
+  const params: EventsListParams =
+    typeof cityOrParams === 'string'
+      ? { city: cityOrParams, type }
+      : cityOrParams;
+
+  const city = params.city ?? '';
+  const listType = params.type ?? 'upcoming';
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? EVENTS_PAGE_SIZE;
+
   try {
     const { data } = await http.get('hello/event/list', {
-      params: { city, type },
+      params: {
+        city,
+        type: listType,
+        page,
+        pageSize,
+      },
     });
     const events = data?.data ?? data;
     return {
       success: true,
       data: asEventList(events),
+      pageInfo: parseEventPageInfo(data) ?? parseEventPageInfo(data?.data),
     };
   } catch {
     return { success: false, data: [] };
@@ -109,12 +239,20 @@ export async function getEventsList(
 
 export async function getRegisteredEvents(
   mobile: string,
-): Promise<{ success: boolean; data: CommunityEvent[]; message?: string }> {
+  options?: { page?: number; pageSize?: number },
+): Promise<EventsListResult> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? EVENTS_PAGE_SIZE;
+
   try {
-    const { data } = await http.get<{ success?: boolean; data?: unknown; message?: string }>(
-      'hello/event/registered',
-      { params: { mobile } },
-    );
+    const { data } = await http.get<{
+      success?: boolean;
+      data?: unknown;
+      message?: string;
+      pagination?: unknown;
+    }>('hello/event/registered', {
+      params: { mobile, page, pageSize },
+    });
 
     const raw = data?.data ?? data;
     const list = Array.isArray(raw)
@@ -124,6 +262,7 @@ export async function getRegisteredEvents(
     return {
       success: Boolean(data?.success),
       data: list,
+      pageInfo: parseEventPageInfo(data) ?? parseEventPageInfo(data?.data),
       message: data?.message,
     };
   } catch (error: unknown) {

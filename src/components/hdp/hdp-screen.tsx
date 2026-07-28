@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -42,6 +42,7 @@ import { usePropertyDetail } from '@/queries/use-property-detail';
 import { usePropertyCategories } from '@/queries/use-property-categories';
 import { useWishlist } from '@/providers/wishlist-provider';
 import { useSelectedCity } from '@/stores/auth-store';
+import { useIsTenant } from '@/stores/tenant-store';
 import {
   extractPropertyPhotos,
   extractPropertyVideos,
@@ -50,6 +51,7 @@ import {
 import { extractNearByFromDetail, mapNearByToDayCards } from '@/utils/hdp-nearby';
 import { extractMomentsFromHdp } from '@/utils/hdp-moments';
 import { shareProperty } from '@/utils/share-property';
+import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
 const SHEET_OVERLAP = 48;
 const FOOTER_HEIGHT = 96;
@@ -102,10 +104,12 @@ export function HdpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { id, name, image } = useLocalSearchParams<{
+  const isTenant = useIsTenant();
+  const { id, name, image, openBook } = useLocalSearchParams<{
     id: string;
     name?: string;
     image?: string;
+    openBook?: string;
   }>();
 
   const propertyId = id ?? '';
@@ -120,6 +124,7 @@ export function HdpScreen() {
   const [visitSheetOpen, setVisitSheetOpen] = useState(false);
   const [visitSheetTab, setVisitSheetTab] = useState<'schedule' | 'book'>('schedule');
   const [showStickyTabs, setShowStickyTabs] = useState(false);
+  const autoOpenedBookRef = useRef(false);
   const scrollY = useSharedValue(0);
   const lastScrollYRef = useRef(0);
   const tabStickScrollYRef = useRef(0);
@@ -189,6 +194,16 @@ export function HdpScreen() {
 
   const property = data?.success ? (data.data as Record<string, any>) : null;
   const googleRating = data?.googleData?.google_rating ?? property?.google_rating ?? 4.5;
+
+  useEffect(() => {
+    if (autoOpenedBookRef.current) return;
+    if (openBook !== '1' && openBook !== 'true') return;
+    if (isLoading || !property) return;
+
+    autoOpenedBookRef.current = true;
+    setVisitSheetTab('book');
+    setVisitSheetOpen(true);
+  }, [isLoading, openBook, property]);
 
   const displayName = property?.display_name ?? property?.name ?? name ?? 'Property';
   const locality =
@@ -295,7 +310,7 @@ export function HdpScreen() {
           if (router.canGoBack()) {
             router.back();
           } else {
-            router.replace('/');
+            router.replace(getExploreHomeRoute(isTenant));
           }
         }}
         onRightPress={handleShare}

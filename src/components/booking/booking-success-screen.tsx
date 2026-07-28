@@ -9,12 +9,14 @@ import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
-import { useTenantStore } from '@/stores/tenant-store';
+import { useIsTenant, useTenantStore } from '@/stores/tenant-store';
 import { formatBookingAmount, formatBookingMoveInDate } from '@/utils/booking-payment';
 import { resetRootRoute } from '@/utils/navigation-reset';
+import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
 export function BookingSuccessScreen() {
   const insets = useSafeAreaInsets();
+  const isTenant = useIsTenant();
   const paymentResult = useBookingDraftStore((state) => state.paymentResult);
   const clearDraft = useBookingDraftStore((state) => state.clearDraft);
   const clearPaymentResult = useBookingDraftStore((state) => state.clearPaymentResult);
@@ -41,7 +43,7 @@ export function BookingSuccessScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!paymentResult) {
-        resetRootRoute('/(tabs)/home');
+        resetRootRoute(getExploreHomeRoute(isTenant));
         return undefined;
       }
 
@@ -51,7 +53,7 @@ export function BookingSuccessScreen() {
       });
 
       return () => subscription.remove();
-    }, [handleGoToDashboard, paymentResult]),
+    }, [handleGoToDashboard, isTenant, paymentResult]),
   );
 
   if (!paymentResult) {

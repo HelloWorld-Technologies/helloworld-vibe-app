@@ -35,10 +35,86 @@ function parseTicketsPayload(payload: unknown): SupportTicket[] {
 function parsePageInfo(payload: unknown): TicketPageInfo | undefined {
   if (!payload || typeof payload !== 'object') return undefined;
   const record = payload as Record<string, unknown>;
-  const pageInfo = (record.pageInfo ?? record.pagination ?? record.meta) as
-    | TicketPageInfo
-    | undefined;
-  if (pageInfo && typeof pageInfo === 'object') return pageInfo;
+  const raw = (record.pageInfo ?? record.pagination ?? record.meta ?? record) as Record<
+    string,
+    unknown
+  >;
+
+  if (!raw || typeof raw !== 'object') return undefined;
+
+  const nextPage =
+    raw.nextPage ??
+    raw.next_page ??
+    (typeof raw.hasMore === 'boolean'
+      ? raw.hasMore
+      : typeof raw.has_next === 'boolean'
+        ? raw.has_next
+        : typeof raw.hasNextPage === 'boolean'
+          ? raw.hasNextPage
+          : undefined);
+
+  const total =
+    typeof raw.total === 'number'
+      ? raw.total
+      : typeof raw.totalCount === 'number'
+        ? raw.totalCount
+        : undefined;
+
+  const count =
+    typeof raw.count === 'number'
+      ? raw.count
+      : typeof raw.pageSize === 'number'
+        ? raw.pageSize
+        : undefined;
+
+  const page =
+    typeof raw.page === 'number'
+      ? raw.page
+      : typeof raw.currentPage === 'number'
+        ? raw.currentPage
+        : undefined;
+
+  const pageSize = typeof raw.pageSize === 'number' ? raw.pageSize : undefined;
+
+  // Only treat as pageInfo if it looks like pagination metadata.
+  if (
+    nextPage === undefined &&
+    total === undefined &&
+    count === undefined &&
+    page === undefined &&
+    pageSize === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    nextPage: nextPage as TicketPageInfo['nextPage'],
+    total,
+    count,
+    page,
+    pageSize,
+  };
+}
+
+export function resolveNextTicketPage(
+  pageInfo: TicketPageInfo | undefined,
+  lastPageParam: number,
+  lastPageCount: number,
+  pageSize: number,
+): number | undefined {
+  const next = pageInfo?.nextPage;
+  if (next === false || next === null) return undefined;
+  if (typeof next === 'number' && next > lastPageParam) return next;
+  if (next === true) return lastPageParam + 1;
+
+  if (typeof pageInfo?.total === 'number' && pageInfo.total >= 0) {
+    const loaded = lastPageParam * pageSize;
+    if (loaded < pageInfo.total) return lastPageParam + 1;
+    return undefined;
+  }
+
+  // Fallback when API omits pageInfo: a full page usually means more may exist.
+  if (lastPageCount >= pageSize) return lastPageParam + 1;
   return undefined;
 }
 

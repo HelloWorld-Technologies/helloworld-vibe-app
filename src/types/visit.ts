@@ -1,5 +1,8 @@
 export type PropertyVisit = {
   id: string | number;
+  crmVisitId?: string | number;
+  crm_visit_id?: string | number;
+  Crm_Visit_Id?: string | number;
   Building_Name?: string;
   building_name?: string;
   Locality?: string;

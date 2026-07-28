@@ -29,7 +29,7 @@ type SupportTab = 'active' | 'resolved';
 const SUPPORT_TABS: SupportTab[] = ['active', 'resolved'];
 const FAB_HEIGHT = 52;
 const FAB_GAP = 12;
-const NATIVE_TAB_BAR_HEIGHT = Platform.select({ ios: 0, android: 56, default: 56 }) ?? 56;
+const NATIVE_TAB_BAR_HEIGHT = Platform.select({ ios: 49, android: 56, default: 56 }) ?? 56;
 
 function SupportTicketList({
   tabId,
@@ -108,15 +108,17 @@ function SupportTicketList({
       data={tickets}
       keyExtractor={(item) => String(item.id)}
       renderItem={renderTicket}
+      ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListFooterComponent={renderFooter}
       contentContainerStyle={[styles.list, { paddingBottom: bottomPadding }]}
       showsVerticalScrollIndicator={false}
+      nestedScrollEnabled
       onEndReached={() => {
         if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
       }}
-      onEndReachedThreshold={0.4}
+      onEndReachedThreshold={0.35}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />
+        <RefreshControl refreshing={isRefetching && !isFetchingNextPage} onRefresh={() => void refetch()} />
       }
     />
   );
@@ -128,19 +130,14 @@ export function TenantSupportScreen() {
     useRaiseSupportRequest();
   const [tab, setTab] = useState<SupportTab>('active');
 
+  // Native tabs: iOS draws over the scene; Android already insets the screen above the bar.
   const fabBottom =
     Platform.OS === 'ios' ? insets.bottom + NATIVE_TAB_BAR_HEIGHT + FAB_GAP : FAB_GAP;
   const scrollBottomPadding = fabBottom + FAB_HEIGHT + TAB_SCREEN_EXTRA_PADDING;
 
   return (
     <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Typography variant="text" size="lg" weight="medium">
-          Support
-        </Typography>
-      </View>
-
-      <View style={styles.controls}>
+      <View style={[styles.controls, { paddingTop: insets.top + 16 }]}>
         <SegmentedTabToggle
           value={tab}
           onChange={setTab}
@@ -175,14 +172,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.gray[50],
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingBottom: 8,
-    backgroundColor: palette.white,
-  },
   controls: {
     paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 12,
     gap: 16,
     backgroundColor: palette.gray[50],
@@ -190,7 +181,10 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 20,
     paddingTop: 4,
-    gap: 12,
+    flexGrow: 1,
+  },
+  separator: {
+    height: 12,
   },
   loader: {
     marginTop: 24,

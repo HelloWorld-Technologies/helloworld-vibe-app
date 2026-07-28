@@ -6,9 +6,9 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { openInvoiceUrl, PaymentCard } from '@/components/tenant/payment-card';
-import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
+import { openInvoice, PaymentCard } from '@/components/tenant/payment-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
 import { SwipeableTabPager } from '@/components/ui/swipeable-tab-pager';
@@ -32,6 +32,7 @@ function PaymentsEmptyState() {
 }
 
 export function TenantPaymentsScreen() {
+  const insets = useSafeAreaInsets();
   const tabBarInset = useTabBarInset();
   const { payInvoice } = useInvoicePayment();
   const { data, isLoading, refetch, isRefetching } = useTenantInvoices();
@@ -55,7 +56,8 @@ export function TenantPaymentsScreen() {
                 invoice={invoice}
                 variant={tabId === 'pending' ? 'pending' : 'paid'}
                 onPay={() => payInvoice(invoice)}
-                onInvoice={() => openInvoiceUrl(invoice.invoice_url)}
+                onInvoice={() => openInvoice(invoice)}
+                onPress={() => openInvoice(invoice)}
               />
             ))}
           </View>
@@ -70,9 +72,7 @@ export function TenantPaymentsScreen() {
 
   return (
     <View style={styles.root}>
-      <TenantScreenHeader title="Payments" />
-
-      <View style={styles.controls}>
+      <View style={[styles.controls, { paddingTop: insets.top + 16 }]}>
         <SegmentedTabToggle
           value={tab}
           onChange={setTab}
@@ -97,7 +97,6 @@ const styles = StyleSheet.create({
   },
   controls: {
     paddingHorizontal: 24,
-    paddingTop: 16,
     paddingBottom: 12,
     backgroundColor: palette.gray[50],
   },

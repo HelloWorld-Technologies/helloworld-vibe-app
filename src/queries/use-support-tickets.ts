@@ -1,21 +1,13 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
-import { getSupportTickets } from '@/api/tickets';
+import { getSupportTickets, resolveNextTicketPage } from '@/api/tickets';
 import {
   ACTIVE_TICKET_STATUSES,
   RESOLVED_TICKET_STATUSES,
 } from '@/types/ticket';
 
-export const SUPPORT_TICKETS_PAGE_SIZE = 20;
+export const SUPPORT_TICKETS_PAGE_SIZE = 10;
 export const DASHBOARD_TICKETS_PAGE_SIZE = 5;
-
-function getNextPage(
-  nextPage: number | boolean | null | undefined,
-  lastPageParam: number,
-): number | undefined {
-  if (!nextPage) return undefined;
-  return typeof nextPage === 'number' ? nextPage : lastPageParam + 1;
-}
 
 export function useSupportTickets(options?: {
   status?: string | string[];
@@ -49,7 +41,7 @@ export function useSupportTicketsInfinite(tab: 'active' | 'resolved') {
       : [...RESOLVED_TICKET_STATUSES];
 
   return useInfiniteQuery({
-    queryKey: ['support-tickets', 'infinite', tab],
+    queryKey: ['support-tickets', 'infinite', tab, SUPPORT_TICKETS_PAGE_SIZE],
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       getSupportTickets({
@@ -58,6 +50,11 @@ export function useSupportTicketsInfinite(tab: 'active' | 'resolved') {
         status,
       }),
     getNextPageParam: (lastPage, _pages, lastPageParam) =>
-      getNextPage(lastPage.pageInfo?.nextPage, lastPageParam),
+      resolveNextTicketPage(
+        lastPage.pageInfo,
+        lastPageParam,
+        lastPage.data?.length ?? 0,
+        SUPPORT_TICKETS_PAGE_SIZE,
+      ),
   });
 }

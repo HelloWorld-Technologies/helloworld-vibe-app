@@ -1,15 +1,15 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { SymbolView } from 'expo-symbols';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import { SymbolView } from 'expo-symbols';
 
 import { CommunityEventCard } from '@/components/community/community-event-card';
 import { CommunityPromoCard } from '@/components/community/community-promo-card';
@@ -29,7 +29,7 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import {
   useCancelEventRegistration,
-  useCommunityEvents,
+  useCommunityEventsInfinite,
 } from '@/queries/use-events';
 
 const COMMUNITY_TAB_IDS = COMMUNITY_EVENT_TABS.map((tab) => tab.id);
@@ -45,86 +45,123 @@ function CommunityEventsTabPage({
   onRequestPress,
   onEventPress,
 }: CommunityEventsTabPageProps) {
-  const { data: events, isLoading, refetch, isRefetching } = useCommunityEvents(tab);
+  const {
+    data,
+    isLoading,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useCommunityEventsInfinite(tab);
   const cancelRegistration = useCancelEventRegistration();
   const [cancellingId, setCancellingId] = useState<number | null>(null);
-  const hasEvents = (events?.length ?? 0) > 0;
+
+  const events = useMemo(
+    () => (data?.pages ?? []).flatMap((page) => page.data ?? []),
+    [data],
+  );
+
+  const hasEvents = events.length > 0;
   const showEmpty = !isLoading && !hasEvents;
   const showPromo = tab === 'upcoming' && hasEvents;
 
   function handleCancel(event: CommunityEvent) {
     if (!event.registrationId) return;
 
-    Alert.alert(
-      'Cancel registration?',
-      `Remove yourself from ${event.name}?`,
-      [
-        { text: 'Keep registration', style: 'cancel' },
-        {
-          text: 'Cancel registration',
-          style: 'destructive',
-          onPress: () => {
-            setCancellingId(event.registrationId!);
-            cancelRegistration.mutate(event.registrationId!, {
-              onError: (error) => {
-                Alert.alert(
-                  'Cancellation failed',
-                  error instanceof Error ? error.message : 'Please try again',
-                );
-              },
-              onSettled: () => setCancellingId(null),
-            });
-          },
+    Alert.alert('Cancel registration?', `Remove yourself from ${event.name}?`, [
+      { text: 'Keep registration', style: 'cancel' },
+      {
+        text: 'Cancel registration',
+        style: 'destructive',
+        onPress: () => {
+          setCancellingId(event.registrationId!);
+          cancelRegistration.mutate(event.registrationId!, {
+            onError: (error) => {
+              Alert.alert(
+                'Cancellation failed',
+                error instanceof Error ? error.message : 'Please try again',
+              );
+            },
+            onSettled: () => setCancellingId(null),
+          });
         },
-      ],
+      },
+    ]);
+  }
+
+  function renderFooter() {
+    return (
+      <View style={styles.footer}>
+        {showPromo ? <CommunityPromoCard onRequestPress={onRequestPress} /> : null}
+        {hasNextPage || isFetchingNextPage ? (
+          isFetchingNextPage ? (
+            <ActivityIndicator color={palette.lime[700]} style={styles.footerLoader} />
+          ) : (
+            <Pressable onPress={() => void fetchNextPage()} style={styles.loadMore}>
+              <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
+                Load more
+              </Typography>
+            </Pressable>
+          )
+        ) : null}
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return <ActivityIndicator color={palette.lime[700]} style={styles.loader} />;
+  }
+
+  if (showEmpty) {
+    return (
+      <EmptyState
+        title={tab === 'registered' ? 'No registered events yet' : 'No events scheduled this week'}
+        subtitle={
+          tab === 'registered'
+            ? 'Events you register for will show up here.'
+            : 'Got an idea? Help us plan the next one.'
+        }
+        actionLabel={tab === 'registered' ? undefined : 'Request Event'}
+        onAction={tab === 'registered' ? undefined : onRequestPress}
+      />
     );
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scroll}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
-      showsVerticalScrollIndicator={false}>
-      {!showEmpty ? (
+    <FlatList
+      data={events}
+      keyExtractor={(item) => `${item.id}-${item.registrationId ?? 'event'}`}
+      numColumns={2}
+      columnWrapperStyle={styles.gridRow}
+      contentContainerStyle={styles.list}
+      showsVerticalScrollIndicator={false}
+      nestedScrollEnabled
+      ListHeaderComponent={
         <Typography variant="text" size="lg" weight="medium" style={styles.heading}>
           {COMMUNITY_TAB_HEADINGS[tab]}
         </Typography>
-      ) : null}
-
-      {isLoading ? (
-        <ActivityIndicator color={palette.lime[700]} style={styles.loader} />
-      ) : showEmpty ? (
-        <EmptyState
-          title={
-            tab === 'registered'
-              ? 'No registered events yet'
-              : 'No events scheduled this week'
-          }
-          subtitle={
-            tab === 'registered'
-              ? 'Events you register for will show up here.'
-              : 'Got an idea? Help us plan the next one.'
-          }
-          actionLabel={tab === 'registered' ? undefined : 'Request Event'}
-          onAction={tab === 'registered' ? undefined : onRequestPress}
+      }
+      renderItem={({ item }) => (
+        <CommunityEventCard
+          event={item}
+          onPress={() => onEventPress(item.id)}
+          onCancel={tab === 'registered' ? () => handleCancel(item) : undefined}
+          cancelLoading={cancellingId === item.registrationId}
         />
-      ) : (
-        <>
-          <View style={styles.grid}>
-            {events?.map((event) => (
-              <CommunityEventCard
-                key={`${event.id}-${event.registrationId ?? 'event'}`}
-                event={event}
-                onPress={() => onEventPress(event.id)}
-                onCancel={tab === 'registered' ? () => handleCancel(event) : undefined}
-                cancelLoading={cancellingId === event.registrationId}
-              />
-            ))}
-          </View>
-          {showPromo ? <CommunityPromoCard onRequestPress={onRequestPress} /> : null}
-        </>
       )}
-    </ScrollView>
+      ListFooterComponent={renderFooter}
+      onEndReached={() => {
+        if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+      }}
+      onEndReachedThreshold={0.35}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching && !isFetchingNextPage}
+          onRefresh={() => void refetch()}
+        />
+      }
+    />
   );
 }
 
@@ -185,23 +222,34 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     backgroundColor: palette.gray[50],
   },
-  scroll: {
+  list: {
     paddingHorizontal: 24,
     paddingTop: 4,
-    gap: 16,
     paddingBottom: 120,
+    gap: 8,
     flexGrow: 1,
   },
   heading: {
     marginTop: 4,
+    marginBottom: 8,
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  gridRow: {
     gap: 8,
   },
   loader: {
     marginVertical: 48,
+  },
+  footer: {
+    gap: 16,
+    paddingTop: 8,
+  },
+  footerLoader: {
+    marginVertical: 12,
+  },
+  loadMore: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   fab: {
     position: 'absolute',

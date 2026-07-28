@@ -1,12 +1,15 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
+import { cancelVisit, rescheduleVisit } from '@/api/visit';
 import { VisitDateTimePicker } from '@/components/my-visits/visit-date-time-picker';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
+import { queryKeys } from '@/queries/keys';
 import { usePropertyVisitSlots } from '@/queries/use-property-visit-slots';
 import type { PropertyVisit } from '@/types/visit';
 import {
@@ -15,9 +18,10 @@ import {
   type VisitDateOption,
   type VisitTimeSlot,
 } from '@/utils/visit-dates';
-import { getVisitPropertyId } from '@/utils/visit-format';
+import { getCrmVisitId, getVisitPropertyId } from '@/utils/visit-format';
 import {
   findSlotDay,
+  formatVisitApiDate,
   mapSlotDaysToDateOptions,
   mapTimeSlotsForDay,
 } from '@/utils/visit-slots';
@@ -35,7 +39,9 @@ export function RescheduleVisitSheet({
   onClose,
   onRescheduled,
 }: RescheduleVisitSheetProps) {
+  const queryClient = useQueryClient();
   const propertyId = visit ? getVisitPropertyId(visit) : null;
+  const crmVisitId = visit ? getCrmVisitId(visit) : null;
   const fallbackDates = useMemo(() => buildVisitDateOptions(), []);
   const { data: slotDays = [] } = usePropertyVisitSlots(
     propertyId ? String(propertyId) : '',
@@ -51,6 +57,7 @@ export function RescheduleVisitSheet({
   const [selectedDate, setSelectedDate] = useState<VisitDateOption>(fallbackDates[0]);
   const [selectedTime, setSelectedTime] = useState<VisitTimeSlot>(DEFAULT_VISIT_TIME_SLOTS[0]);
   const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   const selectedSlotDay = useMemo(
     () => findSlotDay(slotDays, selectedDate),
@@ -69,6 +76,7 @@ export function RescheduleVisitSheet({
     setSelectedDate(visitDates[0] ?? fallbackDates[0]);
     setSelectedTime(DEFAULT_VISIT_TIME_SLOTS[0]);
     setSubmitting(false);
+    setCancelling(false);
   }, [fallbackDates, visit, visible, visitDates]);
 
   useEffect(() => {
@@ -85,26 +93,77 @@ export function RescheduleVisitSheet({
     }
   }, [selectedTime.id, visitTimeSlots]);
 
+  async function invalidateVisits() {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.visits() });
+  }
+
   function handleCancelVisit() {
-    Alert.alert('Cancel visit?', 'This will cancel your scheduled property visit.', [
-      { text: 'Keep visit', style: 'cancel' },
-      {
-        text: 'Cancel visit',
-        style: 'destructive',
-        onPress: () => {
-          onClose();
-          Alert.alert('Visit cancelled', 'Your visit has been cancelled.');
-        },
-      },
-    ]);
+    if (!crmVisitId || cancelling || submitting) return;
+
+    // Defer so the system alert presents above the bottom-sheet Modal.
+    setTimeout(() => {
+      Alert.alert(
+        'Are you sure?',
+        'Do you want to cancel this property visit? This cannot be undone.',
+        [
+          { text: 'Keep visit', style: 'cancel' },
+          {
+            text: 'Yes, cancel visit',
+            style: 'destructive',
+            onPress: () => {
+              void (async () => {
+                setCancelling(true);
+                try {
+                  const response = await cancelVisit(crmVisitId);
+                  if (!response.success) {
+                    Alert.alert(
+                      'Unable to cancel',
+                      response.error || response.message || 'Please try again.',
+                    );
+                    return;
+                  }
+
+                  await invalidateVisits();
+                  onClose();
+                  onRescheduled?.();
+                  Alert.alert('Visit cancelled', 'Your visit has been cancelled.');
+                } catch {
+                  Alert.alert('Unable to cancel', 'Please try again.');
+                } finally {
+                  setCancelling(false);
+                }
+              })();
+            },
+          },
+        ],
+      );
+    }, 0);
   }
 
   async function handleReschedule() {
+    if (!crmVisitId || submitting || cancelling) return;
+
     setSubmitting(true);
     try {
+      const response = await rescheduleVisit(crmVisitId, {
+        date: formatVisitApiDate(selectedDate.date),
+        time: selectedTime.value,
+      });
+
+      if (!response.success) {
+        Alert.alert(
+          'Unable to reschedule',
+          response.error || response.message || 'Please try again.',
+        );
+        return;
+      }
+
+      await invalidateVisits();
       onClose();
       onRescheduled?.();
       Alert.alert('Visit rescheduled', 'Your visit has been updated with the new date and time.');
+    } catch {
+      Alert.alert('Unable to reschedule', 'Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -113,6 +172,10 @@ export function RescheduleVisitSheet({
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.content}>
+        <Typography variant="text" size="xl" weight="bold" style={styles.title}>
+          Pick your visit date & time
+        </Typography>
+
         <VisitDateTimePicker
           dates={visitDates}
           selectedDateId={selectedDate.id}
@@ -125,16 +188,18 @@ export function RescheduleVisitSheet({
         <View style={styles.actionsRow}>
           <Pressable
             onPress={handleCancelVisit}
+            disabled={cancelling || submitting}
             style={[styles.sheetButton, styles.cancelButton]}
             accessibilityRole="button">
             <Typography variant="text" size="md" weight="medium" color={palette.red[700]}>
-              Cancel Visit
+              {cancelling ? 'Cancelling…' : 'Cancel Visit'}
             </Typography>
           </Pressable>
           <Button
             label="Reschedule Visit"
             onPress={handleReschedule}
             loading={submitting}
+            disabled={cancelling}
             style={styles.sheetButton}
           />
         </View>
@@ -156,7 +221,13 @@ export function RescheduleVisitSheet({
 const styles = StyleSheet.create({
   content: {
     gap: 24,
+    paddingHorizontal: 24,
+    paddingTop: 20,
     paddingBottom: 8,
+  },
+  title: {
+    textAlign: 'center',
+    color: '#0A0E14',
   },
   actionsRow: {
     flexDirection: 'row',

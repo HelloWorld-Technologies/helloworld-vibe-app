@@ -62,10 +62,11 @@ const TENANT_TAB_ICONS = {
   }
 >;
 
+/** Active tab: icon/label #4C7B0C, indicator/pill #F7FEE7 */
 const nativeTabStyle = {
   tintColor: palette.lime[700],
   iconColor: { default: palette.black, selected: palette.lime[700] },
-  indicatorColor: palette.lime[100],
+  indicatorColor: palette.lime[50],
   labelStyle: {
     default: { color: palette.black, fontSize: 11 },
     selected: { color: palette.lime[700], fontSize: 11 },

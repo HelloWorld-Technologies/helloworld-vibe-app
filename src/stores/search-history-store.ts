@@ -73,7 +73,9 @@ export const useSearchHistoryStore = create<SearchHistoryState>()(
   ),
 );
 
+const EMPTY_HISTORY: SearchHistoryItem[] = [];
+
 export function useSearchHistory(city: string): SearchHistoryItem[] {
   const key = normalizeCity(city);
-  return useSearchHistoryStore((state) => state.byCity[key] ?? []);
+  return useSearchHistoryStore((state) => state.byCity[key] ?? EMPTY_HISTORY);
 }

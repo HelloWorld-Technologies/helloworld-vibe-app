@@ -377,7 +377,7 @@ export function HdpVisitSheet({
 
   function handleViewTours() {
     handleClose();
-    router.push('/(tabs)/my-visits');
+    router.push('/my-visits');
   }
 
   function handleContinueToDetails() {
@@ -433,7 +433,7 @@ export function HdpVisitSheet({
       });
 
       if (response.success) {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.visits });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.visits() });
         setScheduleStep('confirmed');
       } else {
         setVisitSubmitError(response.error || response.message || 'Something went wrong.');

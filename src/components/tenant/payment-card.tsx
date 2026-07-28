@@ -1,5 +1,6 @@
 import { SymbolView } from 'expo-symbols';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -17,14 +18,21 @@ type PaymentCardProps = {
   variant: 'pending' | 'paid';
   onPay?: () => void;
   onInvoice?: () => void;
+  onPress?: () => void;
 };
 
-export function PaymentCard({ invoice, variant, onPay, onInvoice }: PaymentCardProps) {
+export function PaymentCard({ invoice, variant, onPay, onInvoice, onPress }: PaymentCardProps) {
   const dueMeta = variant === 'pending' ? getInvoiceDueLabel(invoice) : null;
   const amount = variant === 'pending' ? invoice.balance ?? invoice.total ?? 0 : invoice.total ?? invoice.balance ?? 0;
+  const accent = variant === 'pending' ? palette.red[800] : palette.lime[700];
+  const handleCardPress = onPress ?? onInvoice;
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      onPress={handleCardPress}
+      style={styles.card}
+      accessibilityRole="button"
+      accessibilityLabel={`View invoice ${invoice.invoice_number ?? invoice.invoice_id}`}>
       <View style={styles.topRow}>
         <Typography variant="text" size="sm" weight="medium" style={styles.title} numberOfLines={1}>
           {getInvoiceTitle(invoice)}
@@ -35,17 +43,13 @@ export function PaymentCard({ invoice, variant, onPay, onInvoice }: PaymentCardP
               styles.badge,
               dueMeta.tone === 'error' ? styles.badgeError : styles.badgeWarning,
             ]}>
-            <Typography
-              variant="label"
-              size="xs"
-              weight="medium"
-              color={dueMeta.tone === 'error' ? palette.red[800] : palette.red[800]}>
+            <Typography variant="label" size="xs" weight="medium" color={palette.red[800]}>
               {dueMeta.label}
             </Typography>
           </View>
         ) : (
           <View style={styles.badgePaid}>
-            <Typography variant="label" size="xs" weight="medium" color={palette.lime[800]}>
+            <Typography variant="label" size="xs" weight="medium" color={palette.lime[700]}>
               Paid
             </Typography>
           </View>
@@ -64,30 +68,40 @@ export function PaymentCard({ invoice, variant, onPay, onInvoice }: PaymentCardP
       </View>
 
       <View style={styles.bottomRow}>
-        <Typography
-          variant="display"
-          size="xs"
-          weight="bold"
-          color={variant === 'pending' ? palette.red[800] : palette.lime[800]}>
+        <Typography variant="display" size="xs" weight="bold" color={accent}>
           {priceFormatter(amount)}
         </Typography>
 
-        <Pressable
-          onPress={variant === 'pending' ? onPay : onInvoice}
-          style={styles.actionRow}
-          accessibilityRole="button">
-          {variant === 'paid' ? (
-            <SymbolView name="arrow.down.circle" size={12} tintColor={palette.lime[700]} />
-          ) : null}
-          <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
-            {variant === 'pending' ? 'Pay Now' : 'Invoice'}
-          </Typography>
-          {variant === 'pending' ? (
+        {variant === 'pending' ? (
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation?.();
+              onPay?.();
+            }}
+            style={styles.actionRow}
+            accessibilityRole="button">
+            <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
+              Pay Now
+            </Typography>
             <SymbolView name="chevron.right" size={10} tintColor={palette.lime[700]} />
-          ) : null}
-        </Pressable>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation?.();
+              onInvoice?.();
+            }}
+            style={styles.invoiceAction}
+            accessibilityRole="button"
+            accessibilityLabel="View invoice">
+            <SymbolView name="square.and.arrow.down" size={14} tintColor={palette.lime[700]} />
+            <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
+              Invoice
+            </Typography>
+          </Pressable>
+        )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -96,7 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.white,
     borderRadius: Radius.sm,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 16,
     gap: 8,
     shadowColor: '#8690A3',
     shadowOffset: { width: 0, height: 1.3 },
@@ -144,11 +158,23 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
+  },
+  invoiceAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 });
 
-export async function openInvoiceUrl(url?: string) {
-  if (!url) return;
-  await Linking.openURL(url);
+/** Opens the native invoice details screen (line items). */
+export function openInvoice(invoice: TenantInvoice) {
+  if (!invoice.invoice_id) return;
+  router.push({
+    pathname: '/invoice',
+    params: {
+      invoiceId: invoice.invoice_id,
+      title: invoice.invoice_number ?? getInvoiceTitle(invoice),
+    },
+  });
 }

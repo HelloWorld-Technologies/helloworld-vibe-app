@@ -1,9 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  DASHBOARD_EVENTS_PAGE_SIZE,
+  EVENTS_PAGE_SIZE,
   getEventsList,
   getRegisteredEvents,
   postCancelEventRegistration,
+  resolveNextEventsPage,
   type EventListType,
 } from '@/api/community';
 import type { CommunityEventsTab } from '@/constants/community';
@@ -15,35 +18,64 @@ function listTypeForTab(tab: CommunityEventsTab): EventListType {
   return 'upcoming';
 }
 
-export function useCommunityEvents(tab: CommunityEventsTab, city?: string) {
-  const mobile = useAuthStore((state) => state.mobile) ?? '';
-
+/** First-page preview for dashboard — separate key from infinite list. */
+export function useUpcomingEvents(city?: string) {
   return useQuery({
-    queryKey:
-      tab === 'registered'
-        ? queryKeys.communityRegisteredEvents(mobile)
-        : queryKeys.communityEvents(tab, city ?? ''),
+    queryKey: queryKeys.communityEvents('upcoming', city ?? '', DASHBOARD_EVENTS_PAGE_SIZE),
     queryFn: async () => {
-      if (tab === 'registered') {
-        if (!mobile) return [];
-        const result = await getRegisteredEvents(mobile);
-        return result.data;
-      }
-
-      const result = await getEventsList(city ?? '', listTypeForTab(tab));
-      if (!result.success) return [];
-      return result.data;
+      const result = await getEventsList({
+        city: city ?? '',
+        type: 'upcoming',
+        page: 1,
+        pageSize: DASHBOARD_EVENTS_PAGE_SIZE,
+      });
+      return result.success ? result.data : [];
     },
-    enabled: tab !== 'registered' || Boolean(mobile),
   });
 }
 
-export function useUpcomingEvents(city?: string) {
-  return useQuery({
-    queryKey: queryKeys.communityEvents('upcoming', city ?? ''),
-    queryFn: () => getEventsList(city ?? '', 'upcoming'),
-    select: (result) => result.data ?? [],
+export function useCommunityEventsInfinite(tab: CommunityEventsTab, city?: string) {
+  const mobile = useAuthStore((state) => state.mobile) ?? '';
+  const cityKey = city ?? '';
+
+  return useInfiniteQuery({
+    queryKey:
+      tab === 'registered'
+        ? [...queryKeys.communityRegisteredEvents(mobile), 'infinite', EVENTS_PAGE_SIZE]
+        : queryKeys.communityEventsInfinite(tab, cityKey, EVENTS_PAGE_SIZE),
+    initialPageParam: 1,
+    enabled: tab !== 'registered' || Boolean(mobile),
+    queryFn: async ({ pageParam }) => {
+      if (tab === 'registered') {
+        if (!mobile) return { success: true, data: [] };
+        return getRegisteredEvents(mobile, {
+          page: pageParam,
+          pageSize: EVENTS_PAGE_SIZE,
+        });
+      }
+
+      return getEventsList({
+        city: cityKey,
+        type: listTypeForTab(tab),
+        page: pageParam,
+        pageSize: EVENTS_PAGE_SIZE,
+      });
+    },
+    getNextPageParam: (lastPage, _pages, lastPageParam) =>
+      resolveNextEventsPage(
+        lastPage.pageInfo,
+        lastPageParam,
+        lastPage.data?.length ?? 0,
+        lastPage.pageInfo?.pageSize ?? EVENTS_PAGE_SIZE,
+      ),
   });
+}
+
+/** @deprecated Prefer useCommunityEventsInfinite for list screens. */
+export function useCommunityEvents(tab: CommunityEventsTab, city?: string) {
+  const query = useCommunityEventsInfinite(tab, city);
+  const events = query.data?.pages.flatMap((page) => page.data ?? []) ?? [];
+  return { ...query, data: events };
 }
 
 export function useCancelEventRegistration() {

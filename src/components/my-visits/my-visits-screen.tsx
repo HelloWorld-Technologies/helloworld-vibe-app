@@ -1,8 +1,10 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Linking,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -23,12 +25,15 @@ import palette from '@/constants/palette';
 import { TAB_SCREEN_EXTRA_PADDING } from '@/constants/tab-bar';
 import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { useVisits } from '@/queries/use-visits';
+import { useIsTenant } from '@/stores/tenant-store';
 import type { PropertyVisit, VisitTab } from '@/types/visit';
 import {
   getVisitDirectionsUrl,
+  getVisitId,
   getVisitPropertyId,
   getVisitPropertyName,
 } from '@/utils/visit-format';
+import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
 const VISIT_TABS: VisitTab[] = ['upcoming', 'past'];
 
@@ -52,6 +57,136 @@ function VisitsEmptyState({ tab, onExplore }: { tab: VisitTab; onExplore: () => 
   );
 }
 
+function VisitsTabList({
+  tabId,
+  bottomPadding,
+  onReschedule,
+  onRateVisit,
+  onBookNow,
+  onViewProperty,
+}: {
+  tabId: VisitTab;
+  bottomPadding: number;
+  onReschedule: (visit: PropertyVisit) => void;
+  onRateVisit: (visit: PropertyVisit) => void;
+  onBookNow: (visit: PropertyVisit) => void;
+  onViewProperty: (visit: PropertyVisit) => void;
+}) {
+  const router = useRouter();
+  const isTenant = useIsTenant();
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useVisits(tabId);
+
+  const visits = useMemo(
+    () => (data?.pages ?? []).flatMap((page) => page.data ?? []),
+    [data],
+  );
+
+  const refreshing = isRefetching && !isFetchingNextPage;
+  const refreshControl = (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={() => void refetch()}
+      tintColor={palette.lime[700]}
+      colors={[palette.lime[700]]}
+    />
+  );
+
+  function renderFooter() {
+    if (!hasNextPage && !isFetchingNextPage) return null;
+
+    return (
+      <View style={styles.footer}>
+        {isFetchingNextPage ? (
+          <ActivityIndicator color={palette.lime[700]} />
+        ) : (
+          <Pressable onPress={() => void fetchNextPage()} style={styles.loadMore}>
+            <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
+              Load more
+            </Typography>
+          </Pressable>
+        )}
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return <ActivityIndicator color={palette.lime[700]} style={styles.loader} />;
+  }
+
+  if (isError) {
+    return (
+      <ScrollView
+        contentContainerStyle={[styles.centeredScroll, { paddingBottom: bottomPadding }]}
+        refreshControl={refreshControl}
+        showsVerticalScrollIndicator={false}>
+        <Typography variant="text" size="sm" color={palette.textSecondary} style={styles.errorText}>
+          Unable to load visits right now.
+        </Typography>
+        <Pressable onPress={() => void refetch()} style={styles.retry}>
+          <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
+            Try again
+          </Typography>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+
+  if (visits.length === 0) {
+    return (
+      <ScrollView
+        contentContainerStyle={[styles.centeredScroll, { paddingBottom: bottomPadding }]}
+        refreshControl={refreshControl}
+        showsVerticalScrollIndicator={false}>
+        <VisitsEmptyState tab={tabId} onExplore={() => router.push(getExploreHomeRoute(isTenant))} />
+      </ScrollView>
+    );
+  }
+
+  return (
+    <FlatList
+      data={visits}
+      keyExtractor={(item) => getVisitId(item)}
+      renderItem={({ item: visit }) => (
+        <VisitCard
+          visit={visit}
+          onReschedule={() => onReschedule(visit)}
+          onRateVisit={() => onRateVisit(visit)}
+          onBookNow={() => onBookNow(visit)}
+          onViewProperty={() => onViewProperty(visit)}
+          onGetDirections={() => {
+            const url = getVisitDirectionsUrl(visit);
+            if (url) void Linking.openURL(url);
+          }}
+        />
+      )}
+      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ListHeaderComponent={
+        <Typography variant="text" size="xl" weight="bold" style={styles.listTitle}>
+          {tabId === 'upcoming' ? 'Your upcoming visits' : 'Your past visits'}
+        </Typography>
+      }
+      ListFooterComponent={renderFooter}
+      contentContainerStyle={[styles.scroll, { paddingBottom: bottomPadding }]}
+      showsVerticalScrollIndicator={false}
+      nestedScrollEnabled
+      onEndReached={() => {
+        if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+      }}
+      onEndReachedThreshold={0.35}
+      refreshControl={refreshControl}
+    />
+  );
+}
+
 type MyVisitsScreenProps = {
   variant?: 'tab' | 'stack';
 };
@@ -60,12 +195,11 @@ export function MyVisitsScreen({ variant = 'tab' }: MyVisitsScreenProps) {
   const router = useRouter();
   const tabBarInset = useTabBarInset();
   const insets = useSafeAreaInsets();
-  const { data, isLoading, refetch, isRefetching } = useVisits();
   const [tab, setTab] = useState<VisitTab>('upcoming');
   const [rescheduleVisit, setRescheduleVisit] = useState<PropertyVisit | null>(null);
   const [ratingVisit, setRatingVisit] = useState<PropertyVisit | null>(null);
 
-  function openProperty(visit: PropertyVisit) {
+  function openProperty(visit: PropertyVisit, openBook = false) {
     const propertyId = getVisitPropertyId(visit);
     if (!propertyId) return;
 
@@ -74,6 +208,7 @@ export function MyVisitsScreen({ variant = 'tab' }: MyVisitsScreenProps) {
       params: {
         id: String(propertyId),
         name: getVisitPropertyName(visit),
+        ...(openBook ? { openBook: '1' } : {}),
       },
     });
   }
@@ -82,44 +217,6 @@ export function MyVisitsScreen({ variant = 'tab' }: MyVisitsScreenProps) {
     variant === 'tab'
       ? tabBarInset + TAB_SCREEN_EXTRA_PADDING
       : Math.max(insets.bottom, 16);
-
-  function renderTabContent(tabId: VisitTab) {
-    const list = tabId === 'upcoming' ? data?.upcoming ?? [] : data?.past ?? [];
-
-    return (
-      <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: bottomPadding }]}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
-        showsVerticalScrollIndicator={false}>
-        <Typography variant="text" size="xl" weight="bold">
-          {tabId === 'upcoming' ? 'Your upcoming visits' : 'Your past visits'}
-        </Typography>
-
-        {isLoading ? (
-          <ActivityIndicator color={palette.lime[700]} style={styles.loader} />
-        ) : list.length > 0 ? (
-          <View style={styles.list}>
-            {list.map((visit) => (
-              <VisitCard
-                key={String(visit.id)}
-                visit={visit}
-                onReschedule={() => setRescheduleVisit(visit)}
-                onRateVisit={() => setRatingVisit(visit)}
-                onBookNow={() => openProperty(visit)}
-                onViewProperty={() => openProperty(visit)}
-                onGetDirections={() => {
-                  const url = getVisitDirectionsUrl(visit);
-                  if (url) void Linking.openURL(url);
-                }}
-              />
-            ))}
-          </View>
-        ) : (
-          <VisitsEmptyState tab={tabId} onExplore={() => router.push('/')} />
-        )}
-      </ScrollView>
-    );
-  }
 
   const content = (
     <>
@@ -135,21 +232,28 @@ export function MyVisitsScreen({ variant = 'tab' }: MyVisitsScreenProps) {
       </View>
 
       <SwipeableTabPager tabs={VISIT_TABS} value={tab} onChange={setTab}>
-        {renderTabContent}
+        {(tabId) => (
+          <VisitsTabList
+            tabId={tabId}
+            bottomPadding={bottomPadding}
+            onReschedule={setRescheduleVisit}
+            onRateVisit={setRatingVisit}
+            onBookNow={(visit) => openProperty(visit, true)}
+            onViewProperty={(visit) => openProperty(visit)}
+          />
+        )}
       </SwipeableTabPager>
 
       <RescheduleVisitSheet
         visible={rescheduleVisit != null}
         visit={rescheduleVisit}
         onClose={() => setRescheduleVisit(null)}
-        onRescheduled={() => void refetch()}
       />
 
       <RateVisitSheet
         visible={ratingVisit != null}
         visit={ratingVisit}
         onClose={() => setRatingVisit(null)}
-        onSubmitted={() => void refetch()}
       />
     </>
   );
@@ -188,11 +292,35 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: 24,
     paddingTop: 4,
-    gap: 16,
     flexGrow: 1,
   },
-  list: {
-    gap: 16,
+  listTitle: {
+    marginBottom: 16,
+  },
+  separator: {
+    height: 16,
+  },
+  footer: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  loadMore: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  centeredScroll: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  errorText: {
+    textAlign: 'center',
+  },
+  retry: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   loader: {
     marginTop: 32,

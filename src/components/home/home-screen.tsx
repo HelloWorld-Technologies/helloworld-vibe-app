@@ -41,14 +41,12 @@ import type { PropertyListing } from '@/types/property';
 function SectionTitle({
   prefix,
   highlight,
-  centered = false,
 }: {
   prefix: string;
   highlight: string;
-  centered?: boolean;
 }) {
   return (
-    <View style={[styles.sectionTitleRow, centered && styles.sectionTitleCentered]}>
+    <View style={styles.sectionTitleRow}>
       <Typography variant="text" size="xl" weight="medium">
         {prefix}
       </Typography>
@@ -245,7 +243,7 @@ export function HomeScreen() {
 
           {(isLoadingFeed || feedMoments.length > 0) ? (
             <>
-              <SectionTitle prefix="Straight from the " highlight="Feed!" centered />
+              <SectionTitle prefix="Straight from the " highlight="Feed!" />
               {isLoadingFeed ? (
                 <View style={styles.feedLoader}>
                   <ActivityIndicator color={palette.helloLime} />
@@ -462,10 +460,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'baseline',
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  sectionTitleCentered: {
     justifyContent: 'center',
     marginBottom: 16,
     marginTop: 8,
