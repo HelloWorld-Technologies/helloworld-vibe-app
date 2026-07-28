@@ -377,7 +377,10 @@ export function HdpVisitSheet({
 
   function handleViewTours() {
     handleClose();
-    router.push('/my-visits');
+    // Navigate after the bottom-sheet Modal finishes dismissing, otherwise the push is dropped.
+    setTimeout(() => {
+      router.push('/my-visits');
+    }, 320);
   }
 
   function handleContinueToDetails() {

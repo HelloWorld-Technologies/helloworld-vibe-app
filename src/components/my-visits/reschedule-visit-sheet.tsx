@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { cancelVisit, rescheduleVisit } from '@/api/visit';
 import { VisitDateTimePicker } from '@/components/my-visits/visit-date-time-picker';
@@ -11,14 +11,13 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { queryKeys } from '@/queries/keys';
 import { usePropertyVisitSlots } from '@/queries/use-property-visit-slots';
+import { useVisitPropertyId } from '@/queries/use-visit-property-id';
 import type { PropertyVisit } from '@/types/visit';
 import {
-  buildVisitDateOptions,
-  DEFAULT_VISIT_TIME_SLOTS,
   type VisitDateOption,
   type VisitTimeSlot,
 } from '@/utils/visit-dates';
-import { getCrmVisitId, getVisitPropertyId } from '@/utils/visit-format';
+import { getCrmVisitId } from '@/utils/visit-format';
 import {
   findSlotDay,
   formatVisitApiDate,
@@ -40,58 +39,81 @@ export function RescheduleVisitSheet({
   onRescheduled,
 }: RescheduleVisitSheetProps) {
   const queryClient = useQueryClient();
-  const propertyId = visit ? getVisitPropertyId(visit) : null;
   const crmVisitId = visit ? getCrmVisitId(visit) : null;
-  const fallbackDates = useMemo(() => buildVisitDateOptions(), []);
-  const { data: slotDays = [] } = usePropertyVisitSlots(
-    propertyId ? String(propertyId) : '',
-    visible && propertyId != null,
-  );
 
-  const hasApiSlots = slotDays.length > 0;
-  const visitDates = useMemo(
-    () => (hasApiSlots ? mapSlotDaysToDateOptions(slotDays) : fallbackDates),
-    [fallbackDates, hasApiSlots, slotDays],
-  );
+  const {
+    propertyId,
+    isLoading: propertyIdLoading,
+    isError: propertyIdError,
+    refetch: refetchPropertyId,
+  } = useVisitPropertyId(visit, visible);
 
-  const [selectedDate, setSelectedDate] = useState<VisitDateOption>(fallbackDates[0]);
-  const [selectedTime, setSelectedTime] = useState<VisitTimeSlot>(DEFAULT_VISIT_TIME_SLOTS[0]);
+  const {
+    data: slotDays = [],
+    isLoading: slotsLoading,
+    isError: slotsError,
+    refetch: refetchSlots,
+  } = usePropertyVisitSlots(propertyId ? String(propertyId) : '', visible && propertyId != null);
+
+  const visitDates = useMemo(() => mapSlotDaysToDateOptions(slotDays), [slotDays]);
+
+  const [selectedDate, setSelectedDate] = useState<VisitDateOption | null>(null);
+  const [selectedTime, setSelectedTime] = useState<VisitTimeSlot | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
   const selectedSlotDay = useMemo(
-    () => findSlotDay(slotDays, selectedDate),
+    () => (selectedDate ? findSlotDay(slotDays, selectedDate) : undefined),
     [selectedDate, slotDays],
   );
 
   const visitTimeSlots = useMemo(() => {
-    if (hasApiSlots) {
-      return mapTimeSlotsForDay(selectedSlotDay, selectedDate.date);
-    }
-    return DEFAULT_VISIT_TIME_SLOTS;
-  }, [hasApiSlots, selectedDate.date, selectedSlotDay]);
+    if (!selectedDate) return [];
+    return mapTimeSlotsForDay(selectedSlotDay, selectedDate.date);
+  }, [selectedDate, selectedSlotDay]);
 
   useEffect(() => {
     if (!visible) return;
-    setSelectedDate(visitDates[0] ?? fallbackDates[0]);
-    setSelectedTime(DEFAULT_VISIT_TIME_SLOTS[0]);
     setSubmitting(false);
     setCancelling(false);
-  }, [fallbackDates, visit, visible, visitDates]);
+    setSelectedDate(visitDates[0] ?? null);
+    setSelectedTime(null);
+  }, [visible, visit, visitDates]);
 
   useEffect(() => {
-    if (!visitDates.length) return;
-    if (!visitDates.some((date) => date.id === selectedDate.id)) {
+    if (!visitDates.length) {
+      setSelectedDate(null);
+      return;
+    }
+    if (!selectedDate || !visitDates.some((date) => date.id === selectedDate.id)) {
       setSelectedDate(visitDates[0]);
     }
-  }, [selectedDate.id, visitDates]);
+  }, [selectedDate, visitDates]);
 
   useEffect(() => {
-    if (!visitTimeSlots.length) return;
-    if (!visitTimeSlots.some((slot) => slot.id === selectedTime.id)) {
+    if (!visitTimeSlots.length) {
+      setSelectedTime(null);
+      return;
+    }
+    if (!selectedTime || !visitTimeSlots.some((slot) => slot.id === selectedTime.id)) {
       setSelectedTime(visitTimeSlots[0]);
     }
-  }, [selectedTime.id, visitTimeSlots]);
+  }, [selectedTime, visitTimeSlots]);
+
+  const canReschedule =
+    !propertyIdLoading &&
+    !slotsLoading &&
+    Boolean(selectedDate?.slotId) &&
+    Boolean(selectedTime?.value) &&
+    visitTimeSlots.length > 0;
+
+  function handleRetrySlots() {
+    if (propertyId == null) {
+      void refetchPropertyId();
+      return;
+    }
+    void refetchSlots();
+  }
 
   async function invalidateVisits() {
     await queryClient.invalidateQueries({ queryKey: queryKeys.visits() });
@@ -143,11 +165,22 @@ export function RescheduleVisitSheet({
   async function handleReschedule() {
     if (!crmVisitId || submitting || cancelling) return;
 
+    if (!selectedDate?.slotId) {
+      Alert.alert('Slots unavailable', 'Please choose a valid visit date.');
+      return;
+    }
+
+    if (!selectedTime?.value) {
+      Alert.alert('Select a time', 'Please choose an available visit time slot.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const response = await rescheduleVisit(crmVisitId, {
         date: formatVisitApiDate(selectedDate.date),
         time: selectedTime.value,
+        slotId: selectedDate.slotId,
       });
 
       if (!response.success) {
@@ -176,14 +209,42 @@ export function RescheduleVisitSheet({
           Pick your visit date & time
         </Typography>
 
-        <VisitDateTimePicker
-          dates={visitDates}
-          selectedDateId={selectedDate.id}
-          onSelectDate={setSelectedDate}
-          timeSlots={visitTimeSlots}
-          selectedTimeId={selectedTime.id}
-          onSelectTime={setSelectedTime}
-        />
+        {propertyIdLoading ? (
+          <View style={styles.slotsLoader}>
+            <ActivityIndicator color={palette.lime[700]} />
+          </View>
+        ) : propertyId == null || propertyIdError ? (
+          <View style={styles.emptyBlock}>
+            <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.emptyCopy}>
+              Visit slots are not available for this property right now.
+            </Typography>
+            <Button label="Retry" variant="outline" onPress={handleRetrySlots} />
+          </View>
+        ) : slotsLoading ? (
+          <View style={styles.slotsLoader}>
+            <ActivityIndicator color={palette.lime[700]} />
+          </View>
+        ) : slotsError || visitDates.length === 0 ? (
+          <View style={styles.emptyBlock}>
+            <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.emptyCopy}>
+              No visit slots are available right now. Please try again later.
+            </Typography>
+            <Button label="Retry" variant="outline" onPress={handleRetrySlots} />
+          </View>
+        ) : selectedDate && selectedTime ? (
+          <VisitDateTimePicker
+            dates={visitDates}
+            selectedDateId={selectedDate.id}
+            onSelectDate={setSelectedDate}
+            timeSlots={visitTimeSlots}
+            selectedTimeId={selectedTime.id}
+            onSelectTime={setSelectedTime}
+          />
+        ) : (
+          <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.emptyCopy}>
+            No time slots available for this date.
+          </Typography>
+        )}
 
         <View style={styles.actionsRow}>
           <Pressable
@@ -199,7 +260,7 @@ export function RescheduleVisitSheet({
             label="Reschedule Visit"
             onPress={handleReschedule}
             loading={submitting}
-            disabled={cancelling}
+            disabled={cancelling || !canReschedule}
             style={styles.sheetButton}
           />
         </View>
@@ -228,6 +289,18 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     color: '#0A0E14',
+  },
+  slotsLoader: {
+    minHeight: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyBlock: {
+    gap: 12,
+    alignItems: 'center',
+  },
+  emptyCopy: {
+    textAlign: 'center',
   },
   actionsRow: {
     flexDirection: 'row',

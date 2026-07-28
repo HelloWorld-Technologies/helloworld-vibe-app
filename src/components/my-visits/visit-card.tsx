@@ -12,7 +12,6 @@ import {
   getDaysUntilLabel,
   getVisitDateParts,
   getVisitDirectionsUrl,
-  getVisitEndTime,
   getVisitId,
   getVisitImages,
   getVisitLocality,
@@ -102,7 +101,7 @@ export function VisitCard({
   const currentImage = imageSources[imageIndex] ?? imageSources[0];
 
   const startTime = getVisitStartTime(visit);
-  const dateParts = getVisitDateParts(startTime, getVisitEndTime(visit));
+  const dateParts = getVisitDateParts(startTime);
   const daysUntil = getDaysUntilLabel(startTime);
   const managerName = getVisitManagerName(visit);
   const managerPhone = getVisitManagerPhone(visit);
@@ -137,10 +136,14 @@ export function VisitCard({
 
   return (
     <View style={styles.card}>
-      <View style={styles.hero}>
+      <Pressable
+        onPress={() => onViewProperty?.()}
+        style={styles.hero}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${getVisitPropertyName(visit)}`}>
         <Image source={currentImage} style={styles.heroImage} contentFit="cover" />
 
-        <View style={styles.heroTopRow}>
+        <View style={styles.heroTopRow} pointerEvents="none">
           {isUpcoming ? (
             <StatusBadge label="Upcoming" tone="upcoming" />
           ) : status === 'visited' ? (
@@ -154,24 +157,26 @@ export function VisitCard({
         {imageSources.length > 1 ? (
           <>
             <Pressable
-              onPress={() =>
-                setImageIndex((index) => (index === 0 ? imageSources.length - 1 : index - 1))
-              }
+              onPress={(event) => {
+                event.stopPropagation?.();
+                setImageIndex((index) => (index === 0 ? imageSources.length - 1 : index - 1));
+              }}
               style={[styles.carouselButton, styles.carouselButtonLeft]}
               accessibilityRole="button"
               accessibilityLabel="Previous photo">
               <SymbolView name="chevron.left" size={14} weight="semibold" tintColor={palette.white} />
             </Pressable>
             <Pressable
-              onPress={() =>
-                setImageIndex((index) => (index === imageSources.length - 1 ? 0 : index + 1))
-              }
+              onPress={(event) => {
+                event.stopPropagation?.();
+                setImageIndex((index) => (index === imageSources.length - 1 ? 0 : index + 1));
+              }}
               style={[styles.carouselButton, styles.carouselButtonRight]}
               accessibilityRole="button"
               accessibilityLabel="Next photo">
               <SymbolView name="chevron.right" size={14} weight="semibold" tintColor={palette.white} />
             </Pressable>
-            <View style={styles.dotsRow}>
+            <View style={styles.dotsRow} pointerEvents="none">
               {imageSources.map((_, index) => (
                 <View
                   key={`${getVisitId(visit)}-dot-${index}`}
@@ -181,7 +186,7 @@ export function VisitCard({
             </View>
           </>
         ) : null}
-      </View>
+      </Pressable>
 
       <View style={styles.body}>
         <View style={styles.copyBlock}>

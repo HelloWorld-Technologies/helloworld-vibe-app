@@ -8,6 +8,7 @@ export const queryKeys = {
   propertyList: (city: string, locality: string, filtersKey: string) =>
     ['property-list', city, locality, filtersKey] as const,
   propertyDetail: (id: string) => ['property-detail', id] as const,
+  propertyByName: (name: string) => ['property-by-name', name] as const,
   propertyCategories: (id: string) => ['property-categories', id] as const,
   propertyVisitSlots: (id: string) => ['property-visit-slots', id] as const,
   visits: (type?: string) => (type ? (['visits', type] as const) : (['visits'] as const)),

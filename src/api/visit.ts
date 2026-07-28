@@ -59,6 +59,7 @@ export type VisitsListResult = {
 export type RescheduleVisitPayload = {
   date: string;
   time: string;
+  slotId: string | number;
 };
 
 export type VisitMutationResponse = {

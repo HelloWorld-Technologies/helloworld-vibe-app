@@ -86,6 +86,25 @@ export async function getPropertyData(id: number | string): Promise<PropertyDeta
   }
 }
 
+/** Resolve a house id when CRM visit payloads only include Building_Name. */
+export async function lookupPropertyIdByName(name: string): Promise<number | null> {
+  const trimmed = name.trim();
+  if (!trimmed || trimmed === 'Property') return null;
+
+  try {
+    const { data } = await http.get<PropertyDetailResponse>('v2/hello/house', {
+      params: { active: true, name: trimmed },
+    });
+    if (!data.success || !data.data || typeof data.data !== 'object') return null;
+    const raw = (data.data as { id?: unknown }).id;
+    if (raw == null || raw === '') return null;
+    const numeric = Number(raw);
+    return Number.isFinite(numeric) ? numeric : null;
+  } catch {
+    return null;
+  }
+}
+
 export type PropertyCategoriesResponse = {
   success: boolean;
   data?: Record<string, unknown>[];

@@ -7,7 +7,7 @@ import {
 } from '@/types/ticket';
 
 export const SUPPORT_TICKETS_PAGE_SIZE = 10;
-export const DASHBOARD_TICKETS_PAGE_SIZE = 5;
+export const DASHBOARD_TICKETS_PAGE_SIZE = 3;
 
 export function useSupportTickets(options?: {
   status?: string | string[];
@@ -31,7 +31,10 @@ export function useSupportTickets(options?: {
 }
 
 export function useDashboardSupportTickets() {
-  return useSupportTickets({ pageSize: DASHBOARD_TICKETS_PAGE_SIZE });
+  return useSupportTickets({
+    pageSize: DASHBOARD_TICKETS_PAGE_SIZE,
+    status: [...ACTIVE_TICKET_STATUSES],
+  });
 }
 
 export function useSupportTicketsInfinite(tab: 'active' | 'resolved') {

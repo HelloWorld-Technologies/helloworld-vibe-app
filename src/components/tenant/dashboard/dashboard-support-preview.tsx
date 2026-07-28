@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
+import { DASHBOARD_TICKETS_PAGE_SIZE } from '@/queries/use-support-tickets';
 import type { SupportTicket } from '@/types/ticket';
 import { formatDisplayDate, isActiveTicket } from '@/utils/tenant-format';
 
@@ -62,9 +63,9 @@ function TicketPreviewRow({ ticket }: { ticket: SupportTicket }) {
 
 export function DashboardSupportPreview({ tickets, onRaiseRequest }: DashboardSupportPreviewProps) {
   const router = useRouter();
-  const activeTicket = tickets.find((ticket) => isActiveTicket(ticket.status));
-  const resolvedTicket = tickets.find((ticket) => !isActiveTicket(ticket.status));
-  const previewTickets = [activeTicket, resolvedTicket].filter(Boolean) as SupportTicket[];
+  const previewTickets = tickets
+    .filter((ticket) => isActiveTicket(ticket.status))
+    .slice(0, DASHBOARD_TICKETS_PAGE_SIZE);
 
   return (
     <View style={styles.section}>
@@ -83,7 +84,7 @@ export function DashboardSupportPreview({ tickets, onRaiseRequest }: DashboardSu
             </View>
           ))
         ) : (
-          <EmptyState compact title="No tickets yet" />
+          <EmptyState compact title="No open tickets" />
         )}
 
         <Pressable style={styles.raiseButton} onPress={onRaiseRequest} accessibilityRole="button">

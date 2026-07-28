@@ -14,7 +14,13 @@ export function getCrmVisitId(visit: PropertyVisit) {
 }
 
 export function getVisitPropertyId(visit: PropertyVisit) {
-  const raw = visit.Property_Id ?? visit.property_id;
+  const raw =
+    visit.Property_Id ??
+    visit.property_id ??
+    visit.propertyId ??
+    visit.house_id ??
+    visit.House_Id ??
+    visit.houseId;
   if (raw == null || raw === '') return null;
   const numeric = Number(raw);
   return Number.isFinite(numeric) ? numeric : null;
@@ -102,7 +108,7 @@ export function getDaysUntilLabel(startTime?: string) {
   return `In ${diffDays} Days`;
 }
 
-export function getVisitDateParts(startTime?: string, endTime?: string) {
+export function getVisitDateParts(startTime?: string) {
   if (!startTime) {
     return {
       day: '--',
@@ -123,9 +129,7 @@ export function getVisitDateParts(startTime?: string, endTime?: string) {
       .replace(' ', ' ')
       .toUpperCase();
 
-  const timeRange = endTime
-    ? `${formatTime(start)} – ${formatTime(new Date(endTime))}`
-    : formatTime(start);
+  const timeRange = formatTime(start);
 
   return { day, month, weekday, timeRange };
 }

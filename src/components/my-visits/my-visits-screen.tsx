@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { lookupPropertyIdByName } from '@/api/property';
 import { RateVisitSheet } from '@/components/my-visits/rate-visit-sheet';
 import { RescheduleVisitSheet } from '@/components/my-visits/reschedule-visit-sheet';
 import { VisitCard } from '@/components/my-visits/visit-card';
@@ -199,9 +200,12 @@ export function MyVisitsScreen({ variant = 'tab' }: MyVisitsScreenProps) {
   const [rescheduleVisit, setRescheduleVisit] = useState<PropertyVisit | null>(null);
   const [ratingVisit, setRatingVisit] = useState<PropertyVisit | null>(null);
 
-  function openProperty(visit: PropertyVisit, openBook = false) {
-    const propertyId = getVisitPropertyId(visit);
-    if (!propertyId) return;
+  async function openProperty(visit: PropertyVisit, openBook = false) {
+    let propertyId = getVisitPropertyId(visit);
+    if (propertyId == null) {
+      propertyId = await lookupPropertyIdByName(getVisitPropertyName(visit));
+    }
+    if (propertyId == null) return;
 
     router.push({
       pathname: '/hdp',
