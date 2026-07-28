@@ -1,7 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,7 +11,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 
+import { RedeemCreditsSheet } from '@/components/tenant/redeem-credits-sheet';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
@@ -183,11 +185,13 @@ function SummaryRow({
 export function InvoiceViewerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const { payInvoice } = useInvoicePayment();
   const params = useLocalSearchParams<{
     invoiceId?: string;
     title?: string;
   }>();
+  const [redeemVisible, setRedeemVisible] = useState(false);
 
   const invoiceId = firstParam(params.invoiceId)?.trim() ?? '';
   const fallbackTitle = firstParam(params.title)?.trim() || 'Invoice';
@@ -199,6 +203,7 @@ export function InvoiceViewerScreen() {
   const isPaid = (data?.status ?? '').toLowerCase() === 'paid';
   const balance = data?.balance ?? 0;
   const canPay = !isPaid && balance > 0;
+  const canRedeem = canPay;
   const summaryTaxes = data ? getSummaryTaxes(data) : [];
   const showSubtotal =
     data != null &&
@@ -238,6 +243,14 @@ export function InvoiceViewerScreen() {
       showTitle: true,
       enableBarCollapsing: false,
     });
+  }
+
+  async function handleRedeemed() {
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ['tenant-invoices'] }),
+      queryClient.invalidateQueries({ queryKey: ['referral-details'] }),
+    ]);
   }
 
   return (
@@ -430,6 +443,13 @@ export function InvoiceViewerScreen() {
 
           <View style={styles.actions}>
             {canPay ? <Button label="Pay Now" onPress={handlePay} /> : null}
+            {canRedeem ? (
+              <Button
+                label="Redeem Points"
+                variant="outline"
+                onPress={() => setRedeemVisible(true)}
+              />
+            ) : null}
             {data.invoice_url ? (
               <Pressable
                 onPress={() => void handleDownload()}
@@ -445,6 +465,15 @@ export function InvoiceViewerScreen() {
           </View>
         </ScrollView>
       )}
+
+      {canRedeem && invoiceId ? (
+        <RedeemCreditsSheet
+          visible={redeemVisible}
+          invoiceId={invoiceId}
+          onClose={() => setRedeemVisible(false)}
+          onRedeemed={() => void handleRedeemed()}
+        />
+      ) : null}
     </View>
   );
 }

@@ -4,6 +4,7 @@ import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { HowItWorksSection } from '@/components/referral/how-it-works-section';
 import { PointsHistorySection } from '@/components/referral/points-history-section';
 import { ReferralHeroCard } from '@/components/referral/referral-hero-card';
+import { ReferralTermsSection } from '@/components/referral/referral-terms-section';
 import { getReferralHowItWorksSteps } from '@/constants/referral';
 import palette from '@/constants/palette';
 import { useReferralDetails, useReferralTerms } from '@/queries/use-referral';
@@ -21,6 +22,7 @@ export function ReferAndEarnScreen() {
   const friendsJoined = referral?.friendsJoined ?? creditInfo?.friendsJoined ?? 0;
   const friendDiscount = terms?.amount ?? 1000;
   const steps = getReferralHowItWorksSteps(friendDiscount, 2000);
+  const termItems = terms?.terms ?? [];
 
   return (
     <ProfileStackScreen title="Refer & Earn" centerTitle style={styles.screenBody}>
@@ -41,6 +43,8 @@ export function ReferAndEarnScreen() {
           />
 
           <HowItWorksSection steps={steps} />
+
+          <ReferralTermsSection terms={termItems} />
 
           <PointsHistorySection logs={referral?.logs ?? []} />
         </ScrollView>

@@ -125,3 +125,97 @@ export async function getInvoiceLineItems(
     return { success: false, message };
   }
 }
+
+export type InvoiceCreditsInfo = {
+  referral?: number;
+  rewards?: number;
+};
+
+export type InvoiceCreditsResponse = {
+  success: boolean;
+  data?: InvoiceCreditsInfo;
+  message?: string;
+  error?: string;
+  info?: string;
+};
+
+export type AvailCreditsPayload = {
+  invoiceId: string;
+  bookingId: string;
+  type: 'referral' | 'rewards';
+  amount: number;
+};
+
+export type AvailCreditsResponse = {
+  success: boolean;
+  message?: string;
+  error?: string;
+  info?: string;
+  data?: {
+    balance?: number;
+    invoice?: InvoiceDetails;
+  };
+};
+
+export async function getCreditsDetails(
+  invoiceId: string,
+  bookingId: string,
+): Promise<InvoiceCreditsResponse> {
+  try {
+    const { data } = await http.post<Record<string, unknown>>('credits/validate', {
+      invoiceId,
+      bookingId,
+    });
+
+    if (data && data.success === false) {
+      return {
+        success: false,
+        message:
+          (typeof data.message === 'string' && data.message) ||
+          (typeof data.error === 'string' && data.error) ||
+          'Failed to fetch credit details',
+      };
+    }
+
+    const nested =
+      data?.data && typeof data.data === 'object'
+        ? (data.data as Record<string, unknown>)
+        : data;
+
+    const credits: InvoiceCreditsInfo = {
+      referral: typeof nested?.referral === 'number' ? nested.referral : undefined,
+      rewards: typeof nested?.rewards === 'number' ? nested.rewards : undefined,
+    };
+
+    return { success: true, data: credits };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch credit details';
+    return { success: false, message };
+  }
+}
+
+export async function postAvailCredits(
+  payload: AvailCreditsPayload,
+): Promise<AvailCreditsResponse> {
+  try {
+    const { data } = await http.post<AvailCreditsResponse>('credits/claim', payload);
+
+    if (data && data.success === false) {
+      return {
+        success: false,
+        message: data.message || data.error || data.info || 'Failed to redeem credits',
+        error: data.error,
+        info: data.info,
+      };
+    }
+
+    return {
+      success: true,
+      message: data?.message,
+      data: data?.data,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to redeem credits';
+    return { success: false, message };
+  }
+}

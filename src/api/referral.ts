@@ -40,12 +40,26 @@ export async function getReferralDetails(withLogs = true): Promise<ReferralDetai
 
 export async function getReferralTerms(): Promise<ReferralTerms> {
   try {
-    const { data } = await http.get('hello/const', {
-      params: { ctype: 'referral' },
-    });
-    const body = (data as { data?: ReferralTerms })?.data ?? data;
-    return body as ReferralTerms;
+    const { data } = await http.get<{ success?: boolean; data?: ReferralTerms } | ReferralTerms>(
+      'hello/const',
+      {
+        params: { ctype: 'referral' },
+      },
+    );
+    const body =
+      data && typeof data === 'object' && 'data' in data && data.data
+        ? data.data
+        : (data as ReferralTerms);
+
+    const terms = Array.isArray(body?.terms)
+      ? body.terms.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      : [];
+
+    return {
+      amount: typeof body?.amount === 'number' ? body.amount : undefined,
+      terms,
+    };
   } catch {
-    return {};
+    return { terms: [] };
   }
 }
