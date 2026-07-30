@@ -16,24 +16,58 @@ import {
 type PaymentCardProps = {
   invoice: TenantInvoice;
   variant: 'pending' | 'paid';
+  selected?: boolean;
+  selectionMode?: boolean;
   onPay?: () => void;
   onInvoice?: () => void;
   onPress?: () => void;
+  onLongPress?: () => void;
+  onToggleSelect?: () => void;
 };
 
-export function PaymentCard({ invoice, variant, onPay, onInvoice, onPress }: PaymentCardProps) {
+export function PaymentCard({
+  invoice,
+  variant,
+  selected = false,
+  selectionMode = false,
+  onPay,
+  onInvoice,
+  onPress,
+  onLongPress,
+  onToggleSelect,
+}: PaymentCardProps) {
   const dueMeta = variant === 'pending' ? getInvoiceDueLabel(invoice) : null;
-  const amount = variant === 'pending' ? invoice.balance ?? invoice.total ?? 0 : invoice.total ?? invoice.balance ?? 0;
+  const amount =
+    variant === 'pending' ? invoice.balance ?? invoice.total ?? 0 : invoice.total ?? invoice.balance ?? 0;
   const accent = variant === 'pending' ? palette.red[800] : palette.lime[700];
-  const handleCardPress = onPress ?? onInvoice;
+  const isPending = variant === 'pending';
+
+  function handleCardPress() {
+    if (isPending && selectionMode) {
+      onToggleSelect?.();
+      return;
+    }
+    (onPress ?? onInvoice)?.();
+  }
 
   return (
     <Pressable
       onPress={handleCardPress}
-      style={styles.card}
+      onLongPress={isPending ? onLongPress : undefined}
+      delayLongPress={280}
+      style={[styles.card, selected && styles.cardSelected]}
       accessibilityRole="button"
+      accessibilityState={isPending ? { selected } : undefined}
       accessibilityLabel={`View invoice ${invoice.invoice_number ?? invoice.invoice_id}`}>
       <View style={styles.topRow}>
+        {selectionMode && isPending ? (
+          <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+            {selected ? (
+              <SymbolView name="checkmark" size={12} weight="bold" tintColor={palette.white} />
+            ) : null}
+          </View>
+        ) : null}
+
         <Typography variant="text" size="sm" weight="medium" style={styles.title} numberOfLines={1}>
           {getInvoiceTitle(invoice)}
         </Typography>
@@ -73,18 +107,24 @@ export function PaymentCard({ invoice, variant, onPay, onInvoice, onPress }: Pay
         </Typography>
 
         {variant === 'pending' ? (
-          <Pressable
-            onPress={(event) => {
-              event.stopPropagation?.();
-              onPay?.();
-            }}
-            style={styles.actionRow}
-            accessibilityRole="button">
-            <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
-              Pay Now
+          selectionMode ? (
+            <Typography variant="text" size="sm" weight="medium" color={palette.gray[500]}>
+              {selected ? 'Selected' : 'Tap to select'}
             </Typography>
-            <SymbolView name="chevron.right" size={10} tintColor={palette.lime[700]} />
-          </Pressable>
+          ) : (
+            <Pressable
+              onPress={(event) => {
+                event.stopPropagation?.();
+                onPay?.();
+              }}
+              style={styles.actionRow}
+              accessibilityRole="button">
+              <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
+                Pay Now
+              </Typography>
+              <SymbolView name="chevron.right" size={10} tintColor={palette.lime[700]} />
+            </Pressable>
+          )
         ) : (
           <Pressable
             onPress={(event) => {
@@ -112,17 +152,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     gap: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
     shadowColor: '#8690A3',
     shadowOffset: { width: 0, height: 1.3 },
     shadowOpacity: 0.2,
     shadowRadius: 20,
     elevation: 3,
   },
+  cardSelected: {
+    backgroundColor: palette.lime[50],
+    borderColor: palette.lime[300],
+  },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 8,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: palette.gray[300],
+    backgroundColor: palette.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  checkboxSelected: {
+    borderColor: palette.lime[600],
+    backgroundColor: palette.lime[600],
   },
   title: {
     flex: 1,

@@ -1,9 +1,11 @@
+import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import { StyleSheet, View } from 'react-native';
 
 type MoveOutPlanningSheetProps = {
   visible: boolean;
@@ -20,9 +22,11 @@ export function MoveOutPlanningSheet({
   onProceed,
   onHelpMeStay,
 }: MoveOutPlanningSheetProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <Typography variant="text" size="md" weight="medium" style={styles.title}>
           Planning to move?
         </Typography>
@@ -50,7 +54,7 @@ export function MoveOutPlanningSheet({
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingTop: 12,
     gap: 16,
   },
   title: {

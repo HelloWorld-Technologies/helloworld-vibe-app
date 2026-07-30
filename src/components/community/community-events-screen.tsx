@@ -145,6 +145,8 @@ function CommunityEventsTabPage({
       renderItem={({ item }) => (
         <CommunityEventCard
           event={item}
+          style={styles.gridCard}
+          imageHeight={140}
           onPress={() => onEventPress(item.id)}
           onCancel={tab === 'registered' ? () => handleCancel(item) : undefined}
           cancelLoading={cancellingId === item.registrationId}
@@ -234,7 +236,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   gridRow: {
-    gap: 8,
+    gap: 12,
+    marginBottom: 16,
+  },
+  gridCard: {
+    flex: 1,
   },
   loader: {
     marginVertical: 48,

@@ -1,71 +1,28 @@
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 
+import { CommunityEventCard } from '@/components/community/community-event-card';
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
 import { HwCarousel } from '@/components/ui/carousel';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Typography } from '@/components/ui/typography';
-import palette from '@/constants/palette';
-import { Radius } from '@/constants/theme';
 import type { CommunityEvent } from '@/api/community';
-import { formatDisplayDate } from '@/utils/tenant-format';
+import palette from '@/constants/palette';
 
-const EVENT_FALLBACK_IMAGE =
-  'https://hello-assets-items.s3.ap-south-1.amazonaws.com/images/coming-soon.jpg';
 const EVENT_CARD_GAP = 12;
+const EVENT_IMAGE_HEIGHT = 168;
+const EVENT_COPY_HEIGHT = 92;
 
 type DashboardEventsSectionProps = {
   events: CommunityEvent[];
   isLoading?: boolean;
 };
 
-function EventCard({ event, width }: { event: CommunityEvent; width: number }) {
-  const router = useRouter();
-  const attendees =
-    event.total_registration ?? event.people_attending ?? event.attendees_count ?? 0;
-  const dateValue = event.event_start_date ?? event.start_date;
-
-  return (
-    <Pressable
-      style={[styles.card, { width }]}
-      onPress={() =>
-        router.push({
-          pathname: '/community-event',
-          params: { id: String(event.id) },
-        })
-      }
-      accessibilityRole="button">
-      <Image
-        source={{ uri: event.display_image || EVENT_FALLBACK_IMAGE }}
-        style={styles.image}
-        contentFit="cover"
-      />
-      <View style={styles.copy}>
-        <Typography variant="text" size="md" weight="medium" numberOfLines={2}>
-          {event.name}
-        </Typography>
-        {dateValue ? (
-          <Typography variant="text" size="sm" color={palette.gray[600]}>
-            {formatDisplayDate(dateValue)}
-          </Typography>
-        ) : null}
-        <View style={styles.attendeesRow}>
-          <Typography variant="label" size="xs" color={palette.gray[500]}>
-            {attendees} People attending
-          </Typography>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
 export function DashboardEventsSection({ events, isLoading }: DashboardEventsSectionProps) {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const cardWidth = width - 72;
+  const cardWidth = Math.min(width - 72, 300);
   const slideWidth = cardWidth + EVENT_CARD_GAP;
-  const carouselHeight = 280;
+  const carouselHeight = EVENT_IMAGE_HEIGHT + EVENT_COPY_HEIGHT;
 
   return (
     <View style={styles.section}>
@@ -84,7 +41,17 @@ export function DashboardEventsSection({ events, isLoading }: DashboardEventsSec
           width={slideWidth}
           height={carouselHeight}
           renderItem={({ item }) => (
-            <EventCard event={item} width={cardWidth} />
+            <CommunityEventCard
+              event={item}
+              style={{ width: cardWidth }}
+              imageHeight={EVENT_IMAGE_HEIGHT}
+              onPress={() =>
+                router.push({
+                  pathname: '/community-event',
+                  params: { id: String(item.id) },
+                })
+              }
+            />
           )}
         />
       ) : (
@@ -102,24 +69,6 @@ export function DashboardEventsSection({ events, isLoading }: DashboardEventsSec
 const styles = StyleSheet.create({
   section: {
     gap: 16,
-  },
-  card: {
-    backgroundColor: palette.white,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: palette.gray[200],
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: 160,
-  },
-  copy: {
-    padding: 16,
-    gap: 6,
-  },
-  attendeesRow: {
-    marginTop: 4,
   },
   loader: {
     marginVertical: 24,

@@ -16,5 +16,13 @@ export function useInvoicePayment() {
     });
   }
 
-  return { payInvoice };
+  function payInvoices(invoices: TenantInvoice[]) {
+    if (!profile || invoices.length === 0) return;
+    router.push({
+      pathname: '/complete-payment',
+      params: buildInvoicePaymentParams(invoices, profile),
+    });
+  }
+
+  return { payInvoice, payInvoices };
 }

@@ -4,12 +4,28 @@ import type { TenantProfile } from '@/types/tenant';
 export const INVOICE_PAYMENT_INIT_API = 'api/hello/v2/payments/init';
 export const INVOICE_PAYMENT_VERIFY_API = 'api/hello/v2/payments/verify_payment';
 
-export function buildInvoicePaymentPayload(invoice: TenantInvoice, profile: TenantProfile) {
+export function getInvoicePayableAmount(invoice: TenantInvoice) {
+  return invoice.balance ?? invoice.total ?? 0;
+}
+
+export function getSelectedInvoicesTotal(invoices: TenantInvoice[]) {
+  const total = invoices.reduce((sum, invoice) => sum + getInvoicePayableAmount(invoice), 0);
+  return Math.round(total * 100) / 100;
+}
+
+export function buildInvoicePaymentPayload(
+  invoices: TenantInvoice | TenantInvoice[],
+  profile: TenantProfile,
+) {
+  const list = Array.isArray(invoices) ? invoices : [invoices];
+  const amount = getSelectedInvoicesTotal(list);
+  const paymentForIds = list.map((invoice) => invoice.invoice_id).filter(Boolean);
+
   return {
-    customerId: invoice.customer_id,
+    customerId: list[0]?.customer_id,
     type: 'invoice',
-    amount: invoice.balance ?? invoice.total ?? 0,
-    paymentForIds: [invoice.invoice_id],
+    amount,
+    paymentForIds,
     paymentMode: 'Razorpay',
     paymentMethod: 'Upi',
     isTenantApp: true,
@@ -17,12 +33,17 @@ export function buildInvoicePaymentPayload(invoice: TenantInvoice, profile: Tena
   };
 }
 
-export function buildInvoicePaymentParams(invoice: TenantInvoice, profile: TenantProfile) {
-  const amount = invoice.balance ?? invoice.total ?? 0;
+export function buildInvoicePaymentParams(
+  invoices: TenantInvoice | TenantInvoice[],
+  profile: TenantProfile,
+) {
+  const list = Array.isArray(invoices) ? invoices : [invoices];
+  const amount = getSelectedInvoicesTotal(list);
+  const paymentForIds = list.map((invoice) => invoice.invoice_id).filter(Boolean);
 
   return {
     type: 'invoice',
-    paymentFor: invoice.invoice_id,
+    paymentFor: paymentForIds.join(','),
     amount: String(amount),
     description: 'Invoice payment from tenant app',
     email: profile.userInfo?.email ?? '',
@@ -31,6 +52,6 @@ export function buildInvoicePaymentParams(invoice: TenantInvoice, profile: Tenan
     propertyName: profile.propertyInfo?.name ?? '',
     initApi: INVOICE_PAYMENT_INIT_API,
     verifyApi: INVOICE_PAYMENT_VERIFY_API,
-    payload: JSON.stringify(buildInvoicePaymentPayload(invoice, profile)),
+    payload: JSON.stringify(buildInvoicePaymentPayload(list, profile)),
   };
 }

@@ -29,6 +29,7 @@ type BottomSheetProps = {
 
 const ANIMATION_MS = 280;
 const SHEET_TOP_RADIUS = 28;
+const BACKDROP_OPACITY = 0.55;
 
 export function BottomSheet({
   visible,
@@ -61,7 +62,7 @@ export function BottomSheet({
   }, [mounted, progress, visible]);
 
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: progress.value * 0.55,
+    opacity: progress.value * BACKDROP_OPACITY,
   }));
 
   const sheetStyle = useAnimatedStyle(() => ({
@@ -85,12 +86,17 @@ export function BottomSheet({
       statusBarTranslucent
       onRequestClose={requestClose}>
       <View style={styles.root}>
+        {/* Dim layer — must be a full-screen sibling, not only inside a flex press target. */}
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}
+        />
+
         <Pressable
-          style={styles.backdropPress}
+          style={StyleSheet.absoluteFill}
           onPress={requestClose}
-          accessibilityLabel="Close">
-          <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]} />
-        </Pressable>
+          accessibilityLabel="Close"
+        />
 
         {showCloseButton ? (
           <Pressable
@@ -102,8 +108,7 @@ export function BottomSheet({
           </Pressable>
         ) : null}
 
-        {/* Transform stays on the outer view; radius/clip on the inner so corners render reliably. */}
-        <Animated.View style={[styles.sheet, sheetStyle]}>
+        <Animated.View style={[styles.sheetTranslate, sheetStyle]}>
           <View style={styles.sheetSurface} collapsable={false}>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -121,10 +126,8 @@ export function BottomSheet({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    justifyContent: 'flex-end',
     backgroundColor: 'transparent',
-  },
-  backdropPress: {
-    flex: 1,
   },
   backdrop: {
     backgroundColor: palette.black,
@@ -140,9 +143,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sheet: {
-    maxHeight: '88%',
+  sheetTranslate: {
     width: '100%',
+    maxHeight: '88%',
+    backgroundColor: 'transparent',
+    zIndex: 1,
   },
   sheetSurface: {
     width: '100%',
@@ -150,15 +155,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: SHEET_TOP_RADIUS,
     borderTopRightRadius: SHEET_TOP_RADIUS,
     overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        borderCurve: 'continuous',
-      },
-      default: {},
-    }),
   },
   keyboardAvoid: {
     width: '100%',
     maxHeight: '100%',
+    backgroundColor: 'transparent',
   },
 });
