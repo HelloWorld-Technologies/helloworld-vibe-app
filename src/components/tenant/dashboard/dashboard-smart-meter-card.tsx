@@ -1,0 +1,156 @@
+import { SymbolView } from 'expo-symbols';
+import { useRouter } from 'expo-router';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+
+import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
+import { Typography } from '@/components/ui/typography';
+import palette from '@/constants/palette';
+import { Radius } from '@/constants/theme';
+import { getSmartMeterBalance } from '@/api/smart-meter';
+import { useSmartMeterRooms } from '@/queries/use-smart-meter';
+import { useTenantProfile } from '@/stores/tenant-store';
+import { priceFormatter } from '@/utils/tenant-format';
+
+type SmartMeterAction = {
+  id: 'recharge' | 'usage' | 'history';
+  label: string;
+  icon: 'bolt.fill' | 'chart.bar.fill' | 'clock.arrow.circlepath';
+  route: '/smart-meter-recharge' | '/smart-meter-usage' | '/smart-meter-history';
+};
+
+const ACTIONS: SmartMeterAction[] = [
+  {
+    id: 'recharge',
+    label: 'Recharge',
+    icon: 'bolt.fill',
+    route: '/smart-meter-recharge',
+  },
+  {
+    id: 'usage',
+    label: 'Usage',
+    icon: 'chart.bar.fill',
+    route: '/smart-meter-usage',
+  },
+  {
+    id: 'history',
+    label: 'History',
+    icon: 'clock.arrow.circlepath',
+    route: '/smart-meter-history',
+  },
+];
+
+export function DashboardSmartMeterCard() {
+  const router = useRouter();
+  const profile = useTenantProfile();
+  const bookingId = profile?.bookingId;
+  const { data: rooms = [], isLoading } = useSmartMeterRooms(bookingId);
+  const balance = rooms.length > 0 ? getSmartMeterBalance(rooms) : null;
+
+  return (
+    <View style={styles.section}>
+      <DashboardSectionHeader title="Smart Meter" subtitle="Electricity prepaid balance" />
+
+      <View style={styles.card}>
+        <View style={styles.balanceRow}>
+          <View style={styles.balanceCopy}>
+            <Typography variant="label" size="xs" color={palette.gray[500]}>
+              Balance
+            </Typography>
+            {isLoading ? (
+              <ActivityIndicator color={palette.lime[700]} style={styles.balanceLoader} />
+            ) : (
+              <Typography variant="display" size="xs" weight="bold" color={palette.gray[900]}>
+                {balance != null ? priceFormatter(balance) : '—'}
+              </Typography>
+            )}
+          </View>
+          <View style={styles.flashBadge}>
+            <SymbolView name="bolt.fill" size={20} tintColor={palette.lime[700]} />
+          </View>
+        </View>
+
+        <View style={styles.actionsRow}>
+          {ACTIONS.map((action) => (
+            <Pressable
+              key={action.id}
+              style={styles.actionTile}
+              onPress={() => router.push(action.route)}
+              accessibilityRole="button"
+              accessibilityLabel={action.label}>
+              <View style={styles.actionIcon}>
+                <SymbolView name={action.icon} size={18} tintColor={palette.blue[800]} />
+              </View>
+              <Typography variant="label" size="xs" weight="medium" color={palette.gray[800]}>
+                {action.label}
+              </Typography>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  section: {
+    gap: 12,
+  },
+  card: {
+    backgroundColor: palette.white,
+    borderRadius: Radius.md,
+    padding: 16,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: palette.gray[200],
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  balanceCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  balanceLoader: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  flashBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: palette.lime[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionTile: {
+    flex: 1,
+    minHeight: 72,
+    borderRadius: Radius.sm,
+    backgroundColor: palette.blue[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 10,
+  },
+  actionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: palette.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

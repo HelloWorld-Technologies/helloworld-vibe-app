@@ -23,4 +23,9 @@ export const queryKeys = {
     ['community-events', 'infinite', tab, city, pageSize] as const,
   communityRegisteredEvents: (mobile: string) =>
     ['community-events', 'registered', mobile] as const,
+  smartMeterRooms: (bookingId: string) => ['smart-meter', 'rooms', bookingId] as const,
+  smartMeterPaymentHistory: (bookingId: string) =>
+    ['smart-meter', 'payment-history', bookingId] as const,
+  smartMeterConsumption: (bookingId: string, startDate: string, endDate: string) =>
+    ['smart-meter', 'consumption', bookingId, startDate, endDate] as const,
 };

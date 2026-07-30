@@ -70,6 +70,9 @@ export default function RootLayout() {
         <Stack.Screen name="my-visits" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="my-wishlist" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="sos" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="smart-meter-recharge" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="smart-meter-usage" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="smart-meter-history" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="complete-payment" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="invoice" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="ticket-details" options={{ animation: 'slide_from_right' }} />

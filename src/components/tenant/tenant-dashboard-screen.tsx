@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { getPropertyManagerByBookingId } from '@/api/user';
 import { DashboardIcon } from '@/components/dashboard/dashboard-icon';
 import { DashboardEventsSection } from '@/components/tenant/dashboard/dashboard-events-section';
 import { DashboardMoveInPendingPaymentCard } from '@/components/tenant/dashboard/dashboard-move-in-pending-payment-card';
@@ -24,6 +26,7 @@ import { DashboardPmCard } from '@/components/tenant/dashboard/dashboard-pm-card
 import { DashboardQuickActions } from '@/components/tenant/dashboard/dashboard-quick-actions';
 import { DashboardReferralCard } from '@/components/tenant/dashboard/dashboard-referral-card';
 import { DashboardRentCard } from '@/components/tenant/dashboard/dashboard-rent-card';
+import { DashboardSmartMeterCard } from '@/components/tenant/dashboard/dashboard-smart-meter-card';
 import { DashboardSupportPreview } from '@/components/tenant/dashboard/dashboard-support-preview';
 import { RaiseRequestSheet } from '@/components/tenant/raise-request-sheet';
 import { Typography } from '@/components/ui/typography';
@@ -42,9 +45,9 @@ import { useInvoicePayment } from '@/hooks/use-invoice-payment';
 import { useMoveInPayment } from '@/hooks/use-move-in-payment';
 import { useUpcomingEvents } from '@/queries/use-events';
 import { useBookingStatus } from '@/queries/use-booking-status';
+import { queryKeys } from '@/queries/keys';
 import { useDashboardSupportTickets } from '@/queries/use-support-tickets';
 import { useTenantInvoices } from '@/queries/use-tenant-invoices';
-import { getPropertyManagerByBookingId } from '@/api/user';
 import { useTenantProfile } from '@/stores/tenant-store';
 import {
   getMoveInPendingAmount,
@@ -55,6 +58,7 @@ export function TenantDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabBarInset = useTabBarInset();
+  const queryClient = useQueryClient();
   const { payInvoice } = useInvoicePayment();
   const { startMoveInPayment } = useMoveInPayment();
   const profile = useTenantProfile();
@@ -79,6 +83,7 @@ export function TenantDashboardScreen() {
   const showMoveInPendingPayment = shouldShowMoveInPendingPaymentCard(profile, bookingStatus);
   const moveInPendingAmount = getMoveInPendingAmount(profile, nextPending);
   const propertyLocality = profile?.propertyInfo?.locality;
+  const showSmartMeter = Boolean(profile?.propertyInfo?.isSmartMeterEnabled);
 
   useEffect(() => {
     if (!profile?.bookingId) return;
@@ -93,7 +98,16 @@ export function TenantDashboardScreen() {
 
   async function onRefresh() {
     setRefreshing(true);
-    await Promise.all([refetchInvoices(), refetchTickets(), refetchEvents()]);
+    await Promise.all([
+      refetchInvoices(),
+      refetchTickets(),
+      refetchEvents(),
+      profile?.bookingId
+        ? queryClient.invalidateQueries({
+            queryKey: queryKeys.smartMeterRooms(profile.bookingId),
+          })
+        : Promise.resolve(),
+    ]);
     setRefreshing(false);
   }
 
@@ -202,6 +216,8 @@ export function TenantDashboardScreen() {
         ) : null}
 
         <DashboardQuickActions onActionPress={handleQuickAction} />
+
+        {showSmartMeter ? <DashboardSmartMeterCard /> : null}
 
         <DashboardSupportPreview
           tickets={tickets ?? []}

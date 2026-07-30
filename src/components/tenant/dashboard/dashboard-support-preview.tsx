@@ -3,7 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
-import { EmptyState } from '@/components/ui/empty-state';
+
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
@@ -76,16 +76,12 @@ export function DashboardSupportPreview({ tickets, onRaiseRequest }: DashboardSu
       />
 
       <View style={styles.card}>
-        {previewTickets.length > 0 ? (
-          previewTickets.map((ticket, index) => (
-            <View key={ticket.id}>
-              <TicketPreviewRow ticket={ticket} />
-              {index < previewTickets.length - 1 ? <View style={styles.divider} /> : null}
-            </View>
-          ))
-        ) : (
-          <EmptyState compact title="No open tickets" />
-        )}
+        {previewTickets.map((ticket, index) => (
+          <View key={ticket.id}>
+            <TicketPreviewRow ticket={ticket} />
+            {index < previewTickets.length - 1 ? <View style={styles.divider} /> : null}
+          </View>
+        ))}
 
         <Pressable style={styles.raiseButton} onPress={onRaiseRequest} accessibilityRole="button">
           <SymbolView name="plus" size={16} tintColor={palette.gray[800]} />
