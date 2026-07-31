@@ -5,11 +5,7 @@ import { TextField } from '@/components/ui/text-field';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-
-export type VisitContactDetails = {
-  name: string;
-  email: string;
-};
+import type { VisitContactDetails } from '@/types/visit';
 
 type HdpVisitDetailsFormProps = {
   value: VisitContactDetails;

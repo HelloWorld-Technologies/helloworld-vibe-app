@@ -1,23 +1,5 @@
-import type { BookingChargeId, BookingChargeOption } from '@/types/booking-payment';
+import type { BookingChargeId, BookingChargeOption, BookingPricingDetails, TaxableCharge } from '@/types/booking-payment';
 import { normalizeBookingChargeAmount } from '@/utils/booking-payment';
-
-export type TaxableCharge = {
-  amount: number;
-  totalAmount: number;
-  cgst: number;
-  sgst: number;
-};
-
-export type BookingPricingDetails = {
-  token: number;
-  moveInCharges: TaxableCharge;
-  advanceRent: TaxableCharge;
-  securityDeposit: number;
-  rent: { amount: number };
-  sdKey: string;
-  sdMonths: number;
-  utility: TaxableCharge;
-};
 
 function toTaxableCharge(value: unknown): TaxableCharge {
   if (value && typeof value === 'object') {

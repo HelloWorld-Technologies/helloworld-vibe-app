@@ -1,20 +1,11 @@
 import { http } from '@/api/http';
-import type { HdpApiMoment } from '@/types/hdp-moments';
+import type {
+  HdpApiMoment,
+  MomentsListResponse,
+  MomentsMediaType,
+  MomentsPagination,
+} from '@/types/hdp-moments';
 import { mapApiMomentsToItems } from '@/utils/hdp-moments';
-
-export type MomentsMediaType = 'video' | 'image';
-
-export type MomentsPagination = {
-  page: number;
-  pageSize: number;
-  total: number;
-};
-
-export type MomentsListResponse = {
-  success: boolean;
-  data: ReturnType<typeof mapApiMomentsToItems>;
-  pagination?: MomentsPagination;
-};
 
 type MomentsApiResponse = {
   success?: boolean;

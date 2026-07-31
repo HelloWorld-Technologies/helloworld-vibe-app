@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -39,13 +39,13 @@ import {
 import palette from '@/constants/palette';
 import { TAB_SCREEN_EXTRA_PADDING } from '@/constants/tab-bar';
 import { Radius } from '@/constants/theme';
-import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
-import { useRaiseSupportRequest } from '@/hooks/use-raise-support-request';
 import { useInvoicePayment } from '@/hooks/use-invoice-payment';
 import { useMoveInPayment } from '@/hooks/use-move-in-payment';
-import { useUpcomingEvents } from '@/queries/use-events';
-import { useBookingStatus } from '@/queries/use-booking-status';
+import { useRaiseSupportRequest } from '@/hooks/use-raise-support-request';
+import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { queryKeys } from '@/queries/keys';
+import { useBookingStatus } from '@/queries/use-booking-status';
+import { useUpcomingEvents } from '@/queries/use-events';
 import { useDashboardSupportTickets } from '@/queries/use-support-tickets';
 import { useTenantInvoices } from '@/queries/use-tenant-invoices';
 import { useTenantProfile } from '@/stores/tenant-store';
@@ -162,7 +162,7 @@ export function TenantDashboardScreen() {
               👋 Hello, {profile?.userInfo?.name?.split(' ')[0] ?? 'there'}!
             </Typography>
             <Typography variant="label" size="xs" color={palette.gray[300]}>
-              {propertyLabel || profile?.propertyInfo?.name || 'Your home'}
+              {profile?.propertyInfo?.name || ''}
             </Typography>
           </View>
           <View style={styles.headerActions}>

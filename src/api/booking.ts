@@ -1,39 +1,16 @@
 import { http } from '@/api/http';
-import type { MoveInPaymentDetailsResponse } from '@/types/move-in-payment';
+import type {
+  PaymentDetailsPayload,
+  PaymentDetailsResponse,
+  ReferralValidatePayload,
+  ReferralValidateResponse,
+} from '@/types/booking-payment';
 import type {
   MoveInChecklistResponse,
   UpdateMoveInChecklistPayload,
   UpdateMoveInChecklistResponse,
 } from '@/types/move-in-checklist';
-
-export type PaymentDetailsPayload = {
-  categoryId: string | number;
-  sharingType: string;
-  moveInDate: string;
-  sdMonths?: number;
-  propertyId: string | number;
-  couponCode?: string;
-  propertyName?: string;
-  sdKey?: string;
-};
-
-export type PaymentDetailsResponse = {
-  success: boolean;
-  data?: Record<string, unknown>[];
-  discountMessage?: string;
-  message?: string;
-};
-
-export type ReferralValidatePayload = {
-  referralCode: string;
-  propertyName?: string;
-};
-
-export type ReferralValidateResponse = {
-  success?: boolean;
-  isValid?: boolean;
-  message?: string;
-};
+import type { MoveInPaymentDetailsResponse } from '@/types/move-in-payment';
 
 export async function getPaymentDetails(
   payload: PaymentDetailsPayload,

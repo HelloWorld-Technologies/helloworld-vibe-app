@@ -1,19 +1,6 @@
+import type { VisitDateOption, VisitTimeSlot } from '@/types/visit';
+
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-
-export type VisitDateOption = {
-  id: string;
-  slotId?: string | number;
-  dayLabel: string;
-  dateLabel: string;
-  date: Date;
-};
-
-export type VisitTimeSlot = {
-  id: string;
-  label: string;
-  value: string;
-  isAvailable?: boolean;
-};
 
 export const DEFAULT_VISIT_TIME_SLOTS: VisitTimeSlot[] = [
   { id: 'morning', label: '10:00 am - 01:00 pm', value: '10:00', isAvailable: true },

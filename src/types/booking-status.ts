@@ -28,3 +28,14 @@ export type MoveInStep = {
   route?: string;
   completed: boolean;
 };
+
+export type RentalAgreementItem = {
+  id: string;
+  label: string;
+  dateRange: string;
+  downloadUrl?: string;
+};
+
+export type ResidenceStatus = {
+  label: string;
+};

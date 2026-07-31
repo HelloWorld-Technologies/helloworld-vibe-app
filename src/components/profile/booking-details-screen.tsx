@@ -9,6 +9,7 @@ import { Radius } from '@/constants/theme';
 import { useBookingStatus } from '@/queries/use-booking-status';
 import { usePropertyDetail } from '@/queries/use-property-detail';
 import { useTenantProfile } from '@/stores/tenant-store';
+import type { RentalAgreementItem } from '@/types/booking-status';
 import {
   formatAgreementDateRange,
   formatBookingDate,
@@ -16,7 +17,6 @@ import {
   getRentalAgreements,
   getResidenceStatus,
   getRoomLabel,
-  type RentalAgreementItem,
 } from '@/utils/booking-details-format';
 import { COMING_SOON_IMAGE_URI, formatPropertyImageUrl, getPropertyImageKeys } from '@/utils/images';
 import { priceFormatter } from '@/utils/tenant-format';

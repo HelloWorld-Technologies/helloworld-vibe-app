@@ -26,7 +26,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
 import { useIsTenant } from '@/stores/tenant-store';
 import { useBookingPayment } from '@/hooks/use-booking-payment';
-import type { AppliedDiscount, BookingChargeId } from '@/types/booking-payment';
+import type { AppliedDiscount, BookingChargeId, BookingPricingDetails } from '@/types/booking-payment';
 import {
   formatBookingAmount,
   formatBookingApiDate,
@@ -36,7 +36,6 @@ import {
   buildChargesFromPricing,
   computePayableSubtotal,
   mapPaymentDetailsRow,
-  type BookingPricingDetails,
 } from '@/utils/booking-pricing';
 import { getExploreHomeRoute } from '@/utils/tenant-routing';
 

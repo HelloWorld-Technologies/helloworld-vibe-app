@@ -5,7 +5,7 @@ import { CommunityEventCard } from '@/components/community/community-event-card'
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
 import { HwCarousel } from '@/components/ui/carousel';
 import { EmptyState } from '@/components/ui/empty-state';
-import type { CommunityEvent } from '@/api/community';
+import type { CommunityEvent } from '@/types/community';
 import palette from '@/constants/palette';
 
 const EVENT_CARD_GAP = 12;

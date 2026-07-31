@@ -1,4 +1,4 @@
-import type { ApiProperty, PropertyDetailResponse } from '@/api/property';
+import type { ApiProperty, PropertyDetailResponse } from '@/types/property';
 import { mapApiPropertyToListing } from '@/api/property';
 import { SAMPLE_PROPERTIES } from '@/constants/sample-property';
 import type { PropertyListing } from '@/types/property';

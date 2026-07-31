@@ -21,9 +21,8 @@ import { useAuthStore, useSelectedCity } from '@/stores/auth-store';
 import {
   useSearchHistory,
   useSearchHistoryStore,
-  type SearchHistoryItem,
 } from '@/stores/search-history-store';
-import type { SearchPropertyResult } from '@/types/search';
+import type { SearchHistoryItem, SearchPropertyResult } from '@/types/search';
 
 const RESULT_ENTER_MS = 220;
 const RESULT_STAGGER_MS = 45;

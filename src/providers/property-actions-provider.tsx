@@ -9,16 +9,7 @@ import {
 
 import { RequestCallbackSheet } from '@/components/callback/request-callback-sheet';
 import { HdpVisitSheet } from '@/components/hdp/hdp-visit-sheet';
-
-export type PropertyActionTarget = {
-  propertyId: number;
-  propertyName: string;
-  location?: string;
-  city?: string;
-  startingRent?: number;
-  imageUri?: string;
-  propertyUrl?: string;
-};
+import type { PropertyActionTarget } from '@/types/property';
 
 interface PropertyActionsContextValue {
   openRequestCallback: (target: PropertyActionTarget) => void;

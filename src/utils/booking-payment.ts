@@ -1,4 +1,4 @@
-import type { BookingChargeId } from '@/types/booking-payment';
+import type { BookingChargeId, MoveInDateOption } from '@/types/booking-payment';
 
 export function formatBookingAmount(amount: number) {
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -106,13 +106,6 @@ export function isMoveInDateInWindow(date: Date, extraDays = BOOKING_MOVE_IN_EXT
   const value = normalized.getTime();
   return value >= min && value <= max;
 }
-
-export type MoveInDateOption = {
-  id: string;
-  date: Date;
-  dayLabel: string;
-  dateLabel: string;
-};
 
 export function buildMoveInDateOptions(extraDays = BOOKING_MOVE_IN_EXTRA_DAYS): MoveInDateOption[] {
   const start = getDefaultMoveInDate();

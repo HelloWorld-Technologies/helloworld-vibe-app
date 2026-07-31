@@ -13,3 +13,20 @@ export type LocalitySuggestResponse = {
   data?: LocalitySuggestData;
   message?: string;
 };
+
+export type SearchHistoryLocalityItem = {
+  type: 'locality';
+  id: string;
+  label: string;
+  locality: string;
+};
+
+export type SearchHistoryPropertyItem = {
+  type: 'property';
+  id: string;
+  label: string;
+  propertyId: number;
+  propertyName: string;
+};
+
+export type SearchHistoryItem = SearchHistoryLocalityItem | SearchHistoryPropertyItem;

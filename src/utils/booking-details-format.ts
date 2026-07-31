@@ -1,16 +1,5 @@
-import type { BookingStatus } from '@/types/booking-status';
+import type { BookingStatus, RentalAgreementItem, ResidenceStatus } from '@/types/booking-status';
 import type { TenantProfile } from '@/types/tenant';
-
-export type RentalAgreementItem = {
-  id: string;
-  label: string;
-  dateRange: string;
-  downloadUrl?: string;
-};
-
-export type ResidenceStatus = {
-  label: string;
-};
 
 export function formatBookingDate(value?: string) {
   if (!value) return '—';

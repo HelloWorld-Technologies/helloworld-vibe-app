@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
+import type { BookingCheckoutInput } from '@/types/booking-payment';
 import {
   buildBookingCheckoutSession,
   buildBookingPaymentParams,
-  type BookingCheckoutInput,
 } from '@/utils/booking-checkout';
 
 export function useBookingPayment() {

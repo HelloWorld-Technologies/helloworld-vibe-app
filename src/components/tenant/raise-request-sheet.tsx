@@ -20,7 +20,7 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { Typography } from '@/components/ui/typography';
-import type { RaiseSupportRequestPayload } from '@/hooks/use-raise-support-request';
+import type { RaiseSupportRequestPayload } from '@/types/ticket';
 import palette from '@/constants/palette';
 import { useKbCategories } from '@/queries/use-kb-categories';
 import type {

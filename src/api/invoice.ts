@@ -1,5 +1,9 @@
 import { http } from '@/api/http';
 import type {
+  AvailCreditsPayload,
+  AvailCreditsResponse,
+  InvoiceCreditsInfo,
+  InvoiceCreditsResponse,
   InvoiceDetails,
   InvoiceDetailsResponse,
   InvoiceLineItem,
@@ -125,37 +129,6 @@ export async function getInvoiceLineItems(
     return { success: false, message };
   }
 }
-
-export type InvoiceCreditsInfo = {
-  referral?: number;
-  rewards?: number;
-};
-
-export type InvoiceCreditsResponse = {
-  success: boolean;
-  data?: InvoiceCreditsInfo;
-  message?: string;
-  error?: string;
-  info?: string;
-};
-
-export type AvailCreditsPayload = {
-  invoiceId: string;
-  bookingId: string;
-  type: 'referral' | 'rewards';
-  amount: number;
-};
-
-export type AvailCreditsResponse = {
-  success: boolean;
-  message?: string;
-  error?: string;
-  info?: string;
-  data?: {
-    balance?: number;
-    invoice?: InvoiceDetails;
-  };
-};
 
 export async function getCreditsDetails(
   invoiceId: string,

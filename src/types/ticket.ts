@@ -98,6 +98,14 @@ export type CreateTicketResult = {
   message?: string;
 };
 
+export type RaiseSupportRequestPayload = {
+  category: string;
+  subCategory: string;
+  subCategoryId?: string;
+  description: string;
+  attachments?: PendingTicketAttachment[];
+};
+
 export type UpdateTicketParams = {
   ticketId: string;
   comment?: string;

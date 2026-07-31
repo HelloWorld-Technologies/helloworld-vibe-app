@@ -3,7 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Typography } from '@/components/ui/typography';
-import type { CommunityEvent } from '@/api/community';
+import type { CommunityEvent } from '@/types/community';
 import { EVENT_FALLBACK_IMAGE } from '@/constants/community';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';

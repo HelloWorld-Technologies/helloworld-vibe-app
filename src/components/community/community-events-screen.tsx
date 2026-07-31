@@ -19,7 +19,7 @@ import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
 import { SwipeableTabPager } from '@/components/ui/swipeable-tab-pager';
 import { Typography } from '@/components/ui/typography';
-import { type CommunityEvent } from '@/api/community';
+import type { CommunityEvent } from '@/types/community';
 import {
   COMMUNITY_EVENT_TABS,
   COMMUNITY_TAB_HEADINGS,
@@ -241,6 +241,8 @@ const styles = StyleSheet.create({
   },
   gridCard: {
     flex: 1,
+    // Keep the last odd card half-width instead of stretching full row.
+    maxWidth: '48%',
   },
   loader: {
     marginVertical: 48,

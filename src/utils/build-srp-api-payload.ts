@@ -1,4 +1,4 @@
-import type { PropertyListPayload } from '@/api/property';
+import type { PropertyListPayload } from '@/types/property';
 import type { SortOption } from '@/components/srp/srp-filter-sort-bar';
 import { DEFAULT_SRP_FILTERS, type SrpFilters } from '@/types/srp-filters';
 

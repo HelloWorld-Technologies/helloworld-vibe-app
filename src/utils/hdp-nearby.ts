@@ -1,4 +1,4 @@
-import type { PropertyDetailResponse } from '@/api/property';
+import type { PropertyDetailResponse } from '@/types/property';
 import { ImageAssets } from '@/constants/assets';
 import type { HdpDayCard, HdpDayCardOption, NearByArea, NearbyPlace } from '@/types/hdp-nearby';
 

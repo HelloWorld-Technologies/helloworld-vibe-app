@@ -29,3 +29,17 @@ export type HdpApiEvent = {
   display_image?: string;
   event_start_date?: string;
 };
+
+export type MomentsMediaType = 'video' | 'image';
+
+export type MomentsPagination = {
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+export type MomentsListResponse = {
+  success: boolean;
+  data: HdpMomentItem[];
+  pagination?: MomentsPagination;
+};

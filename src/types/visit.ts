@@ -34,3 +34,90 @@ export type PropertyVisit = {
 export type VisitTab = 'upcoming' | 'past';
 
 export type VisitStatus = 'upcoming' | 'visited' | 'cancelled';
+
+export type VisitSlotTime = {
+  label: string;
+  value: boolean;
+};
+
+export type VisitSlotDay = {
+  date: string | number;
+  slotId: string | number;
+  slots?: VisitSlotTime[];
+};
+
+export type VisitSlotsResponse = {
+  success: boolean;
+  data?: VisitSlotDay[];
+  message?: string;
+  error?: string;
+};
+
+export type CreateVisitPayload = {
+  date: string;
+  savType: string;
+  time: string;
+  name: string;
+  email: string;
+  slotId: string | number;
+  propertyId: string | number;
+  source: string;
+  url?: string;
+};
+
+export type CreateVisitResponse = {
+  success: boolean;
+  message?: string;
+  error?: string;
+};
+
+export type VisitsPageInfo = {
+  nextPage?: number | boolean | null;
+  total?: number;
+  count?: number;
+  page?: number;
+  pageSize?: number;
+};
+
+export type VisitsListParams = {
+  type?: VisitTab;
+  page?: number;
+  perPage?: number;
+};
+
+export type VisitsListResult = {
+  data: PropertyVisit[];
+  pageInfo?: VisitsPageInfo;
+};
+
+export type RescheduleVisitPayload = {
+  date: string;
+  time: string;
+  slotId: string | number;
+};
+
+export type VisitMutationResponse = {
+  success: boolean;
+  message?: string;
+  error?: string;
+};
+
+export type VisitDateOption = {
+  id: string;
+  slotId?: string | number;
+  dayLabel: string;
+  dateLabel: string;
+  date: Date;
+};
+
+export type VisitTimeSlot = {
+  id: string;
+  label: string;
+  value: string;
+  isAvailable?: boolean;
+};
+
+export type VisitContactDetails = {
+  name: string;
+  email: string;
+};

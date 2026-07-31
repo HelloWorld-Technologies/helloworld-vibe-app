@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getPropertyVisitSlots, type VisitSlotDay } from '@/api/visit';
+import { getPropertyVisitSlots } from '@/api/visit';
+import type { VisitSlotDay } from '@/types/visit';
 import { queryKeys } from '@/queries/keys';
 
 export function usePropertyVisitSlots(propertyId: string, enabled = true) {

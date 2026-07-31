@@ -2,24 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import type { SearchHistoryItem } from '@/types/search';
+
 export const SEARCH_HISTORY_LIMIT = 5;
-
-export type SearchHistoryLocalityItem = {
-  type: 'locality';
-  id: string;
-  label: string;
-  locality: string;
-};
-
-export type SearchHistoryPropertyItem = {
-  type: 'property';
-  id: string;
-  label: string;
-  propertyId: number;
-  propertyName: string;
-};
-
-export type SearchHistoryItem = SearchHistoryLocalityItem | SearchHistoryPropertyItem;
 
 type SearchHistoryState = {
   byCity: Record<string, SearchHistoryItem[]>;

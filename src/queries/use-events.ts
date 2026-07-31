@@ -7,8 +7,8 @@ import {
   getRegisteredEvents,
   postCancelEventRegistration,
   resolveNextEventsPage,
-  type EventListType,
 } from '@/api/community';
+import type { EventListType } from '@/types/community';
 import type { CommunityEventsTab } from '@/constants/community';
 import { queryKeys } from '@/queries/keys';
 import { useAuthStore } from '@/stores/auth-store';

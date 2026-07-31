@@ -1,5 +1,4 @@
-import type { VisitSlotDay } from '@/api/visit';
-import type { VisitDateOption, VisitTimeSlot } from '@/utils/visit-dates';
+import type { VisitDateOption, VisitSlotDay, VisitTimeSlot } from '@/types/visit';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 

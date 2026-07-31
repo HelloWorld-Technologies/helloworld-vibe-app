@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import type { PropertyDetailResponse } from '@/api/property';
+import type { PropertyDetailResponse } from '@/types/property';
 import { useSrpProperties } from '@/queries/use-srp-properties';
 import {
   SIMILAR_PROPERTIES_LIMIT,

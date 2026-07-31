@@ -12,11 +12,7 @@ import { Radius } from '@/constants/theme';
 import { queryKeys } from '@/queries/keys';
 import { usePropertyVisitSlots } from '@/queries/use-property-visit-slots';
 import { useVisitPropertyId } from '@/queries/use-visit-property-id';
-import type { PropertyVisit } from '@/types/visit';
-import {
-  type VisitDateOption,
-  type VisitTimeSlot,
-} from '@/utils/visit-dates';
+import type { PropertyVisit, VisitDateOption, VisitTimeSlot } from '@/types/visit';
 import { getCrmVisitId } from '@/utils/visit-format';
 import {
   findSlotDay,

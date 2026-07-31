@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { BookingCheckoutSession } from '@/utils/booking-checkout';
+import type { BookingCheckoutSession } from '@/types/booking-payment';
 import type { BookingDraft, BookingPaymentResult } from '@/types/booking-payment';
 
 type BookingDraftState = {

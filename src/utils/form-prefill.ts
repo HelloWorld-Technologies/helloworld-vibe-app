@@ -1,4 +1,4 @@
-import type { VisitContactDetails } from '@/components/hdp/hdp-visit-details-form';
+import type { VisitContactDetails } from '@/types/visit';
 import type { OccupantDetails } from '@/types/booking';
 import type { TenantProfile } from '@/types/tenant';
 import { getDefaultMoveInDate } from '@/utils/booking-payment';

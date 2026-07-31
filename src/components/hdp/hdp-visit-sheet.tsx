@@ -12,8 +12,7 @@ import { createVisit } from '@/api/visit';
 import { HdpBookOccupantForm, type OccupantFormErrors } from '@/components/hdp/hdp-book-occupant-form';
 import { HdpBookRoomSelection } from '@/components/hdp/hdp-book-room-selection';
 import {
-    HdpVisitDetailsForm,
-    type VisitContactDetails,
+  HdpVisitDetailsForm,
 } from '@/components/hdp/hdp-visit-details-form';
 import {
   VisitDateCardsRow,
@@ -32,6 +31,7 @@ import { useBookingDraftStore } from '@/stores/booking-draft-store';
 import { useTenantProfile } from '@/stores/tenant-store';
 import type { BookingDraft } from '@/types/booking-payment';
 import type { OccupancyType, OccupantDetails, PropertyCategory } from '@/types/booking';
+import type { VisitContactDetails, VisitDateOption, VisitTimeSlot } from '@/types/visit';
 import {
     buildBookRoomOptions,
     buildOccupancyOptions,
@@ -46,8 +46,6 @@ import {
     DEFAULT_VISIT_TIME_SLOTS,
     buildVisitDateOptions,
     formatVisitConfirmation,
-    type VisitDateOption,
-    type VisitTimeSlot,
 } from '@/utils/visit-dates';
 import {
   buildOccupantPrefill,

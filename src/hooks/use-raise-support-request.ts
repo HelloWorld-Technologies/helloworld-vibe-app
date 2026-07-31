@@ -6,15 +6,7 @@ import { getKbCategories, postCreateTicket } from '@/api/tickets';
 import { getUploadedAttachmentUrls } from '@/components/support/ticket-attachments-field';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTenantProfile } from '@/stores/tenant-store';
-import type { PendingTicketAttachment } from '@/types/ticket';
-
-export type RaiseSupportRequestPayload = {
-  category: string;
-  subCategory: string;
-  subCategoryId?: string;
-  description: string;
-  attachments?: PendingTicketAttachment[];
-};
+import type { RaiseSupportRequestPayload } from '@/types/ticket';
 
 export function useRaiseSupportRequest() {
   const router = useRouter();

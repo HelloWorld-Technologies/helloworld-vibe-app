@@ -2,11 +2,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  getCreditsDetails,
-  postAvailCredits,
-  type InvoiceCreditsInfo,
-} from '@/api/invoice';
+import { getCreditsDetails, postAvailCredits } from '@/api/invoice';
+import type { InvoiceCreditsInfo } from '@/types/invoice';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { FilterCheckbox } from '@/components/ui/filter-checkbox';

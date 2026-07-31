@@ -9,6 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   runOnJS,
@@ -30,6 +31,8 @@ type BottomSheetProps = {
 const ANIMATION_MS = 280;
 const SHEET_TOP_RADIUS = 28;
 const BACKDROP_OPACITY = 0.55;
+const DISMISS_DISTANCE = 120;
+const DISMISS_VELOCITY = 900;
 
 export function BottomSheet({
   visible,
@@ -40,11 +43,13 @@ export function BottomSheet({
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const progress = useSharedValue(0);
+  const dragY = useSharedValue(0);
   const [mounted, setMounted] = useState(visible);
 
   useEffect(() => {
     if (visible) {
       setMounted(true);
+      dragY.value = 0;
       progress.value = withTiming(1, {
         duration: ANIMATION_MS,
         easing: Easing.out(Easing.cubic),
@@ -53,25 +58,66 @@ export function BottomSheet({
     }
 
     if (mounted) {
+      dragY.value = withTiming(0, { duration: ANIMATION_MS });
       progress.value = withTiming(0, { duration: ANIMATION_MS }, (finished) => {
         if (finished) {
           runOnJS(setMounted)(false);
         }
       });
     }
-  }, [mounted, progress, visible]);
+  }, [dragY, mounted, progress, visible]);
 
-  const backdropStyle = useAnimatedStyle(() => ({
-    opacity: progress.value * BACKDROP_OPACITY,
-  }));
+  const backdropStyle = useAnimatedStyle(() => {
+    const dragFade = 1 - Math.min(dragY.value / (screenHeight * 0.45), 1);
+    return {
+      opacity: progress.value * BACKDROP_OPACITY * dragFade,
+    };
+  });
 
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: (1 - progress.value) * screenHeight }],
+    transform: [{ translateY: (1 - progress.value) * screenHeight + dragY.value }],
   }));
 
   function requestClose() {
     onClose();
   }
+
+  function finishGestureClose() {
+    progress.value = 0;
+    dragY.value = 0;
+    setMounted(false);
+    onClose();
+  }
+
+  const panGesture = Gesture.Pan()
+    .activeOffsetY(10)
+    .failOffsetX([-20, 20])
+    .onUpdate((event) => {
+      dragY.value = Math.max(0, event.translationY);
+    })
+    .onEnd((event) => {
+      const shouldClose =
+        event.translationY > DISMISS_DISTANCE || event.velocityY > DISMISS_VELOCITY;
+
+      if (shouldClose) {
+        const dismissMs = Math.min(
+          ANIMATION_MS,
+          Math.max(160, 320 - event.velocityY / 10),
+        );
+        dragY.value = withTiming(screenHeight, { duration: dismissMs }, (finished) => {
+          if (finished) {
+            runOnJS(finishGestureClose)();
+          }
+        });
+        progress.value = withTiming(0, { duration: dismissMs });
+        return;
+      }
+
+      dragY.value = withTiming(0, {
+        duration: ANIMATION_MS,
+        easing: Easing.out(Easing.cubic),
+      });
+    });
 
   if (!mounted) {
     return null;
@@ -85,8 +131,7 @@ export function BottomSheet({
       presentationStyle="overFullScreen"
       statusBarTranslucent
       onRequestClose={requestClose}>
-      <View style={styles.root}>
-        {/* Dim layer — must be a full-screen sibling, not only inside a flex press target. */}
+      <GestureHandlerRootView style={styles.root}>
         <Animated.View
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}
@@ -108,17 +153,22 @@ export function BottomSheet({
           </Pressable>
         ) : null}
 
-        <Animated.View style={[styles.sheetTranslate, sheetStyle]}>
-          <View style={styles.sheetSurface} collapsable={false}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-              style={styles.keyboardAvoid}>
-              {children}
-            </KeyboardAvoidingView>
-          </View>
-        </Animated.View>
-      </View>
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.sheetTranslate, sheetStyle]}>
+            <View style={styles.sheetSurface} collapsable={false}>
+              <View style={styles.handleHitArea} accessibilityRole="adjustable">
+                <View style={styles.handle} />
+              </View>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+                style={styles.keyboardAvoid}>
+                {children}
+              </KeyboardAvoidingView>
+            </View>
+          </Animated.View>
+        </GestureDetector>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
@@ -155,6 +205,18 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: SHEET_TOP_RADIUS,
     borderTopRightRadius: SHEET_TOP_RADIUS,
     overflow: 'hidden',
+  },
+  handleHitArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: palette.gray[300],
   },
   keyboardAvoid: {
     width: '100%',

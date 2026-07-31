@@ -12,7 +12,7 @@ import Animated, {
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import type { VisitDateOption, VisitTimeSlot } from '@/utils/visit-dates';
+import type { VisitDateOption, VisitTimeSlot } from '@/types/visit';
 
 const ITEM_ENTER_MS = 220;
 const ITEM_STAGGER_MS = 40;

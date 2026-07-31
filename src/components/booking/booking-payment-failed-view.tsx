@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import type { BookingPaymentSummary } from '@/utils/booking-checkout';
+import type { BookingPaymentSummary } from '@/types/booking-payment';
 import { formatBookingAmount, formatBookingMoveInDate } from '@/utils/booking-payment';
 
 type BookingPaymentFailedViewProps = {

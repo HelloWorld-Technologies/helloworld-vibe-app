@@ -1,40 +1,15 @@
 import type {
-  AppliedDiscount,
   BookingChargeId,
   BookingChargeOption,
-  BookingDraft,
+  BookingCheckoutInput,
+  BookingCheckoutSession,
+  BookingPaymentSummary,
 } from '@/types/booking-payment';
 import { buildInvoiceId, formatBookingApiDate, formatBookingInitDate } from '@/utils/booking-payment';
-import type { BookingPricingDetails } from '@/utils/booking-pricing';
 import { getSummaryLineAmount } from '@/utils/booking-pricing';
 
 export const BOOKING_PAYMENT_INIT_API = 'api/v2/booking/init';
 export const BOOKING_PAYMENT_VERIFY_API = 'api/v2/booking/verify';
-
-export type BookingPaymentSummary = {
-  invoiceId: string;
-  date: string;
-  lines: { label: string; amount: number }[];
-  discounts: { type: AppliedDiscount['type']; code: string; amount: number }[];
-  total: number;
-};
-
-export type BookingCheckoutInput = {
-  draft: BookingDraft;
-  selected: Record<BookingChargeId, boolean>;
-  total: number;
-  couponCode?: string;
-  referralCode?: string;
-  sdKey?: string;
-  mobile: string;
-  charges: BookingChargeOption[];
-  discounts: AppliedDiscount[];
-  pricing: BookingPricingDetails;
-};
-
-export type BookingCheckoutSession = BookingCheckoutInput & {
-  summary: BookingPaymentSummary;
-};
 
 export function buildBookingPaymentSummary(
   input: BookingCheckoutInput,
