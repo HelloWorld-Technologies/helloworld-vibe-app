@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { fontStyleForWeight } from '@/constants/fonts';
@@ -10,11 +10,22 @@ const OTP_LENGTH = 6;
 type OtpInputProps = {
   value: string;
   onChange: (value: string) => void;
+  autoFocus?: boolean;
 };
 
-export function OtpInput({ value, onChange }: OtpInputProps) {
+export function OtpInput({ value, onChange, autoFocus = false }: OtpInputProps) {
   const inputRef = useRef<TextInput>(null);
   const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [autoFocus]);
 
   function handleChange(text: string) {
     onChange(text.replace(/\D/g, '').slice(0, OTP_LENGTH));
@@ -48,6 +59,7 @@ export function OtpInput({ value, onChange }: OtpInputProps) {
         keyboardType="number-pad"
         textContentType="oneTimeCode"
         autoComplete="sms-otp"
+        autoFocus={autoFocus}
         maxLength={OTP_LENGTH}
         caretHidden
         selectionColor="transparent"

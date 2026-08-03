@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getHwEventDetail, postBookEvent } from '@/api/community';
+import { getHwEventDetail, getRegisteredEvents, postBookEvent } from '@/api/community';
 import { WhosAttendingCard } from '@/components/community/whos-attending-card';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Button } from '@/components/ui/button';
@@ -23,9 +23,14 @@ import { Typography } from '@/components/ui/typography';
 import { EVENT_FALLBACK_IMAGE } from '@/constants/community';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
+import { useCancelEventRegistration } from '@/queries/use-events';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTenantProfile } from '@/stores/tenant-store';
 import type { CommunityEventDetailResponse } from '@/types/community';
+import {
+  buildEventPaymentParams,
+  getEventPayableAmount,
+} from '@/utils/event-payment';
 import { normalizeGender } from '@/utils/form-prefill';
 import { priceFormatter } from '@/utils/tenant-format';
 
@@ -44,28 +49,74 @@ function isEventEnded(endDate?: string) {
   return !Number.isNaN(end.getTime()) && end < new Date();
 }
 
+function parseRegistrationId(value?: string | number | null) {
+  if (value == null || value === '') return null;
+  const id = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
 export function CommunityEventDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const profile = useTenantProfile();
   const authMobile = useAuthStore((state) => state.mobile);
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, registrationId: registrationIdParam } = useLocalSearchParams<{
+    id?: string;
+    registrationId?: string;
+  }>();
   const [event, setEvent] = useState<CommunityEventDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
+  const [registrationId, setRegistrationId] = useState<number | null>(() =>
+    parseRegistrationId(registrationIdParam),
+  );
+  const cancelRegistration = useCancelEventRegistration();
 
   const fetchEvent = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     const result = await getHwEventDetail(Number(id));
     setEvent(result.data);
+    const detailRegistrationId = parseRegistrationId(result.data?.details?.registrationId);
+    if (detailRegistrationId) {
+      setRegistrationId(detailRegistrationId);
+    }
     setLoading(false);
   }, [id]);
 
   useEffect(() => {
     void fetchEvent();
   }, [fetchEvent]);
+
+  useEffect(() => {
+    const fromParam = parseRegistrationId(registrationIdParam);
+    if (fromParam) {
+      setRegistrationId(fromParam);
+    }
+  }, [registrationIdParam]);
+
+  useEffect(() => {
+    const details = event?.details;
+    if (!details) return;
+
+    const isRegistered = Boolean(details.is_registered || details.registered);
+    if (!isRegistered || registrationId || !authMobile) return;
+
+    let cancelled = false;
+    void getRegisteredEvents(authMobile).then((result) => {
+      if (cancelled) return;
+      const match = result.data.find((item) => item.id === details.id);
+      const matchedId = parseRegistrationId(match?.registrationId);
+      if (matchedId) {
+        setRegistrationId(matchedId);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authMobile, event?.details, registrationId]);
 
   function openMaps() {
     const location = event?.details.location;
@@ -89,14 +140,33 @@ export function CommunityEventDetailScreen() {
       return;
     }
 
-    setRegistering(true);
-    const { success, message } = await postBookEvent({
+    const payload = {
       id: event.details.id,
       email,
       name,
       mobile,
       seatsBooked: 1,
-    });
+    };
+    const amount = getEventPayableAmount(event.paymentData?.total, event.details.amount);
+
+    if (amount > 0) {
+      router.push({
+        pathname: '/complete-payment',
+        params: buildEventPaymentParams({
+          eventId: event.details.id,
+          eventName: event.details.name,
+          amount,
+          email,
+          mobile,
+          name,
+          payload,
+        }),
+      });
+      return;
+    }
+
+    setRegistering(true);
+    const { success, message } = await postBookEvent(payload);
     setRegistering(false);
 
     if (success) {
@@ -112,6 +182,49 @@ export function CommunityEventDetailScreen() {
     }
 
     Alert.alert('Registration failed', message ?? 'Please try again');
+  }
+
+  function handleCancel() {
+    if (!event?.details) return;
+    if (!registrationId) {
+      Alert.alert('Unable to cancel', 'Registration details are still loading. Please try again.');
+      return;
+    }
+
+    Alert.alert('Cancel registration?', `Remove yourself from ${event.details.name}?`, [
+      { text: 'Keep registration', style: 'cancel' },
+      {
+        text: 'Cancel registration',
+        style: 'destructive',
+        onPress: () => {
+          cancelRegistration.mutate(registrationId, {
+            onSuccess: () => {
+              setEvent((current) =>
+                current
+                  ? {
+                      ...current,
+                      details: {
+                        ...current.details,
+                        is_registered: false,
+                        registered: false,
+                        registrationId: undefined,
+                      },
+                    }
+                  : current,
+              );
+              setRegistrationId(null);
+              router.back();
+            },
+            onError: (error) => {
+              Alert.alert(
+                'Cancellation failed',
+                error instanceof Error ? error.message : 'Please try again',
+              );
+            },
+          });
+        },
+      },
+    ]);
   }
 
   if (loading) {
@@ -138,13 +251,14 @@ export function CommunityEventDetailScreen() {
   const details = event.details;
   const start = formatEventDateTime(details.event_start_date ?? details.start_date);
   const ended = isEventEnded(details.event_end_date);
-  const amount = event.paymentData?.total ?? details.amount ?? 0;
+  const amount = getEventPayableAmount(event.paymentData?.total, details.amount);
   const totalRegistration =
     details.total_registration ?? details.people_attending ?? details.attendees_count ?? 0;
   const femaleCount = details.female_count ?? 0;
   const propertyCount = details.property_count ?? details.hw_properties_count;
   const showFemaleCount = normalizeGender(profile?.userInfo?.gender) === 'Female';
   const venue = [details.location?.propertyName, details.location?.street].filter(Boolean).join(', ');
+  const isRegistered = Boolean(details.is_registered || details.registered || registrationId);
   const footerHeight = ended ? 0 : 132 + insets.bottom;
   const heroImageUri = details.display_image?.trim() || EVENT_FALLBACK_IMAGE;
 
@@ -218,8 +332,12 @@ export function CommunityEventDetailScreen() {
                     {venue}
                   </Typography>
                   {details.location?.lat ? (
-                    <Pressable onPress={openMaps} accessibilityRole="link">
-                      <Typography variant="text" size="sm" color={palette.blue[700]}>
+                    <Pressable
+                      onPress={openMaps}
+                      accessibilityRole="link"
+                      style={styles.mapsLink}>
+                      <SymbolView name="mappin" size={14} tintColor={palette.lime[700]} />
+                      <Typography variant="text" size="sm" color={palette.lime[700]}>
                         Show on Google Maps
                       </Typography>
                     </Pressable>
@@ -270,7 +388,16 @@ export function CommunityEventDetailScreen() {
               {amount > 0 ? `${priceFormatter(amount)} +GST` : 'FREE'}
             </Typography>
           </View>
-          <Button label="Register" loading={registering} onPress={handleRegister} />
+          {isRegistered ? (
+            <Button
+              label="Cancel registration"
+              variant="outline"
+              loading={cancelRegistration.isPending}
+              onPress={handleCancel}
+            />
+          ) : (
+            <Button label="Register" loading={registering} onPress={handleRegister} />
+          )}
         </View>
       ) : null}
     </View>
@@ -376,6 +503,12 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: palette.gray[200],
+  },
+  mapsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
   },
   description: {
     lineHeight: 22,

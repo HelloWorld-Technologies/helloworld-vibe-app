@@ -29,6 +29,7 @@ import { DashboardRentCard } from '@/components/tenant/dashboard/dashboard-rent-
 import { DashboardSmartMeterCard } from '@/components/tenant/dashboard/dashboard-smart-meter-card';
 import { DashboardSupportPreview } from '@/components/tenant/dashboard/dashboard-support-preview';
 import { RaiseRequestSheet } from '@/components/tenant/raise-request-sheet';
+import { RatingAndReviewSheet } from '@/components/tenant/rating-and-review-sheet';
 import { Typography } from '@/components/ui/typography';
 import {
   DASHBOARD_HEADER_GRADIENT,
@@ -46,6 +47,7 @@ import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { queryKeys } from '@/queries/keys';
 import { useBookingStatus } from '@/queries/use-booking-status';
 import { useUpcomingEvents } from '@/queries/use-events';
+import { usePendingReviews } from '@/queries/use-pending-reviews';
 import { useDashboardSupportTickets } from '@/queries/use-support-tickets';
 import { useTenantInvoices } from '@/queries/use-tenant-invoices';
 import { useTenantProfile } from '@/stores/tenant-store';
@@ -66,6 +68,10 @@ export function TenantDashboardScreen() {
   const { data: invoices, isLoading: invoicesLoading, refetch: refetchInvoices } = useTenantInvoices();
   const { data: tickets, refetch: refetchTickets } = useDashboardSupportTickets();
   const { data: events, isLoading: eventsLoading, refetch: refetchEvents } = useUpcomingEvents();
+  const {
+    data: pendingReviews,
+    refetch: refetchPendingReviews,
+  } = usePendingReviews();
   const { sheetVisible, openRaiseRequest, closeRaiseRequest, submitRaiseRequest } =
     useRaiseSupportRequest();
   const [refreshing, setRefreshing] = useState(false);
@@ -102,6 +108,7 @@ export function TenantDashboardScreen() {
       refetchInvoices(),
       refetchTickets(),
       refetchEvents(),
+      refetchPendingReviews(),
       profile?.bookingId
         ? queryClient.invalidateQueries({
             queryKey: queryKeys.smartMeterRooms(profile.bookingId),
@@ -243,6 +250,14 @@ export function TenantDashboardScreen() {
         onClose={closeRaiseRequest}
         onSubmit={submitRaiseRequest}
       />
+
+      {(pendingReviews?.length ?? 0) > 0 ? (
+        <RatingAndReviewSheet
+          pendingReviews={pendingReviews}
+          autoOpen
+          onCompleted={() => void refetchPendingReviews()}
+        />
+      ) : null}
     </View>
   );
 }

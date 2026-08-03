@@ -91,7 +91,7 @@ export default function OtpScreen() {
               </Pressable>
             </View>
 
-            <OtpInput value={otp} onChange={setOtp} />
+            <OtpInput value={otp} onChange={setOtp} autoFocus />
 
             {error ? (
               <Typography variant="label" color={palette.error} style={styles.error}>

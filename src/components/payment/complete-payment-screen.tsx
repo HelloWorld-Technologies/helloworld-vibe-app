@@ -1,3 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+
 import { postInitiatePayment, postVerifyPayment } from '@/api/checkout';
 import config from '@/config';
 import { BookingPaymentFailedView } from '@/components/booking/booking-payment-failed-view';
@@ -18,9 +23,6 @@ import {
   CFSession,
   RazorpayCheckout,
 } from '@/utils/payment-gateway';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 type PaymentStatus = 'loading' | 'success' | 'failed';
 
@@ -73,6 +75,7 @@ function parsePayloadParam(payload: string | string[] | undefined) {
 
 export function CompletePaymentScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams();
   const setPaymentResult = useBookingDraftStore((state) => state.setPaymentResult);
   const pendingCheckout = useBookingDraftStore((state) => state.pendingCheckout);
@@ -92,6 +95,8 @@ export function CompletePaymentScreen() {
   const email = (params.email as string) || '';
   const mobile = (params.mobile as string) || '';
   const description = (params.description as string) || 'Payment';
+  const eventId = (params.paymentFor as string) || '';
+  const eventName = (params.eventName as string) || '';
   const moveInDate =
     paymentType === 'booking'
       ? pendingCheckout?.draft.moveInDate ?? ''
@@ -118,15 +123,30 @@ export function CompletePaymentScreen() {
     [amount, moveInDate, setPaymentResult, setPendingCheckout],
   );
 
+  const completeEventPayment = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['community-events'] });
+    router.replace({
+      pathname: '/community-registration-confirmed',
+      params: {
+        id: eventId,
+        name: eventName,
+      },
+    });
+  }, [eventId, eventName, queryClient, router]);
+
   const handlePaymentSuccess = useCallback(
     (initData?: InitPaymentData) => {
       if (paymentType === 'booking' && initData) {
         completeBookingPayment(initData);
         return;
       }
+      if (paymentType === 'events') {
+        completeEventPayment();
+        return;
+      }
       setStatus('success');
     },
-    [completeBookingPayment, paymentType],
+    [completeBookingPayment, completeEventPayment, paymentType],
   );
 
   useEffect(() => {
@@ -135,7 +155,11 @@ export function CompletePaymentScreen() {
     CFPaymentGatewayService.setCallback({
       onVerify(orderID) {
         const initData = initDataRef.current;
-        if (paymentType === 'booking' && initData && verifyPaymentRef.current) {
+        if (
+          (paymentType === 'booking' || paymentType === 'events') &&
+          initData &&
+          verifyPaymentRef.current
+        ) {
           void verifyPaymentRef.current(initData, {
             razorpay_payment_id: orderID,
             razorpay_signature: orderID,

@@ -83,6 +83,10 @@ function main() {
         copyFile(path.join(citiesSource, file), path.join(citiesTarget, file));
       }
     }
+    const chooseCityIcon = path.join(citiesSource, 'Choose city Icon.png');
+    if (fs.existsSync(chooseCityIcon)) {
+      copyFile(chooseCityIcon, path.join(targetRoot, 'choose-city-icon.png'));
+    }
   }
 
   console.log(`[sync-hw-assets] Synced login assets to ${targetRoot}`);

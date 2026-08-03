@@ -2,6 +2,8 @@ import type { LoginIconName } from '@/constants/assets';
 
 export type CityOption = {
   name: string;
+  /** Optional display label (supports line breaks to match design). */
+  label?: string;
   icon: LoginIconName;
 };
 
@@ -21,5 +23,5 @@ export const CITIES: CityOption[] = [
   { name: 'Mumbai', icon: 'mumbai' },
   { name: 'Noida', icon: 'noida' },
   { name: 'Pune', icon: 'pune' },
-  { name: 'Visakhapatnam', icon: 'visakhapatnam' },
+  { name: 'Visakhapatnam', label: 'Visakhapa-\ntnam', icon: 'visakhapatnam' },
 ];

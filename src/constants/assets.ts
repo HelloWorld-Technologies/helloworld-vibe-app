@@ -42,6 +42,7 @@ export const ImageAssets = {
   loginHelloWorldWordmark: require('../../assets/bundled/login/bento/hello-world-wordmark.png'),
   loginColivingBg: require('../../assets/bundled/login/bento/coliving-bg.png'),
   otpIllustration: require('../../assets/bundled/login/OTP 3d Illustration.png'),
+  chooseCityIcon: require('../../assets/bundled/login/choose-city-icon.png'),
   contactIllustration: require('../../assets/bundled/contact/illustration.png'),
   appIcon: require('../../assets/images/icon.png'),
   paymentLogo: require('../../assets/images/icon.png'),
@@ -85,6 +86,7 @@ export const ErrorStateAssets = {
 
 export const CommunityAssets = {
   registrationConfirmed: require('../../assets/bundled/community/pagloo-confirmed-bouncer.png'),
+  confirmedStamp: require('../../assets/bundled/community/confirmed-stamp.png'),
 } as const;
 
 export const LogoAssets = {

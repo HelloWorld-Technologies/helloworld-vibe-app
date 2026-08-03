@@ -3,7 +3,6 @@ import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -19,7 +18,6 @@ import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
 import { SwipeableTabPager } from '@/components/ui/swipeable-tab-pager';
 import { Typography } from '@/components/ui/typography';
-import type { CommunityEvent } from '@/types/community';
 import {
   COMMUNITY_EVENT_TABS,
   COMMUNITY_TAB_HEADINGS,
@@ -27,17 +25,14 @@ import {
 } from '@/constants/community';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import {
-  useCancelEventRegistration,
-  useCommunityEventsInfinite,
-} from '@/queries/use-events';
+import { useCommunityEventsInfinite } from '@/queries/use-events';
 
 const COMMUNITY_TAB_IDS = COMMUNITY_EVENT_TABS.map((tab) => tab.id);
 
 type CommunityEventsTabPageProps = {
   tab: CommunityEventsTab;
   onRequestPress: () => void;
-  onEventPress: (id: number) => void;
+  onEventPress: (event: { id: number; registrationId?: number }) => void;
 };
 
 function CommunityEventsTabPage({
@@ -54,8 +49,6 @@ function CommunityEventsTabPage({
     hasNextPage,
     isFetchingNextPage,
   } = useCommunityEventsInfinite(tab);
-  const cancelRegistration = useCancelEventRegistration();
-  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   const events = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.data ?? []),
@@ -65,30 +58,6 @@ function CommunityEventsTabPage({
   const hasEvents = events.length > 0;
   const showEmpty = !isLoading && !hasEvents;
   const showPromo = tab === 'upcoming' && hasEvents;
-
-  function handleCancel(event: CommunityEvent) {
-    if (!event.registrationId) return;
-
-    Alert.alert('Cancel registration?', `Remove yourself from ${event.name}?`, [
-      { text: 'Keep registration', style: 'cancel' },
-      {
-        text: 'Cancel registration',
-        style: 'destructive',
-        onPress: () => {
-          setCancellingId(event.registrationId!);
-          cancelRegistration.mutate(event.registrationId!, {
-            onError: (error) => {
-              Alert.alert(
-                'Cancellation failed',
-                error instanceof Error ? error.message : 'Please try again',
-              );
-            },
-            onSettled: () => setCancellingId(null),
-          });
-        },
-      },
-    ]);
-  }
 
   function renderFooter() {
     return (
@@ -147,9 +116,9 @@ function CommunityEventsTabPage({
           event={item}
           style={styles.gridCard}
           imageHeight={140}
-          onPress={() => onEventPress(item.id)}
-          onCancel={tab === 'registered' ? () => handleCancel(item) : undefined}
-          cancelLoading={cancellingId === item.registrationId}
+          onPress={() =>
+            onEventPress({ id: item.id, registrationId: item.registrationId })
+          }
         />
       )}
       ListFooterComponent={renderFooter}
@@ -185,10 +154,15 @@ export function CommunityEventsScreen() {
           <CommunityEventsTabPage
             tab={tabId}
             onRequestPress={() => setRequestVisible(true)}
-            onEventPress={(id) =>
+            onEventPress={({ id, registrationId }) =>
               router.push({
                 pathname: '/community-event',
-                params: { id: String(id) },
+                params: {
+                  id: String(id),
+                  ...(registrationId != null
+                    ? { registrationId: String(registrationId) }
+                    : {}),
+                },
               })
             }
           />

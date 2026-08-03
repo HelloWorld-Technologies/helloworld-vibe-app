@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,20 +10,19 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/button';
-import { Typography } from '@/components/ui/typography';
 import { getHwEventDetail } from '@/api/community';
+import { Typography } from '@/components/ui/typography';
 import { CommunityAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import type { CommunityEventDetail } from '@/types/community';
 import { useTenantProfile } from '@/stores/tenant-store';
+import type { CommunityEventDetail } from '@/types/community';
+import { shareEventTicketImage } from '@/utils/share-event-ticket';
 
 function getInitials(name?: string) {
   if (!name?.trim()) return 'HW';
@@ -76,24 +76,13 @@ function toCalendarStamp(value?: string) {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
 
-function DashedDivider() {
+function TicketPerforation() {
   return (
-    <View style={styles.dashedRow}>
-      {Array.from({ length: 28 }, (_, index) => (
-        <View key={index} style={styles.dash} />
-      ))}
-    </View>
-  );
-}
-
-function ConfirmedStamp() {
-  return (
-    <View style={styles.stamp}>
-      <View style={styles.stampInner}>
-        <SymbolView name="checkmark" size={14} weight="bold" tintColor={palette.lime[700]} />
-        <Typography variant="label" size="xs" weight="bold" color={palette.lime[800]} style={styles.stampText}>
-          CONFIRMED
-        </Typography>
+    <View style={styles.perforation}>
+      <View style={styles.dashedRow}>
+        {Array.from({ length: 28 }, (_, index) => (
+          <View key={index} style={styles.dash} />
+        ))}
       </View>
     </View>
   );
@@ -103,9 +92,11 @@ export function CommunityRegistrationConfirmedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const profile = useTenantProfile();
+  const ticketRef = useRef<View>(null);
   const { id, name: nameParam } = useLocalSearchParams<{ id?: string; name?: string }>();
   const [event, setEvent] = useState<CommunityEventDetail | null>(null);
   const [loading, setLoading] = useState(Boolean(id));
+  const [sharing, setSharing] = useState(false);
 
   const fetchEvent = useCallback(async () => {
     if (!id) {
@@ -141,10 +132,21 @@ export function CommunityRegistrationConfirmedScreen() {
     .filter(Boolean)
     .join(' • ');
 
-  function handleShare() {
-    void Share.share({
-      message: `I'm going to ${eventName} with HelloWorld Community!${venue ? `\n📍 ${venue}` : ''}`,
-    }).catch(() => undefined);
+  async function handleShare() {
+    if (!ticketRef.current || sharing) return;
+
+    setSharing(true);
+    try {
+      await shareEventTicketImage({
+        ticketRef,
+        eventName,
+        venue,
+      });
+    } catch {
+      Alert.alert('Unable to share', 'Please try again.');
+    } finally {
+      setSharing(false);
+    }
   }
 
   function handleAddToCalendar() {
@@ -196,11 +198,16 @@ export function CommunityRegistrationConfirmedScreen() {
           Registration Confirmed!
         </Typography>
         <Pressable
-          onPress={handleShare}
+          onPress={() => void handleShare()}
+          disabled={sharing || loading}
           style={styles.headerButton}
           accessibilityRole="button"
           accessibilityLabel="Share registration">
-          <SymbolView name="square.and.arrow.up" size={16} tintColor={palette.lime[700]} />
+          {sharing ? (
+            <ActivityIndicator size="small" color={palette.lime[700]} />
+          ) : (
+            <SymbolView name="square.and.arrow.up" size={16} tintColor={palette.lime[700]} />
+          )}
         </Pressable>
       </View>
 
@@ -227,70 +234,94 @@ export function CommunityRegistrationConfirmedScreen() {
             Show this to HelloWorld staff at the Venue
           </Typography>
 
-          <View style={styles.ticket}>
-            <View style={styles.ticketTop}>
-              <Typography variant="text" size="lg" weight="bold" style={styles.eventName}>
-                {eventName}
-              </Typography>
+          <View ref={ticketRef} collapsable={false} style={styles.ticketCapture}>
+            <LinearGradient
+              colors={[
+                'rgba(196, 181, 253, 0.55)',
+                'rgba(147, 197, 253, 0.45)',
+                'rgba(221, 214, 254, 0.35)',
+              ]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.ticketGlow}
+            />
 
-              {dateParts ? (
-                <View style={styles.dateRow}>
-                  <View style={styles.dateBadge}>
-                    <Typography variant="text" size="lg" weight="bold" color={palette.blue[800]}>
-                      {dateParts.day}
-                    </Typography>
-                    <Typography variant="label" size="xs" weight="bold" color={palette.blue[700]}>
-                      {dateParts.month}
+            <View style={styles.ticketStack}>
+              <View style={styles.ticketCard}>
+                <Typography variant="text" size="lg" weight="bold" style={styles.eventName}>
+                  {eventName}
+                </Typography>
+
+                {dateParts ? (
+                  <View style={styles.dateRow}>
+                    <View style={styles.dateBadge}>
+                      <Typography variant="text" size="lg" weight="bold" color={palette.blue[800]}>
+                        {dateParts.day}
+                      </Typography>
+                      <Typography variant="label" size="xs" weight="bold" color={palette.blue[700]}>
+                        {dateParts.month}
+                      </Typography>
+                    </View>
+                    <View style={styles.dateCopy}>
+                      <Typography variant="text" size="sm" weight="medium">
+                        {dateParts.weekdayLabel}
+                      </Typography>
+                      {timeRange ? (
+                        <Typography variant="text" size="sm" color={palette.gray[700]}>
+                          {timeRange}
+                        </Typography>
+                      ) : null}
+                    </View>
+                  </View>
+                ) : null}
+
+                <View style={styles.venueRow}>
+                  <SymbolView name="mappin" size={14} tintColor={palette.gray[900]} />
+                  <Typography
+                    variant="text"
+                    size="sm"
+                    weight="medium"
+                    color={palette.gray[900]}
+                    style={styles.venueText}
+                    numberOfLines={2}>
+                    {venue}
+                  </Typography>
+                </View>
+
+                <View style={styles.stampWrap} pointerEvents="none">
+                  <Image
+                    source={CommunityAssets.confirmedStamp}
+                    style={styles.stamp}
+                    contentFit="contain"
+                    accessibilityLabel="Confirmed"
+                  />
+                </View>
+              </View>
+
+              <TicketPerforation />
+
+              <View style={[styles.ticketCard, styles.ticketCardBottom]}>
+                <View style={styles.attendeeRow}>
+                  <View style={styles.avatar}>
+                    <Typography variant="text" size="sm" weight="bold" color={palette.lime[800]}>
+                      {getInitials(attendeeName)}
                     </Typography>
                   </View>
-                  <View style={styles.dateCopy}>
-                    <Typography variant="text" size="sm" weight="medium">
-                      {dateParts.weekdayLabel}
+                  <View style={styles.attendeeCopy}>
+                    <Typography variant="text" size="sm" weight="bold" numberOfLines={1}>
+                      {attendeeName}
                     </Typography>
-                    {timeRange ? (
-                      <Typography variant="text" size="sm" color={palette.gray[600]}>
-                        {timeRange}
+                    {attendeeMeta ? (
+                      <Typography
+                        variant="label"
+                        size="xs"
+                        color={palette.gray[600]}
+                        numberOfLines={1}>
+                        {attendeeMeta}
                       </Typography>
                     ) : null}
                   </View>
                 </View>
-              ) : null}
-
-              <View style={styles.venueRow}>
-                <SymbolView name="mappin.and.ellipse" size={14} tintColor={palette.gray[800]} />
-                <Typography
-                  variant="text"
-                  size="sm"
-                  weight="medium"
-                  color={palette.gray[800]}
-                  style={styles.venueText}
-                  numberOfLines={2}>
-                  {venue}
-                </Typography>
-              </View>
-
-              <View style={styles.stampWrap} pointerEvents="none">
-                <ConfirmedStamp />
-              </View>
-            </View>
-
-            <DashedDivider />
-
-            <View style={styles.attendeeRow}>
-              <View style={styles.avatar}>
-                <Typography variant="text" size="sm" weight="bold" color={palette.lime[800]}>
-                  {getInitials(attendeeName)}
-                </Typography>
-              </View>
-              <View style={styles.attendeeCopy}>
-                <Typography variant="text" size="sm" weight="bold" numberOfLines={1}>
-                  {attendeeName}
-                </Typography>
-                {attendeeMeta ? (
-                  <Typography variant="label" size="xs" color={palette.gray[500]} numberOfLines={1}>
-                    {attendeeMeta}
-                  </Typography>
-                ) : null}
               </View>
             </View>
           </View>
@@ -316,7 +347,9 @@ export function CommunityRegistrationConfirmedScreen() {
           <Typography variant="text" size="sm" weight="bold" color={palette.gray[900]}>
             Get Directions
           </Typography>
-          <SymbolView name="location.north.fill" size={14} tintColor={palette.gray[900]} />
+          <View style={styles.directionsIcon}>
+            <SymbolView name="location.north.fill" size={14} tintColor={palette.gray[900]} />
+          </View>
         </Pressable>
       </View>
     </View>
@@ -376,29 +409,50 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  ticket: {
+  ticketCapture: {
     width: '100%',
     marginTop: 8,
+    padding: 14,
+  },
+  ticketGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 28,
+    opacity: 0.9,
+  },
+  ticketStack: {
+    gap: 0,
+  },
+  ticketCard: {
     backgroundColor: palette.white,
     borderRadius: 20,
-    padding: 20,
-    gap: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
-  },
-  ticketTop: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 18,
     gap: 14,
     position: 'relative',
-    paddingRight: 8,
+    overflow: 'visible',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#8B7CF6',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.22,
+        shadowRadius: 18,
+      },
+      android: {
+        elevation: 6,
+      },
+      default: {},
+    }),
+  },
+  ticketCardBottom: {
+    paddingTop: 16,
+    paddingBottom: 18,
   },
   eventName: {
     color: palette.gray[900],
-    paddingRight: 72,
+    paddingRight: 88,
   },
   dateRow: {
     flexDirection: 'row',
@@ -427,34 +481,27 @@ const styles = StyleSheet.create({
   },
   stampWrap: {
     position: 'absolute',
-    right: -4,
+    right: 4,
     top: 36,
   },
   stamp: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    borderWidth: 3,
-    borderColor: palette.lime[500],
-    backgroundColor: 'rgba(190, 242, 100, 0.18)',
-    alignItems: 'center',
+    width: 104,
+    height: 104,
+    transform: [{ rotate: '18deg' }],
+  },
+  perforation: {
+    height: 18,
     justifyContent: 'center',
-    transform: [{ rotate: '-12deg' }],
-  },
-  stampInner: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  stampText: {
-    letterSpacing: 0.4,
+    zIndex: 1,
   },
   dashedRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     overflow: 'hidden',
+    marginHorizontal: 18,
   },
   dash: {
-    width: 6,
+    width: 5,
     height: 1.5,
     borderRadius: 1,
     backgroundColor: palette.gray[300],
@@ -518,5 +565,8 @@ const styles = StyleSheet.create({
   },
   primaryPressed: {
     backgroundColor: palette.lime[400],
+  },
+  directionsIcon: {
+    transform: [{ rotate: '45deg' }],
   },
 });

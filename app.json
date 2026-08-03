@@ -20,7 +20,8 @@
         "NSPhotoLibraryUsageDescription": "Allow HelloWorld to access your photos so you can attach images to support tickets.",
         "NSPhotoLibraryAddUsageDescription": "Allow HelloWorld to save images related to your support tickets."
       }
-    },    "android": {
+    },
+    "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -91,7 +92,8 @@
           "microphonePermission": false
         }
       ],
-      "expo-video"
+      "expo-video",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

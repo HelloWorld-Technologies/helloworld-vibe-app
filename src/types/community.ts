@@ -24,6 +24,8 @@ export type CommunityEventDetail = {
   hw_properties_count?: number;
   what_to_bring?: string;
   is_registered?: boolean;
+  registered?: boolean;
+  registrationId?: number;
 };
 
 export type CommunityEventDetailResponse = {

@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Share, StyleSheet, View, Pressable } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
 import { Typography } from '@/components/ui/typography';
@@ -44,40 +44,46 @@ export function DashboardReferralCard({
         onActionPress={onViewRewards ?? shareCode}
       />
 
-      <LinearGradient
-        colors={[...DASHBOARD_REFERRAL_GRADIENT.colors]}
-        start={DASHBOARD_REFERRAL_GRADIENT.start}
-        end={DASHBOARD_REFERRAL_GRADIENT.end}
-        style={styles.card}>
-        <View style={styles.content}>
-          <Typography variant="text" size="sm" color={palette.gray[600]}>
-            Refer friends. Earn on your rent!
-          </Typography>
-          <Typography variant="display" size="xs" weight="bold" color={palette.gray[900]}>
-            {priceFormatter(unlockedAmount)} Unlocked
-          </Typography>
-          <Typography variant="text" size="sm" color={palette.gray[600]}>
-            {friendsJoined} Friends Joined through You
-          </Typography>
+      <View style={styles.cardShadow}>
+        <LinearGradient
+          colors={[...DASHBOARD_REFERRAL_GRADIENT.colors]}
+          start={DASHBOARD_REFERRAL_GRADIENT.start}
+          end={DASHBOARD_REFERRAL_GRADIENT.end}
+          style={styles.card}>
+          <View style={styles.content}>
+            <Typography variant="text" size="sm" color={palette.gray[600]}>
+              Refer friends. Earn on your rent!
+            </Typography>
+            <Typography variant="display" size="xs" weight="bold" color={palette.gray[900]}>
+              {priceFormatter(unlockedAmount)} Unlocked
+            </Typography>
+            <Typography variant="text" size="sm" color={palette.gray[600]}>
+              {friendsJoined} Friends Joined through You
+            </Typography>
 
-          {referralCode ? (
-            <View style={styles.codeRow}>
-              <Pressable style={styles.codeBox} onPress={copyCode} accessibilityRole="button">
-                <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]}>
-                  {referralCode}
-                </Typography>
-              </Pressable>
-              <Pressable style={styles.shareButton} onPress={shareCode} accessibilityRole="button">
-                <Typography variant="text" size="sm" weight="medium" color={palette.blue[800]}>
-                  Share
-                </Typography>
-              </Pressable>
-            </View>
-          ) : null}
-        </View>
+            {referralCode ? (
+              <View style={styles.codeRow}>
+                <Pressable style={styles.codeBox} onPress={copyCode} accessibilityRole="button">
+                  <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]}>
+                    {referralCode}
+                  </Typography>
+                </Pressable>
+                <Pressable style={styles.shareButton} onPress={shareCode} accessibilityRole="button">
+                  <Typography variant="text" size="sm" weight="medium" color={palette.blue[800]}>
+                    Share
+                  </Typography>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
 
-        <Image source={DashboardImages.referralIllustration} style={styles.illustration} contentFit="contain" />
-      </LinearGradient>
+          <Image
+            source={DashboardImages.referralIllustration}
+            style={styles.illustration}
+            contentFit="contain"
+          />
+        </LinearGradient>
+      </View>
     </View>
   );
 }
@@ -85,6 +91,14 @@ export function DashboardReferralCard({
 const styles = StyleSheet.create({
   section: {
     gap: 16,
+  },
+  cardShadow: {
+    borderRadius: Radius.md,
+    shadowColor: '#8690A3',
+    shadowOffset: { width: 0, height: 1.3 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 2,
   },
   card: {
     borderRadius: Radius.md,

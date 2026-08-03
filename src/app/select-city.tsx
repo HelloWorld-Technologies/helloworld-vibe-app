@@ -1,12 +1,12 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 
 import { HwIcon } from '@/components/hw-icon';
-import { HwLottie } from '@/components/hw-lottie';
 import { Typography } from '@/components/ui/typography';
-import { LottieAssets } from '@/constants/assets';
+import { ImageAssets } from '@/constants/assets';
 import { CITIES, type CityOption } from '@/constants/cities';
 import palette from '@/constants/palette';
 import { useAuthStore } from '@/stores/auth-store';
@@ -19,6 +19,7 @@ export default function SelectCityScreen() {
   const router = useRouter();
   const isTenant = useIsTenant();
   const setSelectedCity = useAuthStore((state) => state.setSelectedCity);
+  const canGoBack = router.canGoBack();
 
   function handleSelectCity(city: CityOption) {
     setSelectedCity(city.name);
@@ -27,23 +28,30 @@ export default function SelectCityScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.topBar}>
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Go back">
-          <SymbolView
-            name="chevron.left"
-            size={18}
-            weight="semibold"
-            tintColor={palette.gray[800]}
-          />
-        </Pressable>
-      </View>
+      {canGoBack ? (
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back">
+            <SymbolView
+              name="chevron.left"
+              size={18}
+              weight="semibold"
+              tintColor={palette.gray[800]}
+            />
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.header}>
-        <HwLottie source={LottieAssets.loginLoading} style={styles.headerLottie} loop />
+        <Image
+          source={ImageAssets.chooseCityIcon}
+          style={styles.headerIcon}
+          contentFit="contain"
+          accessibilityIgnoresInvertColors
+        />
         <Typography variant="heading" weight="bold" style={styles.headerTitle}>
           Pick your city to get started!
         </Typography>
@@ -62,10 +70,10 @@ export default function SelectCityScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Select ${item.name}`}>
             <View style={styles.iconWrap}>
-              <HwIcon name={item.icon} size={34} />
+              <HwIcon name={item.icon} size={36} />
             </View>
             <Typography variant="label" weight="medium" style={styles.cityName}>
-              {item.name}
+              {item.label ?? item.name}
             </Typography>
           </Pressable>
         )}
@@ -77,71 +85,67 @@ export default function SelectCityScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: palette.blue[50],
+    backgroundColor: palette.white,
   },
   topBar: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 4,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: palette.white,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#101828',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
   backButtonPressed: {
-    opacity: 0.85,
+    opacity: 0.7,
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 12,
-    gap: 8,
+    paddingBottom: 28,
+    gap: 12,
   },
-  headerLottie: {
-    width: 48,
-    height: 36,
+  headerIcon: {
+    width: 52,
+    height: 40,
   },
   headerTitle: {
-    textAlign: 'center',
+    flex: 1,
+    color: palette.gray[900],
   },
   grid: {
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
   row: {
-    gap: 8,
-    marginBottom: 8,
+    gap: 10,
+    marginBottom: 10,
   },
   cityCard: {
     flex: 1,
-    maxWidth: '25%',
     alignItems: 'center',
-    backgroundColor: palette.white,
+    justifyContent: 'center',
+    backgroundColor: palette.gray[100],
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 4,
-    minHeight: 88,
+    minHeight: 96,
   },
   cityPressed: {
     opacity: 0.85,
-    backgroundColor: palette.lightGreen,
+    backgroundColor: palette.gray[200],
   },
   iconWrap: {
-    height: 36,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   cityName: {
     textAlign: 'center',
+    color: palette.gray[900],
   },
 });

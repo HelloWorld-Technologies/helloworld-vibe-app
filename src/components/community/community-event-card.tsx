@@ -12,8 +12,6 @@ import { formatDisplayDate } from '@/utils/tenant-format';
 type CommunityEventCardProps = {
   event: CommunityEvent;
   onPress: () => void;
-  onCancel?: () => void;
-  cancelLoading?: boolean;
   style?: StyleProp<ViewStyle>;
   imageHeight?: number;
 };
@@ -21,15 +19,12 @@ type CommunityEventCardProps = {
 export function CommunityEventCard({
   event,
   onPress,
-  onCancel,
-  cancelLoading = false,
   style,
   imageHeight = 160,
 }: CommunityEventCardProps) {
   const attendees =
     event.total_registration ?? event.people_attending ?? event.attendees_count ?? 0;
   const dateValue = event.event_start_date ?? event.start_date;
-  const showCancel = Boolean(onCancel && event.registrationId);
 
   return (
     <Pressable
@@ -59,26 +54,6 @@ export function CommunityEventCard({
             </Typography>
           </View>
         ) : null}
-        {showCancel ? (
-          <Pressable
-            onPress={(pressEvent) => {
-              pressEvent.stopPropagation();
-              onCancel?.();
-            }}
-            disabled={cancelLoading}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel registration"
-            style={styles.cancelButton}>
-            <Typography
-              variant="label"
-              size="xs"
-              weight="bold"
-              color={cancelLoading ? palette.gray[400] : palette.red[600]}>
-              {cancelLoading ? 'Cancelling…' : 'Cancel registration'}
-            </Typography>
-          </Pressable>
-        ) : null}
       </View>
     </Pressable>
   );
@@ -101,9 +76,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: 2,
-  },
-  cancelButton: {
-    marginTop: 4,
-    alignSelf: 'flex-start',
   },
 });

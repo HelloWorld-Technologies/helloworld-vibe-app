@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SelectCitySheet } from '@/components/city/select-city-sheet';
 import { HwIcon } from '@/components/hw-icon';
 import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer';
 import { LocalityCardImage } from '@/components/locality/locality-card-image';
@@ -83,6 +84,7 @@ export function HomeScreen() {
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [feedStoryOpen, setFeedStoryOpen] = useState(false);
   const [feedStoryIndex, setFeedStoryIndex] = useState(0);
+  const [citySheetVisible, setCitySheetVisible] = useState(false);
   const scrollBottomPadding =
     tabBarInset + (showFeedback ? FEEDBACK_BANNER_HEIGHT + FEEDBACK_BANNER_GAP : 0);
 
@@ -237,7 +239,7 @@ export function HomeScreen() {
               title={`No properties found in ${city}`}
               subtitle="Try another city or check back soon."
               actionLabel="Change City"
-              onAction={() => router.push('/select-city')}
+              onAction={() => setCitySheetVisible(true)}
             />
           )}
 
@@ -308,7 +310,7 @@ export function HomeScreen() {
         ]}>
         <View style={styles.headerTop}>
           <Pressable
-            onPress={() => router.push('/select-city')}
+            onPress={() => setCitySheetVisible(true)}
             style={styles.locationRow}
             accessibilityRole="button"
             accessibilityLabel="Change city">
@@ -358,6 +360,11 @@ export function HomeScreen() {
         initialIndex={feedStoryIndex}
         propertyName="HelloWorld"
         onClose={() => setFeedStoryOpen(false)}
+      />
+
+      <SelectCitySheet
+        visible={citySheetVisible}
+        onClose={() => setCitySheetVisible(false)}
       />
     </View>
   );
