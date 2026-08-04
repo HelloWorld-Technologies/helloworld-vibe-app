@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -33,7 +34,6 @@ import {
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
-import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { useMomentsFeed } from '@/queries/use-moments-feed';
 import { useSrpProperties } from '@/queries/use-srp-properties';
 import { useVibesList } from '@/queries/use-vibes';
@@ -64,14 +64,13 @@ const PROPERTY_CAROUSEL_HEIGHT = 540;
 const FEED_CARD_WIDTH = 172;
 const FEED_CARD_HEIGHT = 268;
 const FEED_CARD_GAP = 16;
-const FEEDBACK_BANNER_HEIGHT = 44;
-const FEEDBACK_BANNER_GAP = 12;
 const HEADER_SHADOW_THRESHOLD = 8;
+/** Native tab bar content height — iOS draws over the scene; Android already insets it. */
+const NATIVE_TAB_BAR_HEIGHT = Platform.select({ ios: 49, android: 56, default: 56 }) ?? 56;
 
 export function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const tabBarInset = useTabBarInset();
   const { width, height } = useWindowDimensions();
 
   const city = useSelectedCity();
@@ -86,13 +85,14 @@ export function HomeScreen() {
     [apiVibes],
   );
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
-  const [showFeedback, setShowFeedback] = useState(true);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [feedStoryOpen, setFeedStoryOpen] = useState(false);
   const [feedStoryIndex, setFeedStoryIndex] = useState(0);
   const [citySheetVisible, setCitySheetVisible] = useState(false);
+
+  // Android already lays content above the tab bar; iOS overlays it.
   const scrollBottomPadding =
-    tabBarInset + (showFeedback ? FEEDBACK_BANNER_HEIGHT + FEEDBACK_BANNER_GAP : 0);
+    Platform.OS === 'ios' ? insets.bottom + NATIVE_TAB_BAR_HEIGHT + 8 : 8;
 
   const cardWidth = width - 48;
   const slideWidth = cardWidth + ITEM_GAP;
@@ -142,7 +142,6 @@ export function HomeScreen() {
         contentContainerStyle={{
           paddingTop: stickyHeaderHeight,
           paddingBottom: scrollBottomPadding,
-          flexGrow: 1,
         }}>
         <View style={styles.heroSection}>
           <Typography
@@ -174,6 +173,8 @@ export function HomeScreen() {
             selectedIds={selectedVibes}
             onChange={setSelectedVibes}
             variant="onDark"
+            style={styles.vibeList}
+            contentContainerStyle={styles.vibeListContent}
             hint={
               <Typography variant="text" size="xs" color={palette.white}>
                 ✨ Pick at least 5 vibes for better matches{' '}
@@ -346,20 +347,6 @@ export function HomeScreen() {
         </View>
       </View>
 
-      {showFeedback ? (
-        <View style={[styles.feedbackBanner, { bottom: tabBarInset + FEEDBACK_BANNER_GAP }]}>
-          <Typography variant="text" size="xs" color={palette.textSecondary} style={styles.feedbackText}>
-            How was your visit to HW Mahaveer? ›
-          </Typography>
-          <Pressable
-            onPress={() => setShowFeedback(false)}
-            accessibilityLabel="Dismiss feedback"
-            hitSlop={8}>
-            <SymbolView name="xmark" size={14} tintColor={palette.gray[500]} />
-          </Pressable>
-        </View>
-      ) : null}
-
       <HdpMomentsStoryViewer
         visible={feedStoryOpen}
         moments={feedMoments}
@@ -408,7 +395,8 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     paddingHorizontal: 20,
-    paddingBottom: 50,
+    // Keep vibe chips above the white sheet overlap (bodySheet marginTop: -32).
+    paddingBottom: 72,
   },
   headerTop: {
     flexDirection: 'row',
@@ -441,6 +429,13 @@ const styles = StyleSheet.create({
   searchInputMargin: {
     marginBottom: 16,
   },
+  vibeList: {
+    marginHorizontal: -20,
+    overflow: 'visible',
+  },
+  vibeListContent: {
+    paddingHorizontal: 20,
+  },
   vibeHintOptional: {
     fontStyle: 'italic',
   },
@@ -462,9 +457,8 @@ const styles = StyleSheet.create({
   body: {
     paddingTop: 32,
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 0,
     gap: 28,
-    flex: 1,
     overflow: 'visible',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
@@ -486,7 +480,7 @@ const styles = StyleSheet.create({
   },
   feedCarouselWrap: {
     marginHorizontal: -4,
-    marginBottom: 16,
+    marginBottom: 0,
   },
   propertiesLoader: {
     height: PROPERTY_CAROUSEL_HEIGHT,
@@ -562,20 +556,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-  },
-  feedbackBanner: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: palette.gray[100],
-    borderRadius: Radius.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  feedbackText: {
-    flex: 1,
   },
 });

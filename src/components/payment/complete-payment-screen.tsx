@@ -39,6 +39,17 @@ type InitPaymentData = {
   data?: Record<string, unknown>;
 };
 
+type PaymentVerifyResult =
+  | {
+      payment_gateway: 'razorpay';
+      razorpay_payment_id: string;
+      razorpay_signature: string;
+    }
+  | {
+      payment_gateway: 'cashfree';
+      orderId: string;
+    };
+
 function parseRazorpayError(error: unknown): string {
   try {
     if (typeof error === 'string') {
@@ -85,7 +96,7 @@ export function CompletePaymentScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const initDataRef = useRef<InitPaymentData | null>(null);
   const verifyPaymentRef = useRef<
-    ((initData: InitPaymentData, razorpayData: { razorpay_payment_id: string; razorpay_signature: string }) => Promise<void>) | null
+    ((initData: InitPaymentData, result: PaymentVerifyResult) => Promise<void>) | null
   >(null);
 
   const amount = params.amount ? parseFloat(String(params.amount)) : 0;
@@ -161,8 +172,8 @@ export function CompletePaymentScreen() {
           verifyPaymentRef.current
         ) {
           void verifyPaymentRef.current(initData, {
-            razorpay_payment_id: orderID,
-            razorpay_signature: orderID,
+            payment_gateway: 'cashfree',
+            orderId: orderID || initData.paymentObj.orderId || '',
           });
           return;
         }
@@ -180,13 +191,34 @@ export function CompletePaymentScreen() {
     };
   }, [handlePaymentSuccess, paymentType]);
 
-  function buildVerifyPayload(
-    initData: InitPaymentData,
-    razorpayData: { razorpay_payment_id: string; razorpay_signature: string },
-  ) {
+  function buildVerifyPayload(initData: InitPaymentData, result: PaymentVerifyResult) {
     if (paymentType === 'booking') {
-      return buildBookingVerifyPayload(initData, razorpayData, initData.amount ?? amount);
+      if (result.payment_gateway === 'cashfree') {
+        return buildBookingVerifyPayload(
+          initData,
+          {
+            payment_gateway: 'cashfree',
+            orderId: result.orderId,
+          },
+          initData.amount ?? amount,
+        );
+      }
+
+      return buildBookingVerifyPayload(
+        initData,
+        {
+          payment_gateway: 'razorpay',
+          razorpayPaymentId: result.razorpay_payment_id,
+          razorpaySignature: result.razorpay_signature,
+        },
+        initData.amount ?? amount,
+      );
     }
+
+    const razorpayPaymentId =
+      result.payment_gateway === 'razorpay' ? result.razorpay_payment_id : result.orderId;
+    const razorpaySignature =
+      result.payment_gateway === 'razorpay' ? result.razorpay_signature : result.orderId;
 
     if (paymentType === 'movein') {
       const bookingId =
@@ -197,8 +229,9 @@ export function CompletePaymentScreen() {
         transactionId: initData.paymentObj.transactionId,
         amount,
         paymentMethod: 'UPI',
-        razorpayPaymentId: razorpayData.razorpay_payment_id,
-        razorpaySignature: razorpayData.razorpay_signature,
+        razorpayPaymentId,
+        razorpaySignature,
+        payment_gateway: result.payment_gateway,
       };
     }
 
@@ -207,18 +240,17 @@ export function CompletePaymentScreen() {
       transactionId: initData.paymentObj.transactionId,
       amount,
       paymentMethod: 'UPI',
-      razorpayPaymentId: razorpayData.razorpay_payment_id,
-      razorpaySignature: razorpayData.razorpay_signature,
+      razorpayPaymentId,
+      razorpaySignature,
+      payment_gateway: result.payment_gateway,
+      ...(result.payment_gateway === 'cashfree' ? { orderId: result.orderId } : {}),
     };
   }
 
   const verifyPayment = useCallback(
-    async (
-      initData: InitPaymentData,
-      razorpayData: { razorpay_payment_id: string; razorpay_signature: string },
-    ) => {
+    async (initData: InitPaymentData, result: PaymentVerifyResult) => {
       try {
-        const verifyPayload = buildVerifyPayload(initData, razorpayData);
+        const verifyPayload = buildVerifyPayload(initData, result);
         const { success, message } = await postVerifyPayment(verifyApi, verifyPayload);
         if (success) {
           handlePaymentSuccess(initData);
@@ -288,7 +320,11 @@ export function CompletePaymentScreen() {
       };
 
       const razorpayData = await RazorpayCheckout.open(options);
-      await verifyPayment(initData, razorpayData);
+      await verifyPayment(initData, {
+        payment_gateway: 'razorpay',
+        razorpay_payment_id: razorpayData.razorpay_payment_id,
+        razorpay_signature: razorpayData.razorpay_signature,
+      });
     } catch (error) {
       setStatus('failed');
       setErrorMessage(parseRazorpayError(error));

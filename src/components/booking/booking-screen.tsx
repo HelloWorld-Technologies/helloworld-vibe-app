@@ -158,7 +158,7 @@ export function BookingScreen() {
       if (!pricing) return;
 
       setPricingDetails(pricing);
-      setCharges(buildChargesFromPricing(pricing));
+      setCharges(buildChargesFromPricing(pricing, draftSnapshot.moveInDate));
     }
 
     void fetchPricing();
@@ -168,10 +168,10 @@ export function BookingScreen() {
     if (!appliedCoupon) {
       setDiscountPricingDetails(null);
       if (pricingDetails) {
-        setCharges(buildChargesFromPricing(pricingDetails));
+        setCharges(buildChargesFromPricing(pricingDetails, draft?.moveInDate));
       }
     }
-  }, [appliedCoupon, pricingDetails]);
+  }, [appliedCoupon, draft?.moveInDate, pricingDetails]);
 
   const discounts = useMemo(
     () => [appliedCoupon, appliedReferral].filter((item): item is AppliedDiscount => Boolean(item)),
@@ -254,7 +254,7 @@ export function BookingScreen() {
         const discountedPricing = mapPaymentDetailsRow(response.data[0] as Record<string, unknown>);
         if (discountedPricing) {
           setDiscountPricingDetails(discountedPricing);
-          setCharges(buildChargesFromPricing(discountedPricing));
+          setCharges(buildChargesFromPricing(discountedPricing, bookingDraft.moveInDate));
         }
 
         setAppliedCoupon({
