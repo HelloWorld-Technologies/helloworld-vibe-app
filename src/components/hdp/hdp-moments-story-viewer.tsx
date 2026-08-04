@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -17,6 +17,7 @@ import Animated, {
   FadeIn,
   FadeOut,
   runOnJS,
+  useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -32,6 +33,7 @@ const TAP_EDGE_RATIO = 0.33;
 const SWIPE_DISTANCE = 56;
 const SWIPE_DOWN_CLOSE = 90;
 const PLAY_ICON_FLASH_MS = 700;
+const OPEN_FADE_MS = 180;
 const PROGRESS_GRADIENT = ['#5EEAD4', '#38BDF8', '#A78BFA'] as const;
 
 type HdpMomentsStoryViewerProps = {
@@ -132,18 +134,23 @@ export function HdpMomentsStoryViewer({
   const [muted, setMuted] = useState(false);
   const [playbackIcon, setPlaybackIcon] = useState<PlaybackIcon>(null);
   const [storyEpoch, setStoryEpoch] = useState(0);
-  const [canMountVideo, setCanMountVideo] = useState(false);
+  const [mounted, setMounted] = useState(visible);
 
   const imageProgress = useSharedValue(0);
+  const overlayOpacity = useSharedValue(visible ? 1 : 0);
   const onCloseRef = useRef(onClose);
   const momentsLengthRef = useRef(moments.length);
   const widthRef = useRef(width);
   const playIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdingRef = useRef(false);
+  const openGenerationRef = useRef(0);
 
-  const current = moments[index];
+  const safeIndex = Math.min(Math.max(index, 0), Math.max(moments.length - 1, 0));
+  const current = moments[safeIndex] ?? moments[0];
   const isVideo = current?.mediaType === 'video';
-  const videoUri = visible && isVideo ? current?.mediaUrl : undefined;
+  // Keep the player mounted through the close fade so media doesn't pop to black.
+  const videoUri = mounted && isVideo ? current?.mediaUrl : undefined;
+  const posterUri = current?.imageUri;
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -154,18 +161,39 @@ export function HdpMomentsStoryViewer({
   }, [width]);
 
   useEffect(() => {
-    if (!visible || !videoUri) {
-      setCanMountVideo(false);
-      return;
-    }
-    setCanMountVideo(false);
-    const timer = setTimeout(() => setCanMountVideo(true), 120);
-    return () => clearTimeout(timer);
-  }, [visible, videoUri, index, storyEpoch]);
-
-  useEffect(() => {
     momentsLengthRef.current = moments.length;
   }, [moments.length]);
+
+  // Mount before paint on open; stay mounted through close fade.
+  useLayoutEffect(() => {
+    if (visible) {
+      openGenerationRef.current += 1;
+      setMounted(true);
+      cancelAnimation(overlayOpacity);
+      overlayOpacity.value = 0;
+      overlayOpacity.value = withTiming(1, {
+        duration: OPEN_FADE_MS,
+        easing: Easing.out(Easing.cubic),
+      });
+      return;
+    }
+
+    const generation = openGenerationRef.current;
+    cancelAnimation(overlayOpacity);
+    overlayOpacity.value = withTiming(
+      0,
+      { duration: OPEN_FADE_MS, easing: Easing.in(Easing.cubic) },
+      (finished) => {
+        if (finished && openGenerationRef.current === generation) {
+          runOnJS(setMounted)(false);
+        }
+      },
+    );
+  }, [visible, overlayOpacity]);
+
+  const overlayStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
 
   useEffect(() => {
     return () => {
@@ -252,7 +280,8 @@ export function HdpMomentsStoryViewer({
     goNext();
   }, [goNext]);
 
-  useEffect(() => {
+  // Sync before paint so the first visible frame shows the tapped moment.
+  useLayoutEffect(() => {
     if (!visible) return;
     setIndex(Math.min(Math.max(initialIndex, 0), Math.max(moments.length - 1, 0)));
     setPaused(false);
@@ -350,43 +379,53 @@ export function HdpMomentsStoryViewer({
     Gesture.Exclusive(longPressGesture, tapGesture),
   );
 
-  if (!current) {
+  if (!current || !mounted) {
     return null;
   }
 
   return (
     <Modal
-      visible={visible}
-      animationType="fade"
+      visible={mounted}
+      animationType="none"
       transparent
       presentationStyle="overFullScreen"
       onRequestClose={onClose}
       statusBarTranslucent>
-      <GestureHandlerRootView style={styles.root}>
+      <GestureHandlerRootView style={styles.modalRoot}>
         <StatusBar style="light" />
-        <View style={styles.root}>
-          {videoUri && canMountVideo ? (
+        <Animated.View style={[styles.root, overlayStyle]}>
+          {/* Poster stays mounted so open never flashes black while video attaches. */}
+          {posterUri ? (
+            <Image
+              source={{ uri: posterUri }}
+              style={styles.media}
+              contentFit="cover"
+              transition={0}
+              cachePolicy="memory-disk"
+            />
+          ) : null}
+
+          {videoUri ? (
             <HwVideoPlayer
               key={`${current.id}-${storyEpoch}-${videoUri}`}
               uri={videoUri}
               playing={visible && !paused}
               loop={false}
               muted={muted}
-              posterUri={current.imageUri}
+              posterUri={posterUri}
               style={styles.media}
               timeUpdateInterval={0.05}
               onProgress={setProgress}
               onEnded={goNext}
               onError={goNext}
             />
-          ) : videoUri ? (
-            <Image source={{ uri: current.imageUri }} style={styles.media} contentFit="cover" />
           ) : (
             <Image
               source={{ uri: current.mediaUrl || current.imageUri }}
               style={styles.media}
               contentFit="cover"
-              transition={200}
+              transition={0}
+              cachePolicy="memory-disk"
             />
           )}
 
@@ -401,7 +440,7 @@ export function HdpMomentsStoryViewer({
             pointerEvents="box-none">
             <StoryProgressBar
               count={moments.length}
-              activeIndex={index}
+              activeIndex={safeIndex}
               progress={progress}
             />
 
@@ -442,13 +481,16 @@ export function HdpMomentsStoryViewer({
               </Pressable>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </GestureHandlerRootView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+  },
   root: {
     flex: 1,
     backgroundColor: palette.black,

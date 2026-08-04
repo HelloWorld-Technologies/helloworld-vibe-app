@@ -179,16 +179,13 @@ export function HwVideoPlayer({
     player.loop = loop;
   }, [loop, player]);
 
-  return (
-    <View style={[styles.root, style]} onLayout={handleLayout} collapsable={false}>
-      {posterUri ? (
-        <Image
-          source={{ uri: posterUri }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-        />
-      ) : null}
+  const showPoster = Boolean(posterUri) && (!ready || !surfaceReady);
 
+  return (
+    <View
+      style={[styles.root, posterUri ? styles.rootTransparent : null, style]}
+      onLayout={handleLayout}
+      collapsable={false}>
       {surfaceReady && hasSize ? (
         <VideoView
           style={{ width: size.width, height: size.height }}
@@ -199,7 +196,18 @@ export function HwVideoPlayer({
         />
       ) : null}
 
-      {!ready ? (
+      {/* Keep poster above the native video layer until the first frame is ready. */}
+      {posterUri ? (
+        <Image
+          source={{ uri: posterUri }}
+          style={[StyleSheet.absoluteFill, showPoster ? null : styles.posterHidden]}
+          contentFit="cover"
+          transition={0}
+          pointerEvents="none"
+        />
+      ) : null}
+
+      {!ready && !posterUri ? (
         <View style={styles.loading} pointerEvents="none">
           <ActivityIndicator color={palette.white} />
         </View>
@@ -213,10 +221,15 @@ const styles = StyleSheet.create({
     backgroundColor: palette.black,
     overflow: 'hidden',
   },
+  rootTransparent: {
+    backgroundColor: 'transparent',
+  },
+  posterHidden: {
+    opacity: 0,
+  },
   loading: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.15)',
   },
 });

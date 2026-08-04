@@ -1,5 +1,5 @@
 import type { BookingChargeId, BookingChargeOption, BookingPricingDetails, TaxableCharge } from '@/types/booking-payment';
-import { normalizeBookingChargeAmount } from '@/utils/booking-payment';
+import { normalizeBookingChargeAmount, parseBookingDate } from '@/utils/booking-payment';
 
 function toTaxableCharge(value: unknown): TaxableCharge {
   if (value && typeof value === 'object') {
@@ -13,6 +13,16 @@ function toTaxableCharge(value: unknown): TaxableCharge {
 
   const amount = normalizeBookingChargeAmount(value) ?? 0;
   return { amount, totalAmount: amount, cgst: 0, sgst: 0 };
+}
+
+/** Remaining days in the move-in month (inclusive), matching legacy `numberOfDaysForRent`. */
+export function numberOfDaysForRent(moveInDate: string | Date) {
+  const date = parseBookingDate(moveInDate);
+  if (!date) return 0;
+
+  return (
+    new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate() - date.getDate() + 1
+  );
 }
 
 export function mapPaymentDetailsRow(row: Record<string, unknown>): BookingPricingDetails | null {
@@ -33,44 +43,53 @@ export function mapPaymentDetailsRow(row: Record<string, unknown>): BookingPrici
 
 export function buildChargesFromPricing(
   pricing: BookingPricingDetails,
+  moveInDate?: string | Date,
 ): BookingChargeOption[] {
+  const days = moveInDate ? numberOfDaysForRent(moveInDate) : 0;
   const tokenLabel =
     pricing.sdMonths === 0 ? 'Token Amount + Move Out Charges' : 'Token Amount';
 
-  return [
+  const charges: BookingChargeOption[] = [
     {
       id: 'token',
       label: tokenLabel,
       amount: pricing.token,
-      description: 'Required to confirm booking',
+      // Match legacy PaymentInformation — no marketing subtitle.
+      description: '',
       required: true,
       badge: 'Required',
     },
     {
       id: 'moveIn',
-      label: 'Move-in Charges',
+      label: 'Move in charges',
       amount: pricing.moveInCharges.amount,
-      description: 'One-time setup fee',
+      description: '',
     },
     {
       id: 'security',
       label: `Security Deposit (${pricing.sdMonths} Month Rent - Token Amount)`,
       amount: pricing.securityDeposit,
-      description: 'Refundable at checkout',
+      description: '',
     },
     {
       id: 'advanceRent',
-      label: 'Advance Rent',
+      label:
+        days > 0
+          ? `Advance Rent Amount ( for ${days} day(s) )`
+          : 'Advance Rent Amount',
       amount: pricing.advanceRent.amount,
-      description: 'Pro-rated first month',
+      description: '',
     },
     {
       id: 'utility',
-      label: 'Utility Charges',
+      label: days > 0 ? `Utility charges [ for ${days} days ]` : 'Utility charges',
       amount: pricing.utility.amount,
-      description: 'Monthly utility deposit',
+      description: '',
     },
   ];
+
+  // Match legacy PaymentInformation: only show charges with an amount.
+  return charges.filter((charge) => charge.id === 'token' || charge.amount > 0);
 }
 
 export function computePayableSubtotal(

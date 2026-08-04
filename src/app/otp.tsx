@@ -107,13 +107,6 @@ export default function OtpScreen() {
               <Typography variant="text" size="sm" color={palette.gray[400]}>
                 Resend SMS in 30s
               </Typography>
-              <View style={styles.resendDivider} />
-              <Pressable style={styles.whatsappRow} accessibilityRole="button">
-                <HwIcon name="whatsapp" size={20} />
-                <Typography variant="text" size="sm" weight="medium" color={palette.helloLime}>
-                  Resend via Whatsapp
-                </Typography>
-              </Pressable>
             </View>
           </View>
         </ScrollView>
@@ -184,16 +177,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flexWrap: 'wrap',
-  },
-  resendDivider: {
-    width: 1,
-    height: 14,
-    backgroundColor: palette.gray[300],
-  },
-  whatsappRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   footer: {
     paddingHorizontal: 24,

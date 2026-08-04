@@ -62,6 +62,7 @@ export function VibeSelectionList({
   const chips = vibes.map((vibe, index) => (
     <Animated.View
       key={vibe.id}
+      style={styles.chipWrap}
       entering={
         animateOnMount ? FadeInDown.duration(CHIP_ENTER_MS).delay(index * CHIP_STAGGER_MS) : undefined
       }>
@@ -96,6 +97,7 @@ export function VibeSelectionList({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.scroll}
           contentContainerStyle={[styles.row, contentContainerStyle]}>
           {chips}
         </ScrollView>
@@ -115,10 +117,19 @@ const styles = StyleSheet.create({
   hint: {
     marginBottom: 10,
   },
+  scroll: {
+    flexGrow: 0,
+    overflow: 'visible',
+  },
   row: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    paddingBottom: 4,
+    // Extra room so selected scale + gradient border aren't clipped.
+    paddingVertical: 10,
+  },
+  chipWrap: {
+    overflow: 'visible',
   },
   wrap: {
     flexDirection: 'row',

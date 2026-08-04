@@ -100,20 +100,46 @@ export function buildBookingPaymentParams(input: BookingCheckoutSession) {
   };
 }
 
+export type BookingRazorpayVerifyResult = {
+  payment_gateway: 'razorpay';
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+};
+
+export type BookingCashfreeVerifyResult = {
+  payment_gateway: 'cashfree';
+  orderId: string;
+};
+
+export type BookingGatewayVerifyResult =
+  | BookingRazorpayVerifyResult
+  | BookingCashfreeVerifyResult;
+
 export function buildBookingVerifyPayload(
   initData: {
-    paymentObj: { transactionId?: string };
+    paymentObj: { transactionId?: string; orderId?: string };
     id?: string | number;
   },
-  razorpayData: { razorpay_payment_id: string; razorpay_signature: string },
+  gatewayResult: BookingGatewayVerifyResult,
   amount: number,
 ) {
-  return {
+  const base = {
     paymentId: initData.paymentObj.transactionId,
     bookingId: initData.id,
     amount,
-    paymentMethod: 'UPI',
-    razorpayPaymentId: razorpayData.razorpay_payment_id,
-    razorpaySignature: razorpayData.razorpay_signature,
+    payment_gateway: gatewayResult.payment_gateway,
+  };
+
+  if (gatewayResult.payment_gateway === 'cashfree') {
+    return {
+      ...base,
+      orderId: gatewayResult.orderId || initData.paymentObj.orderId,
+    };
+  }
+
+  return {
+    ...base,
+    razorpayPaymentId: gatewayResult.razorpayPaymentId,
+    razorpaySignature: gatewayResult.razorpaySignature,
   };
 }

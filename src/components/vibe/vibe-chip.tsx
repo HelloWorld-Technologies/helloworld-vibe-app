@@ -52,7 +52,7 @@ export function VibeChip({
     }
 
     scale.value = withSequence(
-      withSpring(selected ? 1.07 : 0.95, {
+      withSpring(selected ? 1.04 : 0.97, {
         damping: 11,
         stiffness: 380,
         mass: 0.6,
