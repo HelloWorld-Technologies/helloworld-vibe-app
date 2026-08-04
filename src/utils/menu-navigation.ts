@@ -18,6 +18,8 @@ export const TENANT_MENU_ROUTES: Partial<Record<string, Href>> = {
   'community-events': '/community-events',
   'personal-details': '/profile/personal-details',
   'booking-details': '/profile/booking-details',
+  'your-vibes': '/move-in-about-you?from=menu',
+  'education-professional': '/move-in-background?from=menu',
   'bank-details': '/profile/bank-details',
   'emergency-contact': '/profile/emergency-contact',
   referral: '/profile/referral',

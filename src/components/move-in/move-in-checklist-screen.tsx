@@ -198,7 +198,7 @@ export function MoveInChecklistScreen() {
           />
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
             <Typography variant="text" size="xs" color={palette.gray[500]} style={styles.footerNote}>
-              You can update your checklist until it&apos;s approved.
+              You can update your checklist until your Property Manager approves it.
             </Typography>
             <Button
               label="Submit Checklist"

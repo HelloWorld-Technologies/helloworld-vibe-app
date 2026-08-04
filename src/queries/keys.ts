@@ -29,4 +29,5 @@ export const queryKeys = {
   smartMeterConsumption: (bookingId: string, startDate: string, endDate: string) =>
     ['smart-meter', 'consumption', bookingId, startDate, endDate] as const,
   pendingReviews: (bookingId: string) => ['pending-reviews', bookingId] as const,
+  moveInPayments: (bookingId: string) => ['move-in-payments', bookingId] as const,
 };

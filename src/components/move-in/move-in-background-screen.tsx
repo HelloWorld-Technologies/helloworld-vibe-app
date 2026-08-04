@@ -1,13 +1,9 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MoveInSearchableSelect } from '@/components/move-in/move-in-searchable-select';
-import {
-  MoveInWorkEmailSheet,
-  MoveInWorkEmailVerifiedBanner,
-} from '@/components/move-in/move-in-work-email-sheet';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
@@ -24,14 +20,16 @@ import {
   isMoveInBackgroundComplete,
   restoreCollegeSelection,
   restoreWorkplaceSelection,
-  shouldShowWorkEmailVerification,
 } from '@/utils/move-in-background';
+import { resetRootRoute } from '@/utils/navigation-reset';
 
 type OpenField = 'college' | 'company' | null;
 
 export function MoveInBackgroundScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ from?: string }>();
+  const fromMenu = params.from === 'menu';
   const savedBackground = useTenantStore((state) => state.moveInBackground);
   const setMoveInBackground = useTenantStore((state) => state.setMoveInBackground);
   const restoredCollege = restoreCollegeSelection(savedBackground.college);
@@ -42,10 +40,7 @@ export function MoveInBackgroundScreen() {
   const [workplace, setWorkplace] = useState(restoredWorkplace.workplace);
   const [customCompany, setCustomCompany] = useState(restoredWorkplace.customCompany);
   const [isSelfEmployed, setIsSelfEmployed] = useState(restoredWorkplace.isSelfEmployed);
-  const [workEmail, setWorkEmail] = useState(savedBackground.workEmail);
-  const [workEmailVerified, setWorkEmailVerified] = useState(savedBackground.workEmailVerified);
   const [openField, setOpenField] = useState<OpenField>(null);
-  const [emailSheetOpen, setEmailSheetOpen] = useState(false);
 
   const resolvedCollege =
     college === MOVE_IN_OTHER_COLLEGE_LABEL ? customCollege.trim() : college.trim();
@@ -59,18 +54,9 @@ export function MoveInBackgroundScreen() {
     college: resolvedCollege,
     workplace: resolvedWorkplace,
     isSelfEmployed,
-    workEmail,
-    workEmailVerified,
+    workEmail: savedBackground.workEmail,
+    workEmailVerified: savedBackground.workEmailVerified,
   };
-
-  const showVerifyLink =
-    shouldShowWorkEmailVerification({
-      college: resolvedCollege,
-      workplace: resolvedWorkplace,
-      isSelfEmployed,
-      workEmail,
-      workEmailVerified,
-    }) && !workEmailVerified;
 
   function handleSave() {
     if (!resolvedCollege) {
@@ -83,10 +69,7 @@ export function MoveInBackgroundScreen() {
       return;
     }
 
-    if (
-      college === MOVE_IN_OTHER_COLLEGE_LABEL &&
-      !customCollege.trim()
-    ) {
+    if (college === MOVE_IN_OTHER_COLLEGE_LABEL && !customCollege.trim()) {
       Alert.alert('College name required', 'Please type your college name.');
       return;
     }
@@ -101,14 +84,22 @@ export function MoveInBackgroundScreen() {
     }
 
     setMoveInBackground(draftBackground);
-    router.push('/move-in-about-you');
+
+    if (fromMenu) {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/menu');
+      }
+      return;
+    }
+
+    resetRootRoute('/move-in-steps');
   }
 
   function handleCompanySelect(value: string) {
     setWorkplace(value);
     setIsSelfEmployed(false);
-    setWorkEmail('');
-    setWorkEmailVerified(false);
 
     if (value !== MOVE_IN_OTHER_COMPANY_LABEL) {
       setCustomCompany('');
@@ -119,12 +110,13 @@ export function MoveInBackgroundScreen() {
     setWorkplace(MOVE_IN_SELF_EMPLOYED_LABEL);
     setIsSelfEmployed(true);
     setCustomCompany('');
-    setWorkEmail('');
-    setWorkEmailVerified(false);
   }
 
   return (
-    <ProfileStackScreen title="A Little About You" centerTitle style={styles.screen}>
+    <ProfileStackScreen
+      title={fromMenu ? 'Education & Professional Details' : 'A Little About You'}
+      centerTitle
+      style={styles.screen}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
@@ -162,36 +154,15 @@ export function MoveInBackgroundScreen() {
           onSelfEmployed={handleSelfEmployed}
           containerStyle={[styles.field, openField === 'company' && styles.fieldRaised]}
         />
-
-        {workEmailVerified && workEmail ? <MoveInWorkEmailVerifiedBanner email={workEmail} /> : null}
-
-        {showVerifyLink ? (
-          <Pressable onPress={() => setEmailSheetOpen(true)} style={styles.verifyLink}>
-            <Typography variant="text" size="sm" weight="medium" color={palette.helloLime}>
-              Verify Work Email
-            </Typography>
-          </Pressable>
-        ) : null}
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Button
-          label="Save & Continue"
+          label={fromMenu ? 'Save' : 'Save & Continue'}
           onPress={handleSave}
           disabled={!isMoveInBackgroundComplete(draftBackground)}
         />
       </View>
-
-      <MoveInWorkEmailSheet
-        visible={emailSheetOpen}
-        company={resolvedWorkplace}
-        email={workEmail}
-        onClose={() => setEmailSheetOpen(false)}
-        onVerified={(verifiedEmail) => {
-          setWorkEmail(verifiedEmail);
-          setWorkEmailVerified(true);
-        }}
-      />
     </ProfileStackScreen>
   );
 }
@@ -212,10 +183,6 @@ const styles = StyleSheet.create({
   },
   fieldRaised: {
     zIndex: 3,
-  },
-  verifyLink: {
-    alignSelf: 'flex-end',
-    marginTop: -8,
   },
   footer: {
     position: 'absolute',

@@ -1,8 +1,8 @@
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/ui/typography';
 import { DashboardImages } from '@/constants/assets';
@@ -17,6 +17,7 @@ type ReferralHeroCardProps = {
   referralCode?: string;
   userName?: string;
   friendDiscount?: number;
+  onCopied?: () => void;
 };
 
 export function ReferralHeroCard({
@@ -25,11 +26,12 @@ export function ReferralHeroCard({
   referralCode,
   userName,
   friendDiscount = 1000,
+  onCopied,
 }: ReferralHeroCardProps) {
   async function copyCode() {
     if (!referralCode) return;
     await Clipboard.setStringAsync(referralCode);
-    Alert.alert('Copied!', 'Referral code copied to clipboard');
+    onCopied?.();
   }
 
   async function shareCode() {
@@ -75,14 +77,26 @@ export function ReferralHeroCard({
 
         {referralCode ? (
           <View style={styles.codeRow}>
-            <Pressable style={styles.codeBox} onPress={copyCode} accessibilityRole="button">
+            <Pressable
+              style={styles.codeBox}
+              onPress={() => {
+                void copyCode();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Copy referral code">
               <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]}>
                 {referralCode}
               </Typography>
-              <SymbolView name="doc.on.doc" size={16} tintColor={palette.lime[700]} />
+              <SymbolView name="doc.on.doc" size={16} tintColor={palette.lime[600]} />
             </Pressable>
-            <Pressable style={styles.shareButton} onPress={shareCode} accessibilityRole="button">
-              <SymbolView name="square.and.arrow.up" size={20} tintColor={palette.gray[800]} />
+            <Pressable
+              style={styles.shareButton}
+              onPress={() => {
+                void shareCode();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Share referral code">
+              <SymbolView name="square.and.arrow.up" size={20} tintColor={palette.lime[900]} />
             </Pressable>
           </View>
         ) : (
@@ -92,7 +106,11 @@ export function ReferralHeroCard({
         )}
       </View>
 
-      <Image source={DashboardImages.referralIllustration} style={styles.illustration} contentFit="contain" />
+      <Image
+        source={DashboardImages.referralIllustration}
+        style={styles.illustration}
+        contentFit="contain"
+      />
     </LinearGradient>
   );
 }
@@ -140,7 +158,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: palette.lime[500],
+    borderColor: palette.lime[600],
     borderRadius: Radius.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -152,7 +170,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.white,
   },
   illustration: {
     width: 120,

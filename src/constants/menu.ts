@@ -44,6 +44,12 @@ export const TENANT_ACCOUNT_ITEMS: MenuItem[] = [
     label: 'Booking Details & Rental Agreements',
     icon: 'bookingDetails',
   },
+  { id: 'your-vibes', label: 'Your Vibes', icon: 'yourVibes' },
+  {
+    id: 'education-professional',
+    label: 'Education & Professional Details',
+    icon: 'educationProfessional',
+  },
   { id: 'bank-details', label: 'Bank Details', icon: 'bankDetails' },
   { id: 'emergency-contact', label: 'Emergency Contact Details', icon: 'emergencyContact' },
 ];

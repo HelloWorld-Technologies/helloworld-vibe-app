@@ -6,6 +6,7 @@ import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
+import { queryKeys } from '@/queries/keys';
 import { useTenantStore } from '@/stores/tenant-store';
 
 type PaymentSuccessViewProps = {
@@ -25,9 +26,13 @@ export function PaymentSuccessView({ isInvoicePayment, isMoveInPayment }: Paymen
     }
 
     if (isMoveInPayment) {
+      const bookingId = useTenantStore.getState().profile?.bookingId;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['booking-status'] }),
         queryClient.invalidateQueries({ queryKey: ['tenant-invoices'] }),
+        bookingId
+          ? queryClient.invalidateQueries({ queryKey: queryKeys.moveInPayments(bookingId) })
+          : Promise.resolve(),
         useTenantStore.getState().fetchProfile(),
       ]);
       router.replace('/move-in-steps');

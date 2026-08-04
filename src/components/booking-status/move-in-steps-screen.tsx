@@ -1,7 +1,9 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { SymbolView } from 'expo-symbols';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -18,7 +20,7 @@ import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { useMoveInPayment } from '@/hooks/use-move-in-payment';
 import { useBookingStatus } from '@/queries/use-booking-status';
-import { useTenantInvoices } from '@/queries/use-tenant-invoices';
+import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
 import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
 import type { MoveInStep } from '@/types/booking-status';
 import { buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
@@ -33,26 +35,48 @@ export function MoveInStepsScreen() {
   const insets = useSafeAreaInsets();
   const profile = useTenantProfile();
   const { startMoveInPayment } = useMoveInPayment();
-  const { data: invoices } = useTenantInvoices();
+  const { data: moveInPayments, refetch: refetchMoveInPayments } = useMoveInPaymentDetails();
   const { data: status, isLoading, isError, refetch, isRefetching } = useBookingStatus();
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([
+      refetch(),
+      refetchMoveInPayments(),
+      useTenantStore.getState().fetchProfile(),
+    ]);
+  }, [refetch, refetchMoveInPayments]);
 
   useFocusEffect(
     useCallback(() => {
-      refetch();
-    }, [refetch]),
+      void refreshAll();
+    }, [refreshAll]),
   );
 
   const moveInInterests = useTenantStore((state) => state.moveInInterests);
   const moveInBackground = useTenantStore((state) => state.moveInBackground);
-  const steps = status ? buildMoveInSteps(status, profile, moveInInterests, moveInBackground) : [];
+  const remainingMoveInAmount = moveInPayments?.finalAmount ?? null;
+  const steps = status
+    ? buildMoveInSteps(
+        status,
+        profile,
+        moveInInterests,
+        moveInBackground,
+        remainingMoveInAmount,
+      )
+    : [];
   const { completed, pending, total, doneCount } = partitionMoveInSteps(steps);
   const moveInDate = status?.move_in_date ?? profile?.propertyInfo?.moveInDate ?? '';
-  const nextPending = invoices?.pending?.[0];
-  const showMoveInPendingPayment = shouldShowMoveInPendingPaymentCard(profile, status);
-  const moveInPendingAmount = getMoveInPendingAmount(profile, nextPending);
+  const showMoveInPendingPayment = shouldShowMoveInPendingPaymentCard(
+    profile,
+    status,
+    remainingMoveInAmount,
+  );
+  const moveInPendingAmount = getMoveInPendingAmount(profile, remainingMoveInAmount);
   const visiblePending = showMoveInPendingPayment
     ? pending.filter((step) => step.id !== 'advance-charges')
     : pending;
+  const isRefreshing = isRefetching || isManualRefreshing;
 
   function handleMoveInPayment() {
     startMoveInPayment();
@@ -62,7 +86,18 @@ export function MoveInStepsScreen() {
     resetRootRoute('/(tabs)/dashboard');
   }, []);
 
+  async function handleRefreshPress() {
+    if (isRefreshing) return;
+    setIsManualRefreshing(true);
+    try {
+      await refreshAll();
+    } finally {
+      setIsManualRefreshing(false);
+    }
+  }
+
   function handleStepPress(step: MoveInStep) {
+    if (step.enabled === false) return;
     if (step.route) {
       router.push(step.route as never);
     }
@@ -85,7 +120,12 @@ export function MoveInStepsScreen() {
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => void handleRefreshPress()}
+            />
+          }
           contentContainerStyle={[
             styles.content,
             { paddingBottom: Math.max(insets.bottom, 24) + 24 },
@@ -106,14 +146,41 @@ export function MoveInStepsScreen() {
 
           {visiblePending.length > 0 ? (
             <View style={styles.section}>
-              <Typography variant="text" size="xl" weight="bold">
-                Pending Actions
-              </Typography>
+              <View style={styles.sectionHeader}>
+                <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
+                  Pending Actions
+                </Typography>
+                <Pressable
+                  onPress={() => void handleRefreshPress()}
+                  disabled={isRefreshing}
+                  hitSlop={8}
+                  style={({ pressed }) => [
+                    styles.refreshButton,
+                    pressed && styles.refreshButtonPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Refresh pending actions">
+                  {isRefreshing ? (
+                    <ActivityIndicator size="small" color={palette.gray[700]} />
+                  ) : (
+                    <SymbolView
+                      name="arrow.clockwise"
+                      size={18}
+                      weight="semibold"
+                      tintColor={palette.gray[700]}
+                    />
+                  )}
+                </Pressable>
+              </View>
               {visiblePending.map((step) => (
                 <MoveInPendingCard
                   key={step.id}
                   step={step}
-                  onPress={step.actionLabel ? () => handleStepPress(step) : undefined}
+                  onPress={
+                    step.actionLabel && step.enabled !== false
+                      ? () => handleStepPress(step)
+                      : undefined
+                  }
                 />
               ))}
             </View>
@@ -147,5 +214,25 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  sectionTitle: {
+    flex: 1,
+  },
+  refreshButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.gray[100],
+  },
+  refreshButtonPressed: {
+    opacity: 0.75,
   },
 });

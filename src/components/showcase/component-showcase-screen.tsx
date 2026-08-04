@@ -376,7 +376,7 @@ export function ComponentShowcaseScreen() {
                 selectedIds={selectedVibes}
                 onChange={setSelectedVibes}
                 variant="onDark"
-                hint="✨ Pick up to 5 vibes for better matches (optional)"
+                hint="✨ Pick at least 5 vibes for better matches (optional)"
               />
             </LinearGradient>
           </Subsection>

@@ -25,7 +25,7 @@ export function MoveInChecklistSubmittedView({ onEdit }: MoveInChecklistSubmitte
           Your Checklist is Submitted Successfully
         </Typography>
         <Typography variant="text" size="sm" color={palette.gray[500]} style={styles.subheading}>
-          You can edit this checklist until it&apos;s approved.
+          Awaiting approval from your Property Manager. You can still edit until it&apos;s approved.
         </Typography>
         <Pressable onPress={onEdit} accessibilityRole="button">
           <Typography variant="text" size="sm" weight="bold" color={palette.blue[800]} style={styles.editLink}>
@@ -37,8 +37,8 @@ export function MoveInChecklistSubmittedView({ onEdit }: MoveInChecklistSubmitte
           <Typography variant="text" size="md" weight="medium">
             Approval Status
           </Typography>
-          <Typography variant="text" size="md" weight="bold" color={palette.red[500]}>
-            Pending
+          <Typography variant="text" size="sm" weight="bold" color={palette.red[500]} style={styles.statusValue}>
+            Awaiting approval from Property Manager
           </Typography>
         </View>
       </View>
@@ -87,5 +87,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
+  },
+  statusValue: {
+    flexShrink: 1,
+    textAlign: 'right',
   },
 });

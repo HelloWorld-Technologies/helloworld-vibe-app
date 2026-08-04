@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,20 +10,47 @@ import { Typography } from '@/components/ui/typography';
 import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
 import palette from '@/constants/palette';
 import {
-  emojiForVibeCode,
-  MOVE_IN_INTEREST_OPTIONS,
+  mapVibesToListItems,
   MOVE_IN_INTERESTS_MAX,
+  MOVE_IN_INTERESTS_MIN,
 } from '@/constants/vibes';
 import { useSaveUserVibes, useUserVibes, useVibesList } from '@/queries/use-vibes';
 import { useTenantStore } from '@/stores/tenant-store';
-import { resetRootRoute } from '@/utils/navigation-reset';
+import type { Vibe } from '@/types/vibes';
 
 function toChipId(id: number) {
   return String(id);
 }
 
+function resolveVibeIds(selectedIds: string[], apiVibes: Vibe[]) {
+  const resolved: number[] = [];
+
+  for (const selected of selectedIds) {
+    const asNumber = Number(selected);
+    if (Number.isFinite(asNumber) && asNumber > 0) {
+      const byId = apiVibes.find((vibe) => vibe.id === asNumber);
+      if (byId) {
+        resolved.push(byId.id);
+        continue;
+      }
+    }
+
+    const byCode = apiVibes.find(
+      (vibe) => vibe.code.toLowerCase() === selected.toLowerCase(),
+    );
+    if (byCode) {
+      resolved.push(byCode.id);
+    }
+  }
+
+  return [...new Set(resolved)].slice(0, MOVE_IN_INTERESTS_MAX);
+}
+
 export function MoveInAboutYouScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ from?: string }>();
+  const fromMenu = params.from === 'menu';
   const savedInterests = useTenantStore((state) => state.moveInInterests);
   const setMoveInInterests = useTenantStore((state) => state.setMoveInInterests);
 
@@ -34,26 +62,21 @@ export function MoveInAboutYouScreen() {
   const [didPrefill, setDidPrefill] = useState(false);
 
   const apiVibes = vibesListQuery.data ?? [];
-
-  const vibeOptions = useMemo(() => {
-    if (apiVibes.length > 0) {
-      return apiVibes.map((vibe) => ({
-        id: toChipId(vibe.id),
-        label: vibe.display_name,
-        emoji: emojiForVibeCode(vibe.code),
-      }));
-    }
-
-    return MOVE_IN_INTEREST_OPTIONS.map((option) => ({
-      id: option.id,
-      label: option.label,
-      emoji: option.emoji,
-    }));
-  }, [apiVibes]);
+  const vibeOptions = useMemo(() => mapVibesToListItems(apiVibes), [apiVibes]);
+  const resolvedVibeIds = useMemo(
+    () => resolveVibeIds(selectedIds, apiVibes),
+    [apiVibes, selectedIds],
+  );
 
   useEffect(() => {
     if (didPrefill) return;
     if (vibesListQuery.isLoading || userVibesQuery.isLoading) return;
+    if (apiVibes.length === 0) {
+      if (!vibesListQuery.isFetching && !userVibesQuery.isFetching) {
+        setDidPrefill(true);
+      }
+      return;
+    }
 
     const fromApi = userVibesQuery.data ?? [];
     if (fromApi.length > 0) {
@@ -62,26 +85,11 @@ export function MoveInAboutYouScreen() {
       return;
     }
 
-    if (savedInterests.length > 0 && apiVibes.length > 0) {
-      const matched = savedInterests
-        .map((saved) => {
-          if (/^\d+$/.test(saved)) return saved;
-          const byCode = apiVibes.find(
-            (vibe) => vibe.code.toLowerCase() === saved.toLowerCase(),
-          );
-          return byCode ? toChipId(byCode.id) : null;
-        })
-        .filter((id): id is string => Boolean(id));
-
+    if (savedInterests.length > 0) {
+      const matched = resolveVibeIds(savedInterests, apiVibes).map(toChipId);
       if (matched.length > 0) {
         setSelectedIds(matched);
       }
-      setDidPrefill(true);
-      return;
-    }
-
-    if (savedInterests.length > 0 && apiVibes.length === 0) {
-      setSelectedIds(savedInterests);
       setDidPrefill(true);
       return;
     }
@@ -100,44 +108,59 @@ export function MoveInAboutYouScreen() {
     vibesListQuery.isLoading,
   ]);
 
+  // Keep selection aligned to API vibe ids (drops stale local/fallback ids).
+  useEffect(() => {
+    if (apiVibes.length === 0 || selectedIds.length === 0) return;
+    const validIds = new Set(apiVibes.map((vibe) => toChipId(vibe.id)));
+    const hasInvalid = selectedIds.some((id) => !validIds.has(id));
+    if (!hasInvalid) return;
+
+    const remapped = resolveVibeIds(selectedIds, apiVibes).map(toChipId);
+    setSelectedIds(remapped);
+  }, [apiVibes, selectedIds]);
+
   async function handleContinue() {
-    if (selectedIds.length === 0) {
-      Alert.alert('Select interests', 'Pick at least one interest to continue.');
+    if (resolvedVibeIds.length < MOVE_IN_INTERESTS_MIN) {
+      Alert.alert(
+        'Select interests',
+        `Pick at least ${MOVE_IN_INTERESTS_MIN} interests to continue.`,
+      );
       return;
     }
 
-    const vibeIds = selectedIds
-      .map((id) => Number(id))
-      .filter((id) => Number.isFinite(id) && id > 0);
-
-    if (apiVibes.length > 0) {
-      if (vibeIds.length === 0) {
-        Alert.alert('Select interests', 'Pick at least one interest to continue.');
-        return;
-      }
-
-      try {
-        await saveVibes.mutateAsync(vibeIds.slice(0, MOVE_IN_INTERESTS_MAX));
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to save vibes. Please try again.';
-        Alert.alert('Could not save', message);
-        return;
-      }
-
-      setMoveInInterests(vibeIds.map(String));
-    } else {
-      setMoveInInterests(selectedIds);
+    try {
+      await saveVibes.mutateAsync(resolvedVibeIds);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to save vibes. Please try again.';
+      Alert.alert('Could not save', message);
+      return;
     }
 
-    resetRootRoute('/move-in-steps');
+    setMoveInInterests(resolvedVibeIds.map(String));
+
+    if (fromMenu) {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/menu');
+      }
+      return;
+    }
+
+    router.push('/move-in-background');
   }
 
   const isLoadingOptions =
     vibesListQuery.isLoading || (userVibesQuery.isLoading && !didPrefill);
+  const canContinue =
+    apiVibes.length > 0 && resolvedVibeIds.length >= MOVE_IN_INTERESTS_MIN;
 
   return (
-    <ProfileStackScreen title="A Little About You" centerTitle style={styles.screen}>
+    <ProfileStackScreen
+      title={fromMenu ? 'Your Vibes' : 'A Little About You'}
+      centerTitle
+      style={styles.screen}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
@@ -146,7 +169,8 @@ export function MoveInAboutYouScreen() {
           Tell Us What You Enjoy
         </Typography>
         <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.subtitle}>
-          Pick up to {MOVE_IN_INTERESTS_MAX} interests to personalize your HelloWorld experience.
+          Select at least {MOVE_IN_INTERESTS_MIN} interests to personalize your HelloWorld
+          experience.
         </Typography>
 
         {isLoadingOptions ? (
@@ -180,11 +204,11 @@ export function MoveInAboutYouScreen() {
         />
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <Button
-            label="Continue"
+            label={fromMenu ? 'Save' : 'Continue'}
             onPress={() => {
               void handleContinue();
             }}
-            disabled={selectedIds.length === 0 || saveVibes.isPending || isLoadingOptions}
+            disabled={!canContinue || saveVibes.isPending || isLoadingOptions}
             loading={saveVibes.isPending}
           />
         </View>

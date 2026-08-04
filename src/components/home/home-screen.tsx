@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   type NativeScrollEvent,
@@ -32,10 +32,11 @@ import {
 } from '@/constants/home';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import { VIBE_OPTIONS } from '@/constants/vibes';
+import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
 import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { useMomentsFeed } from '@/queries/use-moments-feed';
 import { useSrpProperties } from '@/queries/use-srp-properties';
+import { useVibesList } from '@/queries/use-vibes';
 import { useSelectedCity, useSelectedLocality } from '@/stores/auth-store';
 import type { PropertyListing } from '@/types/property';
 
@@ -77,8 +78,13 @@ export function HomeScreen() {
   const locality = useSelectedLocality();
   const { data: srpData, isLoading: isLoadingProperties } = useSrpProperties(city);
   const { data: feedData, isLoading: isLoadingFeed } = useMomentsFeed();
+  const { data: apiVibes = [] } = useVibesList();
   const properties = srpData?.listings ?? [];
   const feedMoments = (feedData?.moments ?? []).slice(0, 8);
+  const vibeOptions = useMemo(
+    () => (apiVibes.length > 0 ? mapVibesToListItems(apiVibes) : [...VIBE_OPTIONS]),
+    [apiVibes],
+  );
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [showFeedback, setShowFeedback] = useState(true);
   const [headerScrolled, setHeaderScrolled] = useState(false);
@@ -164,13 +170,13 @@ export function HomeScreen() {
           />
 
           <VibeSelectionList
-            vibes={VIBE_OPTIONS}
+            vibes={vibeOptions}
             selectedIds={selectedVibes}
             onChange={setSelectedVibes}
             variant="onDark"
             hint={
               <Typography variant="text" size="xs" color={palette.white}>
-                ✨ Pick up to 5 vibes for better matches{' '}
+                ✨ Pick at least 5 vibes for better matches{' '}
                 <Typography
                   variant="text"
                   size="xs"

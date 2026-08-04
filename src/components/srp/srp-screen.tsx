@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -26,8 +26,9 @@ import { Typography } from '@/components/ui/typography';
 import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
 import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
-import { VIBE_OPTIONS } from '@/constants/vibes';
+import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
 import { usePropertyList } from '@/queries/use-property-list';
+import { useVibesList } from '@/queries/use-vibes';
 import { useSrpFiltersStore } from '@/stores/srp-filters-store';
 import { useSelectedCity, useSelectedLocality } from '@/stores/auth-store';
 import { useIsTenant } from '@/stores/tenant-store';
@@ -48,15 +49,25 @@ export function SrpScreen() {
   const isCityOnly = !locality;
 
   const [activeTab, setActiveTab] = useState<SrpTab>('properties');
-  const [selectedVibes, setSelectedVibes] = useState<string[]>(
-    VIBE_OPTIONS.map((vibe) => vibe.id),
-  );
+  const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
+  const [didInitVibes, setDidInitVibes] = useState(false);
   const [sort, setSort] = useState<SortOption>('distance');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const scrollY = useSharedValue(0);
   const filters = useSrpFiltersStore((state) => state.filters);
   const setFilters = useSrpFiltersStore((state) => state.setFilters);
   const activeFilterCount = countActiveSrpFilters(filters);
+  const { data: apiVibes = [], isLoading: isLoadingVibes } = useVibesList();
+  const vibeOptions = useMemo(
+    () => (apiVibes.length > 0 ? mapVibesToListItems(apiVibes) : [...VIBE_OPTIONS]),
+    [apiVibes],
+  );
+
+  useEffect(() => {
+    if (didInitVibes || isLoadingVibes) return;
+    setSelectedVibes(vibeOptions.map((vibe) => vibe.id));
+    setDidInitVibes(true);
+  }, [didInitVibes, isLoadingVibes, vibeOptions]);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -137,7 +148,7 @@ export function SrpScreen() {
               </Typography>
 
               <VibeSelectionList
-                vibes={VIBE_OPTIONS}
+                vibes={vibeOptions}
                 selectedIds={selectedVibes}
                 onChange={setSelectedVibes}
                 variant="onLight"
@@ -145,7 +156,7 @@ export function SrpScreen() {
               />
 
               <Pressable
-                onPress={() => setSelectedVibes(VIBE_OPTIONS.map((vibe) => vibe.id))}
+                onPress={() => setSelectedVibes(vibeOptions.map((vibe) => vibe.id))}
                 accessibilityRole="button">
                 <Typography
                   variant="text"

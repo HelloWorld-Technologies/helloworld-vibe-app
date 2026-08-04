@@ -1,6 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SymbolView } from 'expo-symbols';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
@@ -16,6 +17,7 @@ type DashboardReferralCardProps = {
   friendsJoined?: number;
   referralCode?: string;
   onViewRewards?: () => void;
+  onCopied?: () => void;
 };
 
 export function DashboardReferralCard({
@@ -23,10 +25,12 @@ export function DashboardReferralCard({
   friendsJoined = 0,
   referralCode,
   onViewRewards,
+  onCopied,
 }: DashboardReferralCardProps) {
   async function copyCode() {
     if (!referralCode) return;
     await Clipboard.setStringAsync(referralCode);
+    onCopied?.();
   }
 
   async function shareCode() {
@@ -63,15 +67,26 @@ export function DashboardReferralCard({
 
             {referralCode ? (
               <View style={styles.codeRow}>
-                <Pressable style={styles.codeBox} onPress={copyCode} accessibilityRole="button">
+                <Pressable
+                  style={styles.codeBox}
+                  onPress={() => {
+                    void copyCode();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Copy referral code">
                   <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]}>
                     {referralCode}
                   </Typography>
+                  <SymbolView name="doc.on.doc" size={16} tintColor={palette.lime[600]} />
                 </Pressable>
-                <Pressable style={styles.shareButton} onPress={shareCode} accessibilityRole="button">
-                  <Typography variant="text" size="sm" weight="medium" color={palette.blue[800]}>
-                    Share
-                  </Typography>
+                <Pressable
+                  style={styles.shareButton}
+                  onPress={() => {
+                    void shareCode();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share referral code">
+                  <SymbolView name="square.and.arrow.up" size={20} tintColor={palette.lime[900]} />
                 </Pressable>
               </View>
             ) : null}
@@ -122,17 +137,23 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   codeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: palette.blue[300],
+    borderColor: palette.lime[600],
     borderRadius: Radius.sm,
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: palette.white,
   },
   shareButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    width: 40,
+    height: 40,
+    borderRadius: Radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   illustration: {
     width: 112,

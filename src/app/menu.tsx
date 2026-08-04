@@ -13,6 +13,7 @@ import { Typography } from '@/components/ui/typography';
 import { buildTenantMenuSections, MENU_SECTIONS } from '@/constants/menu';
 import palette from '@/constants/palette';
 import { useBookingStatus } from '@/queries/use-booking-status';
+import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
 import { queryClient } from '@/queries/query-client';
 import { useAuthStore } from '@/stores/auth-store';
 import {
@@ -38,6 +39,7 @@ export default function MenuScreen() {
   const moveInInterests = useTenantStore((state) => state.moveInInterests);
   const moveInBackground = useTenantStore((state) => state.moveInBackground);
   const { data: bookingStatus } = useBookingStatus();
+  const { data: moveInPayments } = useMoveInPaymentDetails();
 
   const propertyLabel = [tenantProfile?.propertyInfo?.address?.flatNo, tenantProfile?.propertyInfo?.name]
     .filter(Boolean)
@@ -48,16 +50,28 @@ export default function MenuScreen() {
       return MENU_SECTIONS;
     }
 
+    if (!bookingStatus) {
+      return buildTenantMenuSections(false);
+    }
+
     const moveInSteps = buildMoveInSteps(
-      bookingStatus ?? {},
+      bookingStatus,
       tenantProfile,
       moveInInterests,
       moveInBackground,
+      moveInPayments?.finalAmount ?? null,
     );
     const { pending } = partitionMoveInSteps(moveInSteps);
 
     return buildTenantMenuSections(pending.length > 0);
-  }, [bookingStatus, isTenant, moveInBackground, moveInInterests, tenantProfile]);
+  }, [
+    bookingStatus,
+    isTenant,
+    moveInBackground,
+    moveInInterests,
+    moveInPayments?.finalAmount,
+    tenantProfile,
+  ]);
 
   useFocusEffect(
     useCallback(() => {

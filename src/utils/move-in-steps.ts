@@ -3,14 +3,18 @@ import type { MoveInBackground } from '@/types/move-in-background';
 import { EMPTY_MOVE_IN_BACKGROUND } from '@/types/move-in-background';
 import type { TenantProfile } from '@/types/tenant';
 import { isMoveInAboutYouComplete } from '@/utils/move-in-background';
+import { isMoveInPaymentComplete } from '@/utils/move-in-payment';
 
 export function buildMoveInSteps(
   status: BookingStatus,
   profile?: TenantProfile | null,
   moveInInterests: string[] = [],
   moveInBackground: MoveInBackground = EMPTY_MOVE_IN_BACKGROUND,
+  remainingMoveInAmount?: number | null,
 ): MoveInStep[] {
   const tokenPaid = profile?.paymentInfo?.isTokenPaid ?? true;
+  const paymentComplete = isMoveInPaymentComplete(status, remainingMoveInAmount, profile);
+  const paymentLockedMessage = 'Complete move-in payment to unlock this step.';
 
   return [
     {
@@ -18,6 +22,7 @@ export function buildMoveInSteps(
       title: 'Booking & Token Payment',
       description: 'Your booking has been created.',
       completed: Boolean(status['booking date']) && tokenPaid,
+      enabled: true,
     },
     {
       id: 'advance-charges',
@@ -25,15 +30,17 @@ export function buildMoveInSteps(
       description: 'Complete payment is mandatory before move-in.',
       actionLabel: 'Complete Payment',
       route: '/move-in-payment',
-      completed: status.payment,
+      completed: paymentComplete,
+      enabled: true,
     },
     {
       id: 'personal-profile',
       title: 'A Little About You',
       description: 'Your interests help us build the right community around you.',
       actionLabel: 'Continue',
-      route: '/move-in-background',
+      route: '/move-in-about-you',
       completed: isMoveInAboutYouComplete(moveInBackground, moveInInterests),
+      enabled: true,
     },
     {
       id: 'emergency-contact',
@@ -42,6 +49,7 @@ export function buildMoveInSteps(
       actionLabel: 'Add Contact',
       route: '/profile/emergency-contact',
       completed: status['emergency details'],
+      enabled: true,
     },
     {
       id: 'document-verification',
@@ -50,6 +58,8 @@ export function buildMoveInSteps(
       actionLabel: 'Verify',
       route: '/move-in-document-verification',
       completed: status.is_kyc_cleared,
+      enabled: paymentComplete,
+      lockedMessage: paymentLockedMessage,
     },
     {
       id: 'bank-details',
@@ -58,6 +68,7 @@ export function buildMoveInSteps(
       actionLabel: 'Add Details',
       route: '/profile/bank-details',
       completed: status.bank_details,
+      enabled: true,
     },
     {
       id: 'move-in-checklist',
@@ -66,6 +77,8 @@ export function buildMoveInSteps(
       actionLabel: 'Review Amenities',
       route: '/move-in-checklist',
       completed: status.checklist_status,
+      enabled: paymentComplete,
+      lockedMessage: paymentLockedMessage,
     },
     {
       id: 'agreement-signing',
@@ -73,6 +86,7 @@ export function buildMoveInSteps(
       description:
         'Your rental agreement will be shared over your registered Email once onboarding is completed.',
       completed: status.signed_document,
+      enabled: true,
     },
   ];
 }

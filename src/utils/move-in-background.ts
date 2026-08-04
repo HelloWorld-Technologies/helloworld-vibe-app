@@ -6,6 +6,7 @@ import {
   MOVE_IN_OTHER_COMPANY_LABEL,
   MOVE_IN_SELF_EMPLOYED_LABEL,
 } from '@/constants/move-in-background';
+import { MOVE_IN_INTERESTS_MIN } from '@/constants/vibes';
 import type { MoveInBackground } from '@/types/move-in-background';
 
 export function restoreCollegeSelection(savedCollege: string) {
@@ -52,7 +53,7 @@ export function isMoveInAboutYouComplete(
   background: MoveInBackground,
   interestIds: string[],
 ) {
-  return isMoveInBackgroundComplete(background) && interestIds.length > 0;
+  return isMoveInBackgroundComplete(background) && interestIds.length >= MOVE_IN_INTERESTS_MIN;
 }
 
 export function getCompanyEmailDomain(company: string) {

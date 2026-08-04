@@ -27,6 +27,9 @@ export type MoveInStep = {
   actionLabel?: string;
   route?: string;
   completed: boolean;
+  /** When false, the step is visible but not actionable yet. */
+  enabled?: boolean;
+  lockedMessage?: string;
 };
 
 export type RentalAgreementItem = {

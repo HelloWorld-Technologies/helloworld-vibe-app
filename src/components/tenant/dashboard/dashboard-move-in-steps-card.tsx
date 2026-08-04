@@ -9,6 +9,7 @@ import { DASHBOARD_MOVE_IN_CARD_GRADIENT } from '@/constants/dashboard';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { useBookingStatus } from '@/queries/use-booking-status';
+import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
 import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
 import { buildMoveInPendingMessage, buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
 
@@ -17,13 +18,20 @@ export function useMoveInDashboardCard() {
   const moveInInterests = useTenantStore((state) => state.moveInInterests);
   const moveInBackground = useTenantStore((state) => state.moveInBackground);
   const { data: status } = useBookingStatus();
+  const { data: moveInPayments } = useMoveInPaymentDetails();
 
   if (!profile?.bookingId || !status) {
     return { visible: false, pendingCount: 0 };
   }
 
   const { pending } = partitionMoveInSteps(
-    buildMoveInSteps(status, profile, moveInInterests, moveInBackground),
+    buildMoveInSteps(
+      status,
+      profile,
+      moveInInterests,
+      moveInBackground,
+      moveInPayments?.finalAmount ?? null,
+    ),
   );
   return { visible: pending.length > 0, pendingCount: pending.length };
 }

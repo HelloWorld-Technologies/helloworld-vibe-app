@@ -12,6 +12,8 @@ export const ProfileIcons = {
   profile: require('../../assets/bundled/profile/profile.svg').default,
   personalDetails: require('../../assets/bundled/profile/personal-details.svg').default,
   bookingDetails: require('../../assets/bundled/profile/booking-details.svg').default,
+  yourVibes: require('../../assets/bundled/profile/community-events.svg').default,
+  educationProfessional: require('../../assets/bundled/profile/personal-details.svg').default,
   bankDetails: require('../../assets/bundled/profile/bank-details.svg').default,
   emergencyContact: require('../../assets/bundled/profile/emergency-contact.svg').default,
   myPayments: require('../../assets/bundled/profile/my-payments.svg').default,

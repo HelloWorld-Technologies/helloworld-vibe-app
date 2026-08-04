@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
@@ -5,6 +6,7 @@ import { HowItWorksSection } from '@/components/referral/how-it-works-section';
 import { PointsHistorySection } from '@/components/referral/points-history-section';
 import { ReferralHeroCard } from '@/components/referral/referral-hero-card';
 import { ReferralTermsSection } from '@/components/referral/referral-terms-section';
+import { Snackbar } from '@/components/ui/snackbar';
 import { getReferralHowItWorksSteps } from '@/constants/referral';
 import palette from '@/constants/palette';
 import { useReferralDetails, useReferralTerms } from '@/queries/use-referral';
@@ -14,6 +16,10 @@ export function ReferAndEarnScreen() {
   const profile = useTenantProfile();
   const { data: referral, isLoading: referralLoading } = useReferralDetails();
   const { data: terms } = useReferralTerms();
+  const [copySnackbarVisible, setCopySnackbarVisible] = useState(false);
+  const dismissCopySnackbar = useCallback(() => {
+    setCopySnackbarVisible(false);
+  }, []);
 
   const creditInfo = profile?.creditInfo;
   const referralCode = referral?.referralCode ?? creditInfo?.referralCode;
@@ -40,6 +46,7 @@ export function ReferAndEarnScreen() {
             referralCode={referralCode}
             userName={profile?.userInfo?.name}
             friendDiscount={friendDiscount}
+            onCopied={() => setCopySnackbarVisible(true)}
           />
 
           <HowItWorksSection steps={steps} />
@@ -49,6 +56,13 @@ export function ReferAndEarnScreen() {
           <PointsHistorySection logs={referral?.logs ?? []} />
         </ScrollView>
       )}
+
+      <Snackbar
+        message="Referral code copied"
+        visible={copySnackbarVisible}
+        onDismiss={dismissCopySnackbar}
+        bottomOffset={16}
+      />
     </ProfileStackScreen>
   );
 }

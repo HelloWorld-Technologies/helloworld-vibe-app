@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -30,6 +30,7 @@ import { DashboardSmartMeterCard } from '@/components/tenant/dashboard/dashboard
 import { DashboardSupportPreview } from '@/components/tenant/dashboard/dashboard-support-preview';
 import { RaiseRequestSheet } from '@/components/tenant/raise-request-sheet';
 import { RatingAndReviewSheet } from '@/components/tenant/rating-and-review-sheet';
+import { Snackbar } from '@/components/ui/snackbar';
 import { Typography } from '@/components/ui/typography';
 import {
   DASHBOARD_HEADER_GRADIENT,
@@ -38,7 +39,7 @@ import {
   DASHBOARD_SHEET_RADIUS,
 } from '@/constants/dashboard';
 import palette from '@/constants/palette';
-import { TAB_SCREEN_EXTRA_PADDING } from '@/constants/tab-bar';
+import { TAB_BAR_HEIGHT, TAB_SCREEN_EXTRA_PADDING } from '@/constants/tab-bar';
 import { Radius } from '@/constants/theme';
 import { useInvoicePayment } from '@/hooks/use-invoice-payment';
 import { useMoveInPayment } from '@/hooks/use-move-in-payment';
@@ -47,10 +48,11 @@ import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { queryKeys } from '@/queries/keys';
 import { useBookingStatus } from '@/queries/use-booking-status';
 import { useUpcomingEvents } from '@/queries/use-events';
+import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
 import { usePendingReviews } from '@/queries/use-pending-reviews';
 import { useDashboardSupportTickets } from '@/queries/use-support-tickets';
 import { useTenantInvoices } from '@/queries/use-tenant-invoices';
-import { useTenantProfile } from '@/stores/tenant-store';
+import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
 import {
   getMoveInPendingAmount,
   shouldShowMoveInPendingPaymentCard,
@@ -64,7 +66,7 @@ export function TenantDashboardScreen() {
   const { payInvoice } = useInvoicePayment();
   const { startMoveInPayment } = useMoveInPayment();
   const profile = useTenantProfile();
-  const { data: bookingStatus } = useBookingStatus();
+  const { data: bookingStatus, refetch: refetchBookingStatus } = useBookingStatus();
   const { data: invoices, isLoading: invoicesLoading, refetch: refetchInvoices } = useTenantInvoices();
   const { data: tickets, refetch: refetchTickets } = useDashboardSupportTickets();
   const { data: events, isLoading: eventsLoading, refetch: refetchEvents } = useUpcomingEvents();
@@ -72,8 +74,16 @@ export function TenantDashboardScreen() {
     data: pendingReviews,
     refetch: refetchPendingReviews,
   } = usePendingReviews();
+  const {
+    data: moveInPayments,
+    refetch: refetchMoveInPayments,
+  } = useMoveInPaymentDetails();
   const { sheetVisible, openRaiseRequest, closeRaiseRequest, submitRaiseRequest } =
     useRaiseSupportRequest();
+  const [copySnackbarVisible, setCopySnackbarVisible] = useState(false);
+  const dismissCopySnackbar = useCallback(() => {
+    setCopySnackbarVisible(false);
+  }, []);
   const [refreshing, setRefreshing] = useState(false);
   const [pmName, setPmName] = useState(profile?.propertyInfo?.propertyManager?.name ?? '');
   const [pmPhone, setPmPhone] = useState(profile?.propertyInfo?.propertyManager?.mobile ?? '');
@@ -86,8 +96,13 @@ export function TenantDashboardScreen() {
   const creditInfo = profile?.creditInfo;
   const rentAmount = nextPending?.balance ?? profile?.paymentInfo?.rent ?? 0;
   const { visible: showMoveInCard } = useMoveInDashboardCard();
-  const showMoveInPendingPayment = shouldShowMoveInPendingPaymentCard(profile, bookingStatus);
-  const moveInPendingAmount = getMoveInPendingAmount(profile, nextPending);
+  const remainingMoveInAmount = moveInPayments?.finalAmount ?? null;
+  const showMoveInPendingPayment = shouldShowMoveInPendingPaymentCard(
+    profile,
+    bookingStatus,
+    remainingMoveInAmount,
+  );
+  const moveInPendingAmount = getMoveInPendingAmount(profile, remainingMoveInAmount);
   const propertyLocality = profile?.propertyInfo?.locality;
   const showSmartMeter = Boolean(profile?.propertyInfo?.isSmartMeterEnabled);
 
@@ -109,6 +124,9 @@ export function TenantDashboardScreen() {
       refetchTickets(),
       refetchEvents(),
       refetchPendingReviews(),
+      refetchBookingStatus(),
+      refetchMoveInPayments(),
+      useTenantStore.getState().fetchProfile(),
       profile?.bookingId
         ? queryClient.invalidateQueries({
             queryKey: queryKeys.smartMeterRooms(profile.bookingId),
@@ -238,6 +256,7 @@ export function TenantDashboardScreen() {
           friendsJoined={creditInfo?.friendsJoined ?? 0}
           referralCode={creditInfo?.referralCode}
           onViewRewards={() => router.push('/profile/referral')}
+          onCopied={() => setCopySnackbarVisible(true)}
         />
 
         {invoicesLoading ? (
@@ -258,6 +277,13 @@ export function TenantDashboardScreen() {
           onCompleted={() => void refetchPendingReviews()}
         />
       ) : null}
+
+      <Snackbar
+        message="Referral code copied"
+        visible={copySnackbarVisible}
+        onDismiss={dismissCopySnackbar}
+        bottomOffset={TAB_BAR_HEIGHT + 12}
+      />
     </View>
   );
 }

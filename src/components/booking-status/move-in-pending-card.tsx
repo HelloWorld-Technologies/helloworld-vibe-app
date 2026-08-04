@@ -12,23 +12,33 @@ type MoveInPendingCardProps = {
 };
 
 export function MoveInPendingCard({ step, onPress }: MoveInPendingCardProps) {
-  const showAction = Boolean(step.actionLabel && onPress);
+  const isEnabled = step.enabled !== false;
+  const showAction = Boolean(step.actionLabel && onPress && isEnabled);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, !isEnabled && styles.cardLocked]}>
       <View style={styles.topRow}>
-        <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]} style={styles.title}>
+        <Typography
+          variant="text"
+          size="sm"
+          weight="medium"
+          color={isEnabled ? palette.gray[800] : palette.gray[500]}
+          style={styles.title}>
           {step.title}
         </Typography>
-        <View style={styles.pendingBadge}>
-          <Typography variant="text" size="xs" weight="medium" color="#7A271A">
-            Pending
+        <View style={[styles.pendingBadge, !isEnabled && styles.lockedBadge]}>
+          <Typography
+            variant="text"
+            size="xs"
+            weight="medium"
+            color={isEnabled ? '#7A271A' : palette.gray[600]}>
+            {isEnabled ? 'Pending' : 'Locked'}
           </Typography>
         </View>
       </View>
 
       <Typography variant="text" size="xs" color={palette.gray[500]}>
-        {step.description}
+        {!isEnabled && step.lockedMessage ? step.lockedMessage : step.description}
       </Typography>
 
       {showAction ? (
@@ -55,6 +65,11 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
+  cardLocked: {
+    backgroundColor: palette.gray[50],
+    shadowOpacity: 0.08,
+    elevation: 1,
+  },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -69,6 +84,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
+  },
+  lockedBadge: {
+    backgroundColor: palette.gray[200],
   },
   actionRow: {
     alignSelf: 'flex-end',
