@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -192,7 +192,7 @@ export function CommunityRegistrationConfirmedScreen() {
           style={styles.headerButton}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <SymbolView name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[900]} />
+          <HwSymbol name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[900]} />
         </Pressable>
         <Typography variant="text" size="lg" weight="bold" style={styles.headerTitle}>
           Registration Confirmed!
@@ -206,7 +206,7 @@ export function CommunityRegistrationConfirmedScreen() {
           {sharing ? (
             <ActivityIndicator size="small" color={palette.lime[700]} />
           ) : (
-            <SymbolView name="square.and.arrow.up" size={16} tintColor={palette.lime[700]} />
+            <HwSymbol name="square.and.arrow.up" size={16} tintColor={palette.lime[700]} />
           )}
         </Pressable>
       </View>
@@ -276,7 +276,7 @@ export function CommunityRegistrationConfirmedScreen() {
                 ) : null}
 
                 <View style={styles.venueRow}>
-                  <SymbolView name="mappin" size={14} tintColor={palette.gray[900]} />
+                  <HwSymbol name="mappin" size={14} tintColor={palette.gray[900]} />
                   <Typography
                     variant="text"
                     size="sm"
@@ -334,7 +334,7 @@ export function CommunityRegistrationConfirmedScreen() {
           style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryPressed]}
           accessibilityRole="button"
           accessibilityLabel="Add to calendar">
-          <SymbolView name="calendar" size={16} tintColor={palette.gray[900]} />
+          <HwSymbol name="calendar" size={16} tintColor={palette.gray[900]} />
           <Typography variant="text" size="sm" weight="bold" color={palette.gray[900]}>
             Add to calendar
           </Typography>
@@ -348,7 +348,7 @@ export function CommunityRegistrationConfirmedScreen() {
             Get Directions
           </Typography>
           <View style={styles.directionsIcon}>
-            <SymbolView name="location.north.fill" size={14} tintColor={palette.gray[900]} />
+            <HwSymbol name="location.north.fill" size={14} tintColor={palette.gray[900]} />
           </View>
         </Pressable>
       </View>

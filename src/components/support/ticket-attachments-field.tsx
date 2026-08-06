@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { uploadTicketAttachment } from '@/api/tickets';
@@ -190,7 +190,7 @@ export function TicketAttachmentsField({
             <ActivityIndicator size="small" color={palette.lime[700]} />
           ) : (
             <>
-              <SymbolView name="paperclip" size={18} tintColor={palette.gray[700]} />
+              <HwSymbol name="paperclip" size={18} tintColor={palette.gray[700]} />
               <Typography variant="label" size="xs" color={palette.gray[700]}>
                 Add
               </Typography>
@@ -214,13 +214,13 @@ export function TicketAttachmentsField({
                 style={styles.overlay}
                 accessibilityRole="button"
                 accessibilityLabel="Retry upload">
-                <SymbolView name="arrow.clockwise" size={14} tintColor={palette.white} />
+                <HwSymbol name="arrow.clockwise" size={14} tintColor={palette.white} />
               </Pressable>
             ) : null}
 
             {item.status === 'uploaded' ? (
               <View style={styles.successBadge}>
-                <SymbolView name="checkmark" size={10} weight="bold" tintColor={palette.white} />
+                <HwSymbol name="checkmark" size={10} weight="bold" tintColor={palette.white} />
               </View>
             ) : null}
 
@@ -231,7 +231,7 @@ export function TicketAttachmentsField({
               accessibilityRole="button"
               accessibilityLabel="Remove attachment"
               hitSlop={8}>
-              <SymbolView name="xmark" size={10} weight="bold" tintColor={palette.white} />
+              <HwSymbol name="xmark" size={10} weight="bold" tintColor={palette.white} />
             </Pressable>
           </View>
         ))}

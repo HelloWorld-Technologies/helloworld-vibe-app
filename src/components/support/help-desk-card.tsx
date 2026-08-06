@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { ProfileIcon } from '@/components/profile-icon';
@@ -35,7 +35,7 @@ export function HelpDeskCard({ onPress = callHelpDesk }: HelpDeskCardProps) {
         <Typography variant="text" size="sm" weight="bold" color={palette.lime[700]}>
           Call now
         </Typography>
-        <SymbolView name="arrow.right" size={14} weight="semibold" tintColor={palette.lime[700]} />
+        <HwSymbol name="arrow.right" size={14} weight="semibold" tintColor={palette.lime[700]} />
       </View>
     </Pressable>
   );

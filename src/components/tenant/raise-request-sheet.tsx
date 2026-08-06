@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -68,7 +68,7 @@ function CategoryTile({
       style={[styles.categoryTile, selected ? styles.categoryTileSelected : styles.categoryTileDefault]}
       accessibilityRole="button"
       accessibilityState={{ selected }}>
-      <SymbolView name={icon as never} size={24} tintColor={iconColor} />
+      <HwSymbol name={icon as never} size={24} tintColor={iconColor} />
       <Typography variant="label" size="xs" weight="medium" color={textColor} style={styles.categoryLabel}>
         {label}
       </Typography>
@@ -94,7 +94,7 @@ function SubcategoryRow({
       <Typography variant="text" size="sm" weight="medium" color={palette.gray[900]}>
         {item.name}
       </Typography>
-      {selected ? <SymbolView name="checkmark" size={14} tintColor={palette.lime[700]} /> : null}
+      {selected ? <HwSymbol name="checkmark" size={14} tintColor={palette.lime[700]} /> : null}
     </Pressable>
   );
 }
@@ -292,7 +292,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
               <Typography variant="text" size="md" weight="medium" color={palette.gray[800]}>
                 {selectedCategoryLabel}
               </Typography>
-              <SymbolView name="chevron.down" size={14} tintColor={palette.gray[500]} />
+              <HwSymbol name="chevron.down" size={14} tintColor={palette.gray[500]} />
             </Pressable>
 
             <View style={styles.subcategoryList}>

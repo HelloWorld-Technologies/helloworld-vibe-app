@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useCallback } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -68,7 +68,7 @@ export function BookingSuccessScreen() {
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Go to dashboard">
-          <SymbolView name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[800]} />
+          <HwSymbol name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[800]} />
         </Pressable>
         <Typography variant="text" size="md" weight="bold">
           Payment Successful
@@ -82,7 +82,7 @@ export function BookingSuccessScreen() {
         <View style={styles.successIconWrap}>
           <View style={styles.successGlow} />
           <View style={styles.successIcon}>
-            <SymbolView name="checkmark" size={28} weight="bold" tintColor={palette.white} />
+            <HwSymbol name="checkmark" size={28} weight="bold" tintColor={palette.white} />
           </View>
         </View>
 
@@ -101,7 +101,7 @@ export function BookingSuccessScreen() {
         </Typography>
 
         <View style={styles.moveInRow}>
-          <SymbolView name="calendar" size={14} tintColor={palette.gray[600]} />
+          <HwSymbol name="calendar" size={14} tintColor={palette.gray[600]} />
           <Typography variant="text" size="sm" color={palette.gray[600]}>
             Move in Date: {formatBookingMoveInDate(paymentResult.moveInDate)}
           </Typography>
@@ -141,12 +141,12 @@ export function BookingSuccessScreen() {
 
           <Pressable style={styles.receiptRow} accessibilityRole="button">
             <View style={styles.receiptIcon}>
-              <SymbolView name="arrow.down.circle" size={18} tintColor={palette.helloLime} />
+              <HwSymbol name="arrow.down.circle" size={18} tintColor={palette.helloLime} />
             </View>
             <Typography variant="text" size="sm" weight="medium" style={styles.receiptText}>
               Download receipt
             </Typography>
-            <SymbolView name="chevron.right" size={12} tintColor={palette.helloLime} />
+            <HwSymbol name="chevron.right" size={12} tintColor={palette.helloLime} />
           </Pressable>
         </View>
       </ScrollView>

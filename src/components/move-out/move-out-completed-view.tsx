@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -35,7 +35,7 @@ export function MoveOutCompletedView({ moveOutInfo, onGoToDashboard }: MoveOutCo
         <View style={styles.successBlock}>
           <View style={styles.successHalo}>
             <View style={styles.successCircle}>
-              <SymbolView name="checkmark" size={28} weight="bold" tintColor={palette.white} />
+              <HwSymbol name="checkmark" size={28} weight="bold" tintColor={palette.white} />
             </View>
           </View>
           <Typography variant="text" size="xl" weight="bold" color={palette.gray[800]} style={styles.heading}>

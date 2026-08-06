@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -53,7 +53,7 @@ export function ServerErrorScreen({ onRetry, onHome }: ServerErrorScreenProps) {
           style={styles.menuButton}
           accessibilityRole="button"
           accessibilityLabel="Open menu">
-          <SymbolView name="line.3.horizontal" size={18} tintColor={palette.gray[800]} />
+          <HwSymbol name="line.3.horizontal" size={18} tintColor={palette.gray[800]} />
         </Pressable>
       </View>
       <View style={styles.headerDivider} />

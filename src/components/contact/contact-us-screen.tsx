@@ -13,8 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { sendOtpLeads, uploadContactLead } from '@/api/contact';
 import { CallbackRequestSuccess } from '@/components/callback/callback-request-success';
 import { ProfileIcon } from '@/components/profile-icon';
@@ -163,7 +162,7 @@ export function ContactUsScreen({ embedded = false }: { embedded?: boolean }) {
               style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
               accessibilityRole="button"
               accessibilityLabel="Go back">
-              <SymbolView
+              <HwSymbol
                 name="chevron.left"
                 size={18}
                 weight="semibold"
@@ -295,7 +294,7 @@ export function ContactUsScreen({ embedded = false }: { embedded?: boolean }) {
               </View>
               <View style={styles.helpDeskAction}>
                 <Text style={styles.callNow}>Call now</Text>
-                <SymbolView
+                <HwSymbol
                   name="arrow.right"
                   size={14}
                   weight="semibold"

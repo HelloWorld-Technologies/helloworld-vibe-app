@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -102,7 +102,7 @@ export function MoveInWorkEmailVerifiedBanner({ email }: MoveInWorkEmailVerified
   return (
     <View style={styles.verifiedRow}>
       <View style={styles.verifiedIcon}>
-        <SymbolView name="checkmark" size={10} weight="bold" tintColor={palette.white} />
+        <HwSymbol name="checkmark" size={10} weight="bold" tintColor={palette.white} />
       </View>
       <Typography variant="text" size="sm" color={palette.blue[600]}>
         Your Email {email} is verified

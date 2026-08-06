@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -163,7 +163,7 @@ export function MoveInStepsScreen() {
                   {isRefreshing ? (
                     <ActivityIndicator size="small" color={palette.gray[700]} />
                   ) : (
-                    <SymbolView
+                    <HwSymbol
                       name="arrow.clockwise"
                       size={18}
                       weight="semibold"

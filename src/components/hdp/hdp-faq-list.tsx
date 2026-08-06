@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -38,7 +38,7 @@ function FaqAccordionItem({
           {question}
         </Typography>
         <Animated.View style={chevronStyle}>
-          <SymbolView name="chevron.down" size={14} tintColor={palette.gray[600]} />
+          <HwSymbol name="chevron.down" size={14} tintColor={palette.gray[600]} />
         </Animated.View>
       </Pressable>
 

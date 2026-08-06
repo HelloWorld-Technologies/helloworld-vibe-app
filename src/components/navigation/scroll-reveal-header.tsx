@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Extrapolation,
@@ -45,7 +45,7 @@ function HeaderInlineSearch({
       style={[styles.inlineSearch, scrolled && styles.inlineSearchScrolled]}
       accessibilityRole="button"
       accessibilityLabel="Search locality or property">
-      <SymbolView
+      <HwSymbol
         name="magnifyingglass"
         size={18}
         tintColor={scrolled ? palette.gray[500] : palette.gray[600]}
@@ -151,7 +151,7 @@ export function ScrollRevealHeader({
             accessibilityRole="button"
             accessibilityLabel="Go back"
             hitSlop={8}>
-            <SymbolView name="chevron.left" size={17} weight="semibold" tintColor={palette.gray[900]} />
+            <HwSymbol name="chevron.left" size={17} weight="semibold" tintColor={palette.gray[900]} />
           </Pressable>
         </Animated.View>
 
@@ -186,7 +186,7 @@ export function ScrollRevealHeader({
               hitSlop={8}>
               <View style={styles.rightIconWrap}>
                 <Animated.View style={[styles.rightIconLayer, rightIconAccentStyle]}>
-                  <SymbolView
+                  <HwSymbol
                     name={rightIcon}
                     size={rightIconSize}
                     weight="semibold"
@@ -194,7 +194,7 @@ export function ScrollRevealHeader({
                   />
                 </Animated.View>
                 <Animated.View style={[styles.rightIconLayer, rightIconDefaultStyle]}>
-                  <SymbolView
+                  <HwSymbol
                     name={rightIcon}
                     size={rightIconSize}
                     weight="semibold"

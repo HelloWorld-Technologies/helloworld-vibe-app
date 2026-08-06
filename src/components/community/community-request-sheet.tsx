@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -98,7 +98,7 @@ export function CommunityRequestSheet({
           <View style={styles.successIconWrap}>
             <View style={styles.successIconOuter}>
               <View style={styles.successIconInner}>
-                <SymbolView
+                <HwSymbol
                   name="checkmark"
                   size={28}
                   weight="bold"

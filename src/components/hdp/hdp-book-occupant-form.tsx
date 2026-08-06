@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -52,7 +52,7 @@ export function HdpBookOccupantForm({
   return (
     <View style={styles.wrap}>
       <Pressable onPress={onBack} style={styles.backRow} accessibilityRole="button" accessibilityLabel="Go back">
-        <SymbolView name="chevron.left" size={14} weight="semibold" tintColor={palette.helloLime} />
+        <HwSymbol name="chevron.left" size={14} weight="semibold" tintColor={palette.helloLime} />
         <Typography variant="text" size="md" weight="bold">
           Occupant&apos;s Details
         </Typography>
@@ -116,7 +116,7 @@ export function HdpBookOccupantForm({
               color={value.gender ? palette.gray[800] : palette.textPlaceholder}>
               {value.gender || 'Select gender'}
             </Typography>
-            <SymbolView name="chevron.down" size={12} tintColor={palette.gray[500]} />
+            <HwSymbol name="chevron.down" size={12} tintColor={palette.gray[500]} />
           </Pressable>
           {errors?.gender ? (
             <Typography variant="text" size="xs" color={palette.borderError} style={styles.fieldError}>
@@ -154,7 +154,7 @@ export function HdpBookOccupantForm({
             <Typography variant="text" size="md" color={palette.gray[800]} numberOfLines={1}>
               {formatMoveInDate(value.moveInDate)}
             </Typography>
-            <SymbolView name="calendar" size={14} tintColor={palette.gray[800]} />
+            <HwSymbol name="calendar" size={14} tintColor={palette.gray[800]} />
           </Pressable>
         </View>
       </View>

@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabBarIcon } from '@/components/tab-bar-icon';
+import { fontStyleForWeight } from '@/constants/fonts';
+import palette from '@/constants/palette';
 import {
   PROSPECT_TAB_ORDER,
   PROSPECT_TAB_ROUTES,
@@ -17,8 +20,6 @@ import {
   type TabBarIconName,
   type TenantTabRouteName,
 } from '@/constants/tab-bar';
-import { fontStyleForWeight } from '@/constants/fonts';
-import palette from '@/constants/palette';
 
 type TabRoute = { key: string; name: string; params?: object };
 
@@ -34,12 +35,18 @@ type HwBottomTabBarProps = {
       canPreventDefault: true;
     }) => { defaultPrevented: boolean };
     navigate: (name: string, params?: object) => void;
+    jumpTo?: (name: string, params?: object) => void;
   };
   isTenant?: boolean;
+  /** Absolute floating pill (Android). */
+  floating?: boolean;
 };
 
-const PILL_SPRING = { damping: 20, stiffness: 240, mass: 0.75 };
-const PILL_INSET = 2;
+const PILL_TIMING = { duration: 180, easing: Easing.out(Easing.cubic) };
+const FLOATING_OUTER_PAD = 16;
+const FLOATING_INNER_PAD = 8;
+const DEFAULT_BAR_PAD = 8;
+const ACTIVE_PILL_INSET = 0;
 
 type TabMeta = {
   label: string;
@@ -56,7 +63,12 @@ function getTabMeta(isTenant: boolean, name: string): TabMeta | null {
   return null;
 }
 
-export function HwBottomTabBar({ state, navigation, isTenant = false }: HwBottomTabBarProps) {
+export function HwBottomTabBar({
+  state,
+  navigation,
+  isTenant = false,
+  floating = false,
+}: HwBottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const [barWidth, setBarWidth] = useState(0);
   const activeIndex = useSharedValue(0);
@@ -77,8 +89,10 @@ export function HwBottomTabBar({ state, navigation, isTenant = false }: HwBottom
     visibleTabs.findIndex((tab) => tab.route.name === focusedName),
   );
 
+  const barPad = floating ? FLOATING_INNER_PAD : DEFAULT_BAR_PAD;
+
   useEffect(() => {
-    activeIndex.value = withSpring(focusedVisibleIndex, PILL_SPRING);
+    activeIndex.value = withTiming(focusedVisibleIndex, PILL_TIMING);
   }, [focusedVisibleIndex, activeIndex]);
 
   const pillAnimatedStyle = useAnimatedStyle(() => {
@@ -87,23 +101,42 @@ export function HwBottomTabBar({ state, navigation, isTenant = false }: HwBottom
       return { opacity: 0 };
     }
 
-    const tabWidth = barWidth / tabCount;
+    const contentWidth = Math.max(barWidth - barPad * 2, 0);
+    const tabWidth = contentWidth / tabCount;
 
     return {
       opacity: 1,
-      width: tabWidth - PILL_INSET * 2,
-      transform: [{ translateX: activeIndex.value * tabWidth + PILL_INSET }],
+      width: tabWidth - ACTIVE_PILL_INSET * 2,
+      transform: [
+        {
+          translateX: barPad + activeIndex.value * tabWidth + ACTIVE_PILL_INSET,
+        },
+      ],
     };
   });
 
   return (
     <View
-      style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 12) }]}
+      style={[
+        styles.wrapper,
+        floating ? styles.wrapperFloating : null,
+        floating
+          ? {
+              paddingTop: FLOATING_OUTER_PAD,
+              paddingHorizontal: FLOATING_OUTER_PAD,
+              paddingBottom: FLOATING_OUTER_PAD + insets.bottom,
+            }
+          : { paddingBottom: Math.max(insets.bottom, 12) },
+      ]}
       pointerEvents="box-none">
       <View
-        style={styles.bar}
-        onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}>
-        <Animated.View style={[styles.activePill, pillAnimatedStyle]} pointerEvents="none" />
+        style={[styles.bar, floating ? styles.barFloating : null, { padding: barPad }]}
+        onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
+        pointerEvents="auto">
+        <Animated.View
+          style={[styles.activePill, { top: barPad, bottom: barPad }, pillAnimatedStyle]}
+          pointerEvents="none"
+        />
 
         {visibleTabs.map(({ route, meta }) => {
           const isFocused = focusedName === route.name;
@@ -116,7 +149,11 @@ export function HwBottomTabBar({ state, navigation, isTenant = false }: HwBottom
             });
 
             if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
+              if (typeof navigation.jumpTo === 'function') {
+                navigation.jumpTo(route.name, route.params);
+              } else {
+                navigation.navigate(route.name, route.params);
+              }
             }
           }
 
@@ -126,7 +163,7 @@ export function HwBottomTabBar({ state, navigation, isTenant = false }: HwBottom
             <Pressable
               key={route.key}
               onPress={onPress}
-              style={styles.tab}
+              style={[styles.tab, floating ? styles.tabFloating : null]}
               accessibilityRole="button"
               accessibilityState={{ selected: isFocused }}
               accessibilityLabel={meta.label}>
@@ -150,30 +187,50 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: palette.gray[200],
   },
+  wrapperFloating: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    pointerEvents: 'box-none',
+  },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: palette.gray[50],
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
     position: 'relative',
+  },
+  barFloating: {
+    backgroundColor: palette.white,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.gray[200],
+    overflow: 'hidden',
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 0,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    padding: 8,
     minHeight: 56,
     zIndex: 1,
   },
+  tabFloating: {
+    minHeight: 0,
+  },
   activePill: {
     position: 'absolute',
-    top: 8,
-    bottom: 8,
     left: 0,
     backgroundColor: palette.lime[50],
     borderRadius: 999,

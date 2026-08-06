@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient'
-import { SymbolView } from 'expo-symbols'
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Animated, {
@@ -363,7 +363,7 @@ export function HdpVibeMatchCard ({
             {showPropertyVibes ? 'Show Less' : 'Show More'}
           </Typography>
           <Animated.View style={chevronStyle}>
-            <SymbolView
+            <HwSymbol
               name='chevron.down'
               size={12}
               weight='semibold'

@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useRouter } from 'expo-router';
 
 import { Typography } from '@/components/ui/typography';
@@ -44,7 +44,7 @@ export function MoveOutBankDetailsCard({
           <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
             Edit
           </Typography>
-          <SymbolView name="pencil" size={10} tintColor={palette.lime[700]} />
+          <HwSymbol name="pencil" size={10} tintColor={palette.lime[700]} />
         </Pressable>
       </View>
 

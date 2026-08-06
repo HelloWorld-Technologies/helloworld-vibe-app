@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
@@ -311,7 +311,7 @@ export function BookingScreen() {
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <SymbolView name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[800]} />
+          <HwSymbol name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[800]} />
         </Pressable>
         <Typography variant="text" size="md" weight="bold">
           Complete Your Booking
@@ -420,7 +420,7 @@ export function BookingScreen() {
             <Typography variant="text" size="md" weight="bold">
               {formatBookingAmount(total)}
             </Typography>
-            <SymbolView name="chevron.right" size={12} tintColor={palette.gray[500]} />
+            <HwSymbol name="chevron.right" size={12} tintColor={palette.gray[500]} />
           </View>
         </Pressable>
 

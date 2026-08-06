@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/ui/typography';
@@ -16,7 +16,7 @@ function CompletedRow({ step, showDivider }: { step: MoveInStep; showDivider: bo
       <View style={styles.row}>
         <View style={styles.left}>
           <View style={styles.checkIcon}>
-            <SymbolView name="checkmark.circle.fill" size={16} tintColor={palette.lime[700]} />
+            <HwSymbol name="checkmark.circle.fill" size={16} tintColor={palette.lime[700]} />
           </View>
           <Typography variant="text" size="sm" weight="medium" color={palette.gray[700]} style={styles.title}>
             {step.title}

@@ -1,6 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -30,7 +29,7 @@ function PointsHistoryRow({ log }: { log: ReferralLog }) {
   return (
     <View style={styles.row}>
       <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-        <SymbolView name={iconName} size={14} tintColor={amountColor} />
+        <HwSymbol name={iconName} size={14} tintColor={amountColor} />
       </View>
 
       <View style={styles.copy}>

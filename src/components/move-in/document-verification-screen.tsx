@@ -7,8 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { getKycLink } from '@/api/user';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { Button } from '@/components/ui/button';
@@ -150,7 +149,7 @@ export function DocumentVerificationScreen() {
 
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
-            <SymbolView name="doc.text.fill" size={28} weight="medium" tintColor={palette.blue[700]} />
+            <HwSymbol name="doc.text.fill" size={28} weight="medium" tintColor={palette.blue[700]} />
           </View>
           <Typography variant="display" size="xs" weight="bold" style={styles.title}>
             Verify Your Identity

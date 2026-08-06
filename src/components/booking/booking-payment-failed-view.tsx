@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -56,7 +56,7 @@ export function BookingPaymentFailedView({
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <SymbolView name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[800]} />
+          <HwSymbol name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[800]} />
         </Pressable>
         <Typography variant="text" size="md" weight="bold">
           Payment Failed
@@ -66,7 +66,7 @@ export function BookingPaymentFailedView({
           style={styles.supportButton}
           accessibilityRole="button"
           accessibilityLabel="Contact support">
-          <SymbolView name="headphones" size={14} tintColor={palette.blue[600]} />
+          <HwSymbol name="headphones" size={14} tintColor={palette.blue[600]} />
           <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
             Support
           </Typography>
@@ -79,7 +79,7 @@ export function BookingPaymentFailedView({
         <View style={styles.iconWrap}>
           <View style={styles.iconGlow} />
           <View style={styles.iconCircle}>
-            <SymbolView name="xmark" size={28} weight="bold" tintColor={palette.white} />
+            <HwSymbol name="xmark" size={28} weight="bold" tintColor={palette.white} />
           </View>
         </View>
 

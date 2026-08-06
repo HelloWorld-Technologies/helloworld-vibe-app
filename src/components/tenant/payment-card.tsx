@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -63,7 +63,7 @@ export function PaymentCard({
         {selectionMode && isPending ? (
           <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
             {selected ? (
-              <SymbolView name="checkmark" size={12} weight="bold" tintColor={palette.white} />
+              <HwSymbol name="checkmark" size={12} weight="bold" tintColor={palette.white} />
             ) : null}
           </View>
         ) : null}
@@ -122,7 +122,7 @@ export function PaymentCard({
               <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
                 Pay Now
               </Typography>
-              <SymbolView name="chevron.right" size={10} tintColor={palette.lime[700]} />
+              <HwSymbol name="chevron.right" size={10} tintColor={palette.lime[700]} />
             </Pressable>
           )
         ) : (
@@ -134,7 +134,7 @@ export function PaymentCard({
             style={styles.invoiceAction}
             accessibilityRole="button"
             accessibilityLabel="View invoice">
-            <SymbolView name="square.and.arrow.down" size={14} tintColor={palette.lime[700]} />
+            <HwSymbol name="square.and.arrow.down" size={14} tintColor={palette.lime[700]} />
             <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
               Invoice
             </Typography>

@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { PropsWithChildren, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -24,7 +24,7 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
         onPress={() => setIsOpen((value) => !value)}>
         <ThemedView type="backgroundElement" style={styles.button}>
           <Animated.View style={chevronStyle}>
-            <SymbolView
+            <HwSymbol
               name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
               size={14}
               weight="bold"

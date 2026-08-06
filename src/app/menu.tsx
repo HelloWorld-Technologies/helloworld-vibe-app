@@ -5,13 +5,13 @@ import { useCallback, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { MenuSectionCard } from '@/components/menu/menu-section-card';
 import { ProfileSummary } from '@/components/menu/profile-summary';
 import { Typography } from '@/components/ui/typography';
 import { buildTenantMenuSections, MENU_SECTIONS } from '@/constants/menu';
 import palette from '@/constants/palette';
+import { BACK_CHEVRON_SYMBOL } from '@/constants/symbols';
 import { useBookingStatus } from '@/queries/use-booking-status';
 import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
 import { queryClient } from '@/queries/query-client';
@@ -154,8 +154,8 @@ export default function MenuScreen() {
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <SymbolView
-            name="chevron.left"
+          <HwSymbol
+            name={BACK_CHEVRON_SYMBOL}
             size={18}
             weight="semibold"
             tintColor={palette.gray[800]}

@@ -2,8 +2,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { HwIcon } from '@/components/hw-icon';
 import { Typography } from '@/components/ui/typography';
 import { ImageAssets } from '@/constants/assets';
@@ -35,7 +34,7 @@ export default function SelectCityScreen() {
             style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <SymbolView
+            <HwSymbol
               name="chevron.left"
               size={18}
               weight="semibold"

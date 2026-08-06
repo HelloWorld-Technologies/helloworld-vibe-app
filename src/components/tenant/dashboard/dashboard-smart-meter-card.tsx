@@ -1,12 +1,13 @@
-import { SymbolView } from 'expo-symbols';
 import { useRouter } from 'expo-router';
+import { HwSymbol } from '@/components/ui/hw-symbol';
+import type { PlatformSymbolName } from '@/constants/symbols';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { getSmartMeterBalance } from '@/api/smart-meter';
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import { getSmartMeterBalance } from '@/api/smart-meter';
 import { useSmartMeterRooms } from '@/queries/use-smart-meter';
 import { useTenantProfile } from '@/stores/tenant-store';
 import { priceFormatter } from '@/utils/tenant-format';
@@ -14,7 +15,7 @@ import { priceFormatter } from '@/utils/tenant-format';
 type SmartMeterAction = {
   id: 'recharge' | 'usage' | 'history';
   label: string;
-  icon: 'bolt.fill' | 'chart.bar.fill' | 'clock.arrow.circlepath';
+  icon: PlatformSymbolName;
   route: '/smart-meter-recharge' | '/smart-meter-usage' | '/smart-meter-history';
 };
 
@@ -22,22 +23,28 @@ const ACTIONS: SmartMeterAction[] = [
   {
     id: 'recharge',
     label: 'Recharge',
-    icon: 'bolt.fill',
+    icon: { ios: 'bolt.fill', android: 'bolt', web: 'bolt' },
     route: '/smart-meter-recharge',
   },
   {
     id: 'usage',
     label: 'Usage',
-    icon: 'chart.bar.fill',
+    icon: { ios: 'chart.bar.fill', android: 'bar_chart', web: 'bar_chart' },
     route: '/smart-meter-usage',
   },
   {
     id: 'history',
     label: 'History',
-    icon: 'clock.arrow.circlepath',
+    icon: { ios: 'clock.arrow.circlepath', android: 'history', web: 'history' },
     route: '/smart-meter-history',
   },
 ];
+
+const BALANCE_ICON: PlatformSymbolName = {
+  ios: 'bolt.fill',
+  android: 'bolt',
+  web: 'bolt',
+};
 
 export function DashboardSmartMeterCard() {
   const router = useRouter();
@@ -65,7 +72,7 @@ export function DashboardSmartMeterCard() {
             )}
           </View>
           <View style={styles.flashBadge}>
-            <SymbolView name="bolt.fill" size={20} tintColor={palette.lime[700]} />
+            <HwSymbol name={BALANCE_ICON} size={20} tintColor={palette.lime[700]} />
           </View>
         </View>
 
@@ -78,7 +85,7 @@ export function DashboardSmartMeterCard() {
               accessibilityRole="button"
               accessibilityLabel={action.label}>
               <View style={styles.actionIcon}>
-                <SymbolView name={action.icon} size={18} tintColor={palette.blue[800]} />
+                <HwSymbol name={action.icon} size={18} tintColor={palette.blue[800]} />
               </View>
               <Typography variant="label" size="xs" weight="medium" color={palette.gray[800]}>
                 {action.label}

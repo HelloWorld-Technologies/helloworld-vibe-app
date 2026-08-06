@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -47,7 +47,7 @@ export function MoveOutInitiatedView({
         <View style={styles.successBlock}>
           <View style={styles.successHalo}>
             <View style={styles.successCircle}>
-              <SymbolView name="checkmark" size={28} weight="bold" tintColor={palette.white} />
+              <HwSymbol name="checkmark" size={28} weight="bold" tintColor={palette.white} />
             </View>
           </View>
           <Typography variant="text" size="xl" weight="bold" color={palette.black}>
@@ -58,7 +58,7 @@ export function MoveOutInitiatedView({
           </Typography>
           {moveOutInfo.move_out_date ? (
             <View style={styles.dateRow}>
-              <SymbolView name="calendar" size={12} tintColor={palette.gray[700]} />
+              <HwSymbol name="calendar" size={12} tintColor={palette.gray[700]} />
               <Typography variant="text" size="xs" weight="medium" color={palette.gray[700]}>
                 Move-Out Date: {formatDisplayDate(moveOutInfo.move_out_date)}
               </Typography>
@@ -85,7 +85,7 @@ export function MoveOutInitiatedView({
               <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
                 View Submitted Checklist
               </Typography>
-              <SymbolView name="chevron.right" size={10} tintColor={palette.lime[700]} />
+              <HwSymbol name="chevron.right" size={10} tintColor={palette.lime[700]} />
             </Pressable>
           ) : checklistStatus.label === 'Pending' ? (
             <Pressable
@@ -95,7 +95,7 @@ export function MoveOutInitiatedView({
               <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
                 Complete Checklist
               </Typography>
-              <SymbolView name="chevron.right" size={10} tintColor={palette.lime[700]} />
+              <HwSymbol name="chevron.right" size={10} tintColor={palette.lime[700]} />
             </Pressable>
           ) : (
             <Typography

@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
@@ -80,7 +80,7 @@ export function BookingPaymentOption({
         <Animated.View style={[styles.radio, selected && styles.radioSelected, indicatorAnimatedStyle]}>
           {selected ? (
             <Animated.View entering={ZoomIn.duration(160).springify()}>
-              <SymbolView name="checkmark" size={12} weight="bold" tintColor={palette.white} />
+              <HwSymbol name="checkmark" size={12} weight="bold" tintColor={palette.white} />
             </Animated.View>
           ) : null}
         </Animated.View>

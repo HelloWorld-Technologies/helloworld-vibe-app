@@ -4,8 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { HwIcon } from '@/components/hw-icon';
 import { LocalityCardImage } from '@/components/locality/locality-card-image';
 import { PropertyCard } from '@/components/property/property-card';
@@ -49,7 +48,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
         <Typography variant="text" size="lg" weight="bold" style={styles.sectionTitle}>
           {title}
         </Typography>
-        <SymbolView
+        <HwSymbol
           name="chevron.down"
           size={16}
           weight="semibold"
@@ -160,7 +159,7 @@ export function ComponentShowcaseScreen() {
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <SymbolView name="chevron.left" size={18} weight="semibold" tintColor={palette.gray[800]} />
+          <HwSymbol name="chevron.left" size={18} weight="semibold" tintColor={palette.gray[800]} />
         </Pressable>
         <Typography variant="text" size="lg" weight="bold">
           Component Showcase
@@ -288,7 +287,7 @@ export function ComponentShowcaseScreen() {
           <TextField
             label="With left icon"
             placeholder="Search"
-            leftIcon={<SymbolView name="magnifyingglass" size={18} tintColor={palette.gray[500]} />}
+            leftIcon={<HwSymbol name="magnifyingglass" size={18} tintColor={palette.gray[500]} />}
           />
         </Section>
 

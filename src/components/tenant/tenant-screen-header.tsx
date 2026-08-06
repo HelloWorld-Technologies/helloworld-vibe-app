@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,7 +24,7 @@ export function TenantScreenHeader({ title, onBack, style }: TenantScreenHeaderP
             style={styles.backButton}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <SymbolView name="chevron.left" size={16} tintColor={palette.black} />
+            <HwSymbol name="chevron.left" size={16} tintColor={palette.black} />
           </Pressable>
         ) : (
           <View style={styles.backPlaceholder} />

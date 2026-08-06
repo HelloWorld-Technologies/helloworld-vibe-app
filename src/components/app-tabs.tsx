@@ -1,6 +1,9 @@
+import { Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { Platform } from 'react-native';
 import type { SFSymbol } from 'sf-symbols-typescript';
 
+import { HwBottomTabBar } from '@/components/navigation/hw-bottom-tab-bar';
 import palette from '@/constants/palette';
 import {
   PROSPECT_TAB_ORDER,
@@ -73,9 +76,12 @@ const nativeTabStyle = {
   },
 } as const;
 
-export default function AppTabs() {
-  const isTenant = useIsTenant();
+const ALL_TAB_NAMES = [
+  ...PROSPECT_TAB_ORDER,
+  ...TENANT_TAB_ORDER,
+] as const satisfies readonly (ProspectTabRouteName | TenantTabRouteName)[];
 
+function NativeAppTabs({ isTenant }: { isTenant: boolean }) {
   if (isTenant) {
     return (
       <NativeTabs {...nativeTabStyle}>
@@ -112,4 +118,56 @@ export default function AppTabs() {
       })}
     </NativeTabs>
   );
+}
+
+function FloatingAppTabs({ isTenant }: { isTenant: boolean }) {
+  const visibleTabs = new Set<string>(isTenant ? TENANT_TAB_ORDER : PROSPECT_TAB_ORDER);
+
+  return (
+    <Tabs
+      tabBar={(props) => <HwBottomTabBar {...props} isTenant={isTenant} floating />}
+      screenOptions={{
+        headerShown: false,
+        freezeOnBlur: false,
+        animation: 'none',
+        detachInactiveScreens: false,
+        sceneStyle: { backgroundColor: palette.white },
+        tabBarStyle: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+      }}>
+      {ALL_TAB_NAMES.map((name) => {
+        const isVisible = visibleTabs.has(name);
+
+        return (
+          <Tabs.Screen
+            key={name}
+            name={name}
+            options={{
+              href: isVisible ? undefined : null,
+              // Pre-mount visible tabs so switching is instant; keep others lazy.
+              lazy: !isVisible,
+            }}
+          />
+        );
+      })}
+    </Tabs>
+  );
+}
+
+export default function AppTabs() {
+  const isTenant = useIsTenant();
+
+  if (Platform.OS === 'ios') {
+    return <NativeAppTabs isTenant={isTenant} />;
+  }
+
+  return <FloatingAppTabs isTenant={isTenant} />;
 }

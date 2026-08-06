@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -43,7 +42,7 @@ export function TicketSubcategoriesScreen() {
                 <Typography variant="text" size="md" weight="medium" style={styles.rowLabel}>
                   {item.name}
                 </Typography>
-                <SymbolView name="chevron.right" size={14} tintColor={palette.gray[400]} />
+                <HwSymbol name="chevron.right" size={14} tintColor={palette.gray[400]} />
               </Pressable>
             );
           })}

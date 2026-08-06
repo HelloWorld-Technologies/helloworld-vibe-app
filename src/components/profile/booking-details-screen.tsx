@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
@@ -104,7 +104,7 @@ function RentalAgreementCard({
             style={styles.downloadAction}
             accessibilityRole="button"
             accessibilityLabel={`Download ${agreement.label}`}>
-            <SymbolView name="arrow.down.circle" size={12} tintColor={palette.lime[700]} />
+            <HwSymbol name="arrow.down.circle" size={12} tintColor={palette.lime[700]} />
             <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
               Download
             </Typography>

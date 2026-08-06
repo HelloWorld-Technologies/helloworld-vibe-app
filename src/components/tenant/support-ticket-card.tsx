@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
@@ -64,7 +63,7 @@ export function SupportTicketCard({ ticket }: SupportTicketCardProps) {
         <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
           View Details
         </Typography>
-        <SymbolView name="chevron.right" size={12} tintColor={palette.lime[700]} />
+        <HwSymbol name="chevron.right" size={12} tintColor={palette.lime[700]} />
       </Pressable>
     </Pressable>
   );

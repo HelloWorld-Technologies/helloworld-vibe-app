@@ -1,8 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 
@@ -29,7 +28,7 @@ export function ProfileStackScreen({
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <SymbolView name="chevron.left" size={18} weight="semibold" tintColor={palette.gray[800]} />
+          <HwSymbol name="chevron.left" size={18} weight="semibold" tintColor={palette.gray[800]} />
         </Pressable>
         {centerTitle ? (
           <>

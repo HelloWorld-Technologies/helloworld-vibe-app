@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import type { GestureResponderEvent } from 'react-native';
@@ -77,7 +77,7 @@ export function WishlistHeartButton({
       accessibilityRole="button"
       accessibilityLabel={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
       accessibilityState={{ selected: isFavorite }}>
-      <SymbolView
+      <HwSymbol
         name={isFavorite ? 'heart.fill' : 'heart'}
         size={size}
         tintColor={isFavorite ? activeColor : inactiveColor}

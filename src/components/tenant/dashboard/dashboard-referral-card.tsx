@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
@@ -77,7 +77,7 @@ export function DashboardReferralCard({
                   <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]}>
                     {referralCode}
                   </Typography>
-                  <SymbolView name="doc.on.doc" size={16} tintColor={palette.lime[600]} />
+                  <HwSymbol name="doc.on.doc" size={16} tintColor={palette.lime[600]} />
                 </Pressable>
                 <Pressable
                   style={styles.shareButton}
@@ -86,7 +86,7 @@ export function DashboardReferralCard({
                   }}
                   accessibilityRole="button"
                   accessibilityLabel="Share referral code">
-                  <SymbolView name="square.and.arrow.up" size={20} tintColor={palette.lime[900]} />
+                  <HwSymbol name="square.and.arrow.up" size={20} tintColor={palette.lime[900]} />
                 </Pressable>
               </View>
             ) : null}

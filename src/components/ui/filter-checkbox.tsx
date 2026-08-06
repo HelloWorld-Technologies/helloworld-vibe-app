@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
@@ -60,7 +60,7 @@ export function FilterCheckbox({ label, checked, onChange, labelSize = 'sm' }: F
       <Animated.View style={[styles.box, checked && styles.boxChecked, boxAnimatedStyle]}>
         {checked ? (
           <Animated.View entering={ZoomIn.duration(160).springify()}>
-            <SymbolView name="checkmark" size={12} weight="bold" tintColor={palette.gray[800]} />
+            <HwSymbol name="checkmark" size={12} weight="bold" tintColor={palette.gray[800]} />
           </Animated.View>
         ) : null}
       </Animated.View>

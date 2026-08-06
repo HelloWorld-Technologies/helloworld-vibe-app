@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -283,7 +283,7 @@ export function CommunityEventDetailScreen() {
                 style={styles.backButton}
                 accessibilityRole="button"
                 accessibilityLabel="Go back">
-                <SymbolView name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[900]} />
+                <HwSymbol name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[900]} />
               </Pressable>
             </View>
           </View>
@@ -336,7 +336,7 @@ export function CommunityEventDetailScreen() {
                       onPress={openMaps}
                       accessibilityRole="link"
                       style={styles.mapsLink}>
-                      <SymbolView name="mappin" size={14} tintColor={palette.lime[700]} />
+                      <HwSymbol name="mappin" size={14} tintColor={palette.lime[700]} />
                       <Typography variant="text" size="sm" color={palette.lime[700]}>
                         Show on Google Maps
                       </Typography>

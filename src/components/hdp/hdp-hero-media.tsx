@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
@@ -41,17 +41,22 @@ function HeroVideoSlide({
   width,
   height,
   active,
+  playing,
 }: {
   slide: HdpHeroSlide;
   width: number;
   height: number;
   active: boolean;
+  /** When false, show poster only until the user taps play. */
+  playing: boolean;
 }) {
-  // Only attach a native player for the active slide to avoid MediaToolbox conflicts.
-  if (!active || !slide.mediaUrl) {
+  // Only attach a native player for the active, user-started slide.
+  if (!active || !playing || !slide.mediaUrl) {
     return (
       <Image
-        source={{ uri: slide.imageUri }}
+        source={
+          slide.imageUri ? { uri: slide.imageUri } : ImageAssets.loginBento1
+        }
         style={{ width, height }}
         contentFit="cover"
       />
@@ -110,6 +115,8 @@ export function HdpHeroMedia({
   const [slideIndex, setSlideIndex] = useState(0);
   const [failedIndexes, setFailedIndexes] = useState<Set<string>>(new Set());
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
+  /** Wait for tap before mounting expo-video (faster HDP open). */
+  const [videoStarted, setVideoStarted] = useState(false);
 
   useEffect(() => {
     if (tabs.length === 0) return;
@@ -131,6 +138,17 @@ export function HdpHeroMedia({
 
   const safeSlides = slides.length > 0 ? slides : [];
   const currentIndex = Math.min(slideIndex, Math.max(safeSlides.length - 1, 0));
+  const currentSlide = safeSlides[currentIndex];
+  const showPlayButton =
+    currentSlide?.mediaType === 'video' &&
+    Boolean(currentSlide.mediaUrl) &&
+    (activeTab === 'property-video' || activeTab === 'moments') &&
+    !videoStarted;
+
+  useEffect(() => {
+    setVideoStarted(false);
+  }, [activeTab, currentIndex, currentSlide?.id]);
+
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
   const hasPrevTab = activeTabIndex > 0;
   const hasNextTab = activeTabIndex >= 0 && activeTabIndex < tabs.length - 1;
@@ -284,6 +302,7 @@ export function HdpHeroMedia({
                     width={width}
                     height={HDP_HERO_TOTAL_HEIGHT}
                     active={isActive}
+                    playing={isActive && videoStarted}
                   />
                 </Pressable>
               );
@@ -306,7 +325,7 @@ export function HdpHeroMedia({
                 {item.mediaType === 'video' ? (
                   <View style={styles.playBadge} pointerEvents="none">
                     <View style={styles.playCircle}>
-                      <SymbolView
+                      <HwSymbol
                         name="play.fill"
                         size={22}
                         tintColor={palette.white}
@@ -323,6 +342,24 @@ export function HdpHeroMedia({
         <View style={[styles.emptyMedia, { width, height: HDP_HERO_TOTAL_HEIGHT }]} />
       )}
 
+      {showPlayButton ? (
+        <Pressable
+          onPress={() => setVideoStarted(true)}
+          style={styles.playBadge}
+          hitSlop={16}
+          accessibilityRole="button"
+          accessibilityLabel="Play video">
+          <View style={styles.playCircle}>
+            <HwSymbol
+              name="play.fill"
+              size={28}
+              tintColor={palette.white}
+              style={styles.playIcon}
+            />
+          </View>
+        </Pressable>
+      ) : null}
+
       {canGoPrevious || canGoNext ? (
         <>
           {canGoPrevious ? (
@@ -331,7 +368,7 @@ export function HdpHeroMedia({
               style={[styles.arrowButton, styles.arrowLeft]}
               accessibilityRole="button"
               accessibilityLabel="Previous media">
-              <SymbolView name="chevron.left" size={16} weight="semibold" tintColor={palette.white} />
+              <HwSymbol name="chevron.left" size={16} weight="semibold" tintColor={palette.white} />
             </Pressable>
           ) : null}
           {canGoNext ? (
@@ -340,7 +377,7 @@ export function HdpHeroMedia({
               style={[styles.arrowButton, styles.arrowRight]}
               accessibilityRole="button"
               accessibilityLabel="Next media">
-              <SymbolView name="chevron.right" size={16} weight="semibold" tintColor={palette.white} />
+              <HwSymbol name="chevron.right" size={16} weight="semibold" tintColor={palette.white} />
             </Pressable>
           ) : null}
         </>
@@ -496,21 +533,28 @@ const styles = StyleSheet.create({
     backgroundColor: palette.white,
   },
   playBadge: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    // Sit in the visible media area (above tabs / sheet overlap).
+    top: 0,
+    bottom: 120,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 20,
+    elevation: 20,
   },
   playCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingLeft: 3,
+    paddingLeft: 4,
   },
   playIcon: {
-    width: 22,
-    height: 22,
+    width: 28,
+    height: 28,
   },
 });

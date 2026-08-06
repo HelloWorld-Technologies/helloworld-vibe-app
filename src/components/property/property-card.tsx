@@ -4,8 +4,7 @@ import { useRef, useState } from 'react';
 import { LayoutAnimation, Pressable, StyleSheet, Text, UIManager, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { ICarouselInstance } from 'react-native-reanimated-carousel';
 
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { HwCarousel } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
 import { WishlistHeartButton } from '@/components/wishlist/wishlist-heart-button';
@@ -80,7 +79,7 @@ function BadgePill({
   return (
     <View style={[styles.badge, isFillingFast ? styles.badgeOrange : styles.badgePink, style]}>
       {isFillingFast ? (
-        <SymbolView name="exclamationmark.triangle.fill" size={12} tintColor="#B54708" />
+        <HwSymbol name="exclamationmark.triangle.fill" size={12} tintColor="#B54708" />
       ) : null}
       <Text style={[styles.badgeText, isFillingFast ? styles.badgeTextOrange : styles.badgeTextPink]}>
         {badge.label}
@@ -238,7 +237,7 @@ export function PropertyCard({
               style={[styles.carouselButton, styles.carouselButtonLeft]}
               accessibilityRole="button"
               accessibilityLabel="Previous photo">
-              <SymbolView name="chevron.left" size={14} weight="semibold" tintColor={palette.white} />
+              <HwSymbol name="chevron.left" size={14} weight="semibold" tintColor={palette.white} />
             </Pressable>
             <Pressable
               onPress={(event) => {
@@ -248,7 +247,7 @@ export function PropertyCard({
               style={[styles.carouselButton, styles.carouselButtonRight]}
               accessibilityRole="button"
               accessibilityLabel="Next photo">
-              <SymbolView name="chevron.right" size={14} weight="semibold" tintColor={palette.white} />
+              <HwSymbol name="chevron.right" size={14} weight="semibold" tintColor={palette.white} />
             </Pressable>
             <View style={styles.dotsRow}>
               {cardImages.map((slide, index) => (
@@ -313,13 +312,13 @@ export function PropertyCard({
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Share property">
-              <SymbolView name="square.and.arrow.up" size={20} tintColor={palette.gray[800]} />
+              <HwSymbol name="square.and.arrow.up" size={20} tintColor={palette.gray[800]} />
             </Pressable>
           </View>
         </View>
 
         <View style={styles.roomTypesPill}>
-          <SymbolView name="bed.double.fill" size={16} tintColor={palette.gray[700]} />
+          <HwSymbol name="bed.double.fill" size={16} tintColor={palette.gray[700]} />
           <Text style={styles.roomTypesText} numberOfLines={1}>
             {property.roomTypes.join(' · ')}
           </Text>

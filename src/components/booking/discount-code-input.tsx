@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useRef } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -70,7 +70,7 @@ export function DiscountCodeInput({
             style={styles.clearButton}
             accessibilityRole="button"
             accessibilityLabel="Clear code">
-            <SymbolView name="xmark" size={12} weight="bold" tintColor={palette.gray[600]} />
+            <HwSymbol name="xmark" size={12} weight="bold" tintColor={palette.gray[600]} />
           </Pressable>
         ) : (
           <Pressable

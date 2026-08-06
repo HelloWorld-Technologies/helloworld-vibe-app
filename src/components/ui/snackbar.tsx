@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
@@ -51,7 +51,7 @@ export function Snackbar({
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Dismiss">
-          <SymbolView name="xmark" size={14} weight="bold" tintColor={palette.white} />
+          <HwSymbol name="xmark" size={14} weight="bold" tintColor={palette.white} />
         </Pressable>
       </Animated.View>
     </View>

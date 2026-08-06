@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/ui/typography';
@@ -26,7 +26,7 @@ export function LocalityRatingsGrid() {
             <Typography variant="text" size="md" weight="bold" style={styles.score}>
               {item.score}
             </Typography>
-            <SymbolView name="star.fill" size={14} tintColor={palette.yellow[500]} />
+            <HwSymbol name="star.fill" size={14} tintColor={palette.yellow[500]} />
           </View>
 
           <View style={styles.labelRow}>

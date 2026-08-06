@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -103,7 +103,7 @@ export function VisitorsScreen() {
               style={styles.addButton}
               onPress={() => setSheetVisible(true)}
               accessibilityRole="button">
-              <SymbolView name="plus" size={16} tintColor={palette.gray[800]} />
+              <HwSymbol name="plus" size={16} tintColor={palette.gray[800]} />
               <Typography variant="text" size="md" weight="bold" color={palette.gray[800]}>
                 Add Visitor
               </Typography>

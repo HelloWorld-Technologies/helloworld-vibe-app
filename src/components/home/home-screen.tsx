@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -211,7 +211,7 @@ export function HomeScreen() {
                     <Typography variant="text" size="xs" color={palette.gray[200]}>
                       Starting {item.price} | {item.properties} Properties
                     </Typography>
-                    <SymbolView name="arrow.right" size={12} tintColor={palette.white} />
+                    <HwSymbol name="arrow.right" size={12} tintColor={palette.white} />
                   </View>
                 </LinearGradient>
               </View>
@@ -293,7 +293,7 @@ export function HomeScreen() {
                         </LinearGradient>
                         {item.mediaType === 'video' ? (
                           <View style={styles.videoBadge} pointerEvents="none">
-                            <SymbolView name="video.fill" size={14} tintColor={palette.white} />
+                            <HwSymbol name="video.fill" size={14} tintColor={palette.white} />
                           </View>
                         ) : null}
                       </View>
@@ -326,7 +326,7 @@ export function HomeScreen() {
               <Typography variant="text" size="sm" weight="bold" color={palette.lime[300]}>
                 {city}
               </Typography>
-              <SymbolView
+              <HwSymbol
                 name="chevron.down"
                 size={12}
                 weight="semibold"
@@ -354,7 +354,7 @@ export function HomeScreen() {
             onPress={() => setShowFeedback(false)}
             accessibilityLabel="Dismiss feedback"
             hitSlop={8}>
-            <SymbolView name="xmark" size={14} tintColor={palette.gray[500]} />
+            <HwSymbol name="xmark" size={14} tintColor={palette.gray[500]} />
           </Pressable>
         </View>
       ) : null} */}

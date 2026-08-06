@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Typography } from '@/components/ui/typography';
@@ -48,7 +48,7 @@ export function CommunityEventCard({
         ) : null}
         {attendees > 0 ? (
           <View style={styles.attendeesRow}>
-            <SymbolView name="person.2.fill" size={14} tintColor={palette.gray[500]} />
+            <HwSymbol name="person.2.fill" size={14} tintColor={palette.gray[500]} />
             <Typography variant="text" size="sm" color={palette.gray[500]}>
               {attendees} People attending
             </Typography>

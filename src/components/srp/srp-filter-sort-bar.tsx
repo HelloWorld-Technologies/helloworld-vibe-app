@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Typography } from '@/components/ui/typography';
@@ -37,7 +37,7 @@ export function SrpFilterSortBar({
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
         accessibilityRole="button"
         accessibilityLabel="Filters">
-        <SymbolView name="line.3.horizontal.decrease" size={18} tintColor={palette.gray[800]} />
+        <HwSymbol name="line.3.horizontal.decrease" size={18} tintColor={palette.gray[800]} />
         <Typography variant="text" size="md" weight="bold" color={palette.gray[800]}>
           Filters
         </Typography>
@@ -61,7 +61,7 @@ export function SrpFilterSortBar({
         <Typography variant="text" size="md" weight="bold" color={palette.lime[700]}>
           {SORT_LABELS[sort]}
         </Typography>
-        <SymbolView name="chevron.down" size={14} weight="semibold" tintColor={palette.gray[800]} />
+        <HwSymbol name="chevron.down" size={14} weight="semibold" tintColor={palette.gray[800]} />
       </Pressable>
     </View>
   );

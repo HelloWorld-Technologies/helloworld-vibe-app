@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
@@ -84,7 +84,7 @@ export function DashboardSupportPreview({ tickets, onRaiseRequest }: DashboardSu
         ))}
 
         <Pressable style={styles.raiseButton} onPress={onRaiseRequest} accessibilityRole="button">
-          <SymbolView name="plus" size={16} tintColor={palette.gray[800]} />
+          <HwSymbol name="plus" size={16} tintColor={palette.gray[800]} />
           <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]}>
             Raise New Request
           </Typography>

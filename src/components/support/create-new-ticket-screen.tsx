@@ -10,8 +10,7 @@ import {
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { getCategoryDescription, postCreateTicket } from '@/api/tickets';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import {
@@ -58,7 +57,7 @@ function FaqAccordionItem({
           {title}
         </Typography>
         <Animated.View style={chevronStyle}>
-          <SymbolView name="chevron.down" size={14} tintColor={palette.gray[600]} />
+          <HwSymbol name="chevron.down" size={14} tintColor={palette.gray[600]} />
         </Animated.View>
       </Pressable>
       <AnimatedAccordionContent expanded={isOpen}>

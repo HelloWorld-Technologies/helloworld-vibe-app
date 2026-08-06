@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/ui/typography';
@@ -46,7 +46,7 @@ export function MoveInPendingCard({ step, onPress }: MoveInPendingCardProps) {
           <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
             {step.actionLabel}
           </Typography>
-          <SymbolView name="chevron.right" size={12} weight="semibold" tintColor={palette.lime[700]} />
+          <HwSymbol name="chevron.right" size={12} weight="semibold" tintColor={palette.lime[700]} />
         </Pressable>
       ) : null}
     </View>

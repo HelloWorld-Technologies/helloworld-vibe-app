@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -76,13 +76,13 @@ export function TicketReplyBar({
 
               {item.status === 'error' ? (
                 <View style={styles.overlay}>
-                  <SymbolView name="exclamationmark" size={14} tintColor={palette.white} />
+                  <HwSymbol name="exclamationmark" size={14} tintColor={palette.white} />
                 </View>
               ) : null}
 
               {item.status === 'uploaded' ? (
                 <View style={styles.successBadge}>
-                  <SymbolView name="checkmark" size={10} weight="bold" tintColor={palette.white} />
+                  <HwSymbol name="checkmark" size={10} weight="bold" tintColor={palette.white} />
                 </View>
               ) : null}
 
@@ -95,7 +95,7 @@ export function TicketReplyBar({
                 accessibilityRole="button"
                 accessibilityLabel="Remove attachment"
                 hitSlop={8}>
-                <SymbolView name="xmark" size={10} weight="bold" tintColor={palette.white} />
+                <HwSymbol name="xmark" size={10} weight="bold" tintColor={palette.white} />
               </Pressable>
             </View>
           ))}
@@ -115,7 +115,7 @@ export function TicketReplyBar({
           {uploading ? (
             <ActivityIndicator size="small" color={palette.lime[700]} />
           ) : (
-            <SymbolView name="paperclip" size={18} tintColor={palette.gray[700]} />
+            <HwSymbol name="paperclip" size={18} tintColor={palette.gray[700]} />
           )}
         </Pressable>
 
@@ -149,7 +149,7 @@ export function TicketReplyBar({
           {sending ? (
             <ActivityIndicator size="small" color={palette.lime[800]} />
           ) : (
-            <SymbolView
+            <HwSymbol
               name="paperplane.fill"
               size={18}
               weight="semibold"

@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Modal,
@@ -106,7 +106,7 @@ function CenterPlaybackIcon({ icon }: { icon: PlaybackIcon }) {
       pointerEvents="none"
       style={styles.centerIconWrap}>
       <View style={styles.centerIconCircle}>
-        <SymbolView
+        <HwSymbol
           name={icon === 'pause' ? 'pause.fill' : 'play.fill'}
           size={28}
           tintColor={palette.white}
@@ -424,7 +424,7 @@ export function HdpMomentsStoryViewer({
                   style={styles.headerIconButton}
                   accessibilityRole="button"
                   accessibilityLabel={muted ? 'Unmute video' : 'Mute video'}>
-                  <SymbolView
+                  <HwSymbol
                     name={muted ? 'speaker.slash.fill' : 'speaker.wave.2.fill'}
                     size={16}
                     tintColor={palette.white}
@@ -438,7 +438,7 @@ export function HdpMomentsStoryViewer({
                 style={styles.headerIconButton}
                 accessibilityRole="button"
                 accessibilityLabel="Close stories">
-                <SymbolView name="xmark" size={16} weight="bold" tintColor={palette.white} />
+                <HwSymbol name="xmark" size={16} weight="bold" tintColor={palette.white} />
               </Pressable>
             </View>
           </View>

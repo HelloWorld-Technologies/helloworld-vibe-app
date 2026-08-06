@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -49,7 +49,7 @@ function SearchResultRow({
         style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}>
-        <SymbolView name={icon} size={20} tintColor={palette.gray[700]} style={styles.resultIcon} />
+        <HwSymbol name={icon} size={20} tintColor={palette.gray[700]} style={styles.resultIcon} />
         <Typography variant="text" size="md" style={styles.resultLabel} numberOfLines={2}>
           {label}
         </Typography>
@@ -135,7 +135,7 @@ export function LocalitySearchScreen() {
             style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <SymbolView
+            <HwSymbol
               name="chevron.left"
               size={18}
               weight="semibold"

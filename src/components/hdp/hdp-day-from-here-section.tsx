@@ -1,8 +1,7 @@
 import { Image } from 'expo-image';
 import { useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
@@ -54,7 +53,7 @@ function DayCard({
         <Typography variant="text" size="sm" weight="bold" color={palette.lime[600]}>
           {card.linkLabel}
         </Typography>
-        <SymbolView name="chevron.right" size={12} weight="semibold" tintColor={palette.lime[600]} />
+        <HwSymbol name="chevron.right" size={12} weight="semibold" tintColor={palette.lime[600]} />
       </Pressable>
     </View>
   );
@@ -115,7 +114,7 @@ export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFro
             style={styles.mapLink}
             accessibilityRole="link"
             accessibilityLabel="Show on Maps">
-            <SymbolView name="mappin.and.ellipse" size={14} weight="medium" tintColor={palette.lime[600]} />
+            <HwSymbol name="mappin.and.ellipse" size={14} weight="medium" tintColor={palette.lime[600]} />
             <Typography variant="text" size="sm" weight="bold" color={palette.lime[600]}>
               Show on Maps
             </Typography>

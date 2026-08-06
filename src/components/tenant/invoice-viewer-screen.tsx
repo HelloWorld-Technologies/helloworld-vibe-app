@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useMemo, useState } from 'react';
@@ -456,7 +456,7 @@ export function InvoiceViewerScreen() {
                 style={styles.downloadButton}
                 accessibilityRole="button"
                 accessibilityLabel="Download invoice">
-                <SymbolView name="square.and.arrow.down" size={16} tintColor={palette.lime[700]} />
+                <HwSymbol name="square.and.arrow.down" size={16} tintColor={palette.lime[700]} />
                 <Typography variant="text" size="sm" weight="medium" color={palette.lime[700]}>
                   Download invoice
                 </Typography>

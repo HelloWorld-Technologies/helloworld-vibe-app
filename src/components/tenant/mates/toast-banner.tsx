@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
@@ -34,7 +33,7 @@ export function ToastBanner({ message, visible, onDismiss, durationMs = 4000 }: 
         {message}
       </Typography>
       <Pressable onPress={onDismiss} hitSlop={8} accessibilityRole="button" accessibilityLabel="Dismiss">
-        <SymbolView name="xmark" size={14} tintColor={palette.white} />
+        <HwSymbol name="xmark" size={14} tintColor={palette.white} />
       </Pressable>
     </View>
   );

@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
@@ -163,7 +163,7 @@ function RoomTypeRow({
                 ·
               </Typography>
             ) : null}
-            <SymbolView name="house.fill" size={12} tintColor={palette.gray[500]} />
+            <HwSymbol name="house.fill" size={12} tintColor={palette.gray[500]} />
             <Typography variant="text" size="xs" color={palette.gray[600]}>
               {feature}
             </Typography>

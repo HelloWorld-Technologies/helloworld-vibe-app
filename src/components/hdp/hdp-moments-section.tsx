@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -52,7 +52,7 @@ function MomentCard({
       {isVideo ? (
         <View style={styles.playBadge} pointerEvents="none">
           <View style={styles.playCircle}>
-            <SymbolView
+            <HwSymbol
               name="play.fill"
               size={22}
               tintColor={palette.white}

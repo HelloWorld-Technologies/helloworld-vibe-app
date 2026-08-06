@@ -1,8 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { getKbCategories } from '@/api/tickets';
 import { CreateTicketBanner } from '@/components/support/create-ticket-banner';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
@@ -76,7 +75,7 @@ export function TicketCategoriesScreen() {
                       </Typography>
                     ) : null}
                   </View>
-                  <SymbolView name="chevron.right" size={16} tintColor={palette.gray[500]} />
+                  <HwSymbol name="chevron.right" size={16} tintColor={palette.gray[500]} />
                 </Pressable>
               );
             })}
@@ -94,7 +93,7 @@ export function TicketCategoriesScreen() {
                   You can request for moveout from here
                 </Typography>
               </View>
-              <SymbolView name="chevron.right" size={16} tintColor={palette.gray[500]} />
+              <HwSymbol name="chevron.right" size={16} tintColor={palette.gray[500]} />
             </Pressable>
 
             {error ? (

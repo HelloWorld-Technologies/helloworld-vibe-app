@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -175,7 +175,7 @@ export function CommunityEventsScreen() {
           onPress={() => setRequestVisible(true)}
           accessibilityRole="button"
           accessibilityLabel="Request event">
-          <SymbolView name="plus" size={18} weight="bold" tintColor={palette.white} />
+          <HwSymbol name="plus" size={18} weight="bold" tintColor={palette.white} />
         </Pressable>
       ) : null}
 

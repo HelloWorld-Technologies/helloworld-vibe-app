@@ -4,8 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { DashboardIcon, type DashboardIconName } from '@/components/dashboard/dashboard-icon';
 import { Typography } from '@/components/ui/typography';
 import { DASHBOARD_SOS_GRADIENT } from '@/constants/dashboard';
-import { TENANT_QUICK_ACTIONS } from '@/constants/tenant';
 import palette from '@/constants/palette';
+import { TENANT_QUICK_ACTIONS } from '@/constants/tenant';
 import { Radius } from '@/constants/theme';
 
 type DashboardQuickActionsProps = {
@@ -25,7 +25,7 @@ function QuickActionTile({
 }) {
   const content = (
     <>
-      <DashboardIcon name={icon} size={24} color={variant === 'sos' ? palette.red[600] : palette.blue[800]} />
+      <DashboardIcon name={icon} size={36} color={variant === 'sos' ? palette.red[600] : palette.blue[800]} />
       <Typography variant="label" size="xs" style={styles.label}>
         {label}
       </Typography>

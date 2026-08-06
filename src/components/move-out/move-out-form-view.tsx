@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -136,7 +136,7 @@ export function MoveOutFormView({
               <Typography variant="text" size="md" weight="medium" color={palette.gray[800]}>
                 {formatDisplayDate(moveOutDate.toISOString())}
               </Typography>
-              <SymbolView name="calendar" size={16} tintColor={palette.gray[500]} />
+              <HwSymbol name="calendar" size={16} tintColor={palette.gray[500]} />
             </Pressable>
             <MoveOutNoticeBanner>
               {formatMoveOutNotice(minimumDate, maximumDate)}

@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { WishlistHeartButton } from '@/components/wishlist/wishlist-heart-button';
@@ -52,7 +52,7 @@ export function HdpPropertyHeader({
         onPress={onLocationPress}
         style={styles.locationRow}
         accessibilityRole="button">
-        <SymbolView name="mappin" size={11} tintColor={palette.lime[600]} />
+        <HwSymbol name="mappin" size={11} tintColor={palette.lime[600]} />
         <Typography variant="text" size="xs" weight="medium" color={palette.lime[600]} style={styles.location}>
           {location}
         </Typography>

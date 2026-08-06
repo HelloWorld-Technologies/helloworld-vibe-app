@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { type ReactNode, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -149,13 +149,15 @@ export function BottomSheet({
             style={[styles.closeButton, { top: insets.top + 12 }]}
             accessibilityRole="button"
             accessibilityLabel="Close">
-            <SymbolView name="xmark" size={14} weight="bold" tintColor={palette.white} />
+            <HwSymbol name="xmark" size={14} weight="bold" tintColor={palette.white} />
           </Pressable>
         ) : null}
 
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.sheetTranslate, sheetStyle]}>
-            <View style={styles.sheetSurface} collapsable={false}>
+            <View
+              style={[styles.sheetSurface, { paddingBottom: Math.max(insets.bottom, 12) }]}
+              collapsable={false}>
               <View style={styles.handleHitArea} accessibilityRole="adjustable">
                 <View style={styles.handle} />
               </View>

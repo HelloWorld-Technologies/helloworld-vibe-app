@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
@@ -118,13 +118,13 @@ export function CalendarPickerModal({
         <View style={styles.card}>
           <View style={styles.header}>
             <Pressable onPress={() => shiftMonth(-1)} style={styles.navButton} accessibilityLabel="Previous month">
-              <SymbolView name="chevron.left" size={14} weight="semibold" tintColor={palette.gray[700]} />
+              <HwSymbol name="chevron.left" size={14} weight="semibold" tintColor={palette.gray[700]} />
             </Pressable>
             <Typography variant="text" size="md" weight="bold">
               {monthLabel}
             </Typography>
             <Pressable onPress={() => shiftMonth(1)} style={styles.navButton} accessibilityLabel="Next month">
-              <SymbolView name="chevron.right" size={14} weight="semibold" tintColor={palette.gray[700]} />
+              <HwSymbol name="chevron.right" size={14} weight="semibold" tintColor={palette.gray[700]} />
             </Pressable>
           </View>
 

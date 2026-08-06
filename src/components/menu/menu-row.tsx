@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { ProfileIcon } from '@/components/profile-icon';
 import { Typography } from '@/components/ui/typography';
 import type { MenuItem } from '@/constants/menu';
@@ -38,7 +37,7 @@ function MenuRowContent({
         </Typography>
       </View>
       <View style={styles.chevronWrap}>
-        <SymbolView
+        <HwSymbol
           name="chevron.right"
           size={14}
           weight="semibold"

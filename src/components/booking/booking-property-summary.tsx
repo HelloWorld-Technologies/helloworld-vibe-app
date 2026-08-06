@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/ui/typography';
@@ -47,7 +47,7 @@ export function BookingPropertySummary({
         </View>
         {onEdit ? (
           <Pressable onPress={onEdit} style={styles.editButton} accessibilityRole="button">
-            <SymbolView name="pencil" size={12} tintColor={palette.helloLime} />
+            <HwSymbol name="pencil" size={12} tintColor={palette.helloLime} />
             <Typography variant="text" size="xs" weight="bold" color={palette.helloLime}>
               Edit
             </Typography>
@@ -70,7 +70,7 @@ export function BookingPropertySummary({
       </View>
 
       <View style={styles.dateRow}>
-        <SymbolView name="calendar" size={14} tintColor={palette.gray[600]} />
+        <HwSymbol name="calendar" size={14} tintColor={palette.gray[600]} />
         <Typography variant="text" size="xs" color={palette.gray[700]}>
           Move in Date: {formatBookingMoveInDate(moveInDate)}
         </Typography>

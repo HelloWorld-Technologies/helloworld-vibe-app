@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -87,7 +87,7 @@ export function MoveInSearchableSelect({
           style={styles.fieldText}>
           {value || placeholder}
         </Typography>
-        <SymbolView
+        <HwSymbol
           name="chevron.down"
           size={12}
           tintColor={palette.gray[500]}
@@ -109,7 +109,7 @@ export function MoveInSearchableSelect({
       {isOpen ? (
         <View style={styles.dropdown}>
           <View style={styles.searchRow}>
-            <SymbolView name="magnifyingglass" size={14} tintColor={palette.gray[400]} />
+            <HwSymbol name="magnifyingglass" size={14} tintColor={palette.gray[400]} />
             <TextInput
               value={query}
               onChangeText={setQuery}

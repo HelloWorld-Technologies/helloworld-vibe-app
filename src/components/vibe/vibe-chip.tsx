@@ -8,8 +8,7 @@ import Animated, {
   withSpring,
   ZoomIn,
 } from 'react-native-reanimated';
-import { SymbolView } from 'expo-symbols';
-
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { VIBE_CHIP_GRADIENT } from '@/constants/vibes';
@@ -28,7 +27,7 @@ type VibeChipProps = {
 function CheckBadge() {
   return (
     <View style={styles.checkBadge}>
-      <SymbolView name="checkmark" size={9} weight="bold" tintColor={palette.white} />
+      <HwSymbol name="checkmark" size={9} weight="bold" tintColor={palette.white} />
     </View>
   );
 }

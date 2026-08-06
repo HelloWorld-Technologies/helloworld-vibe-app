@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -205,7 +205,7 @@ export function TenantPaymentsScreen() {
             style={styles.clearButton}
             accessibilityRole="button"
             accessibilityLabel="Clear selection">
-            <SymbolView name="xmark.circle.fill" size={24} tintColor={palette.lime[700]} />
+            <HwSymbol name="xmark.circle.fill" size={24} tintColor={palette.lime[700]} />
           </Pressable>
 
           <Pressable

@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +25,7 @@ export function MoveInStepsHeader({ onBack }: MoveInStepsHeaderProps) {
             accessibilityRole="button"
             accessibilityLabel="Go back"
             hitSlop={8}>
-            <SymbolView name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[900]} />
+            <HwSymbol name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[900]} />
           </Pressable>
           <Typography variant="text" size="lg" weight="medium">
             Your Move-in Steps
@@ -37,7 +37,7 @@ export function MoveInStepsHeader({ onBack }: MoveInStepsHeaderProps) {
           style={styles.supportButton}
           accessibilityRole="button"
           accessibilityLabel="Support">
-          <SymbolView name="headphones" size={12} tintColor={palette.blue[700]} />
+          <HwSymbol name="headphones" size={12} tintColor={palette.blue[700]} />
           <Typography variant="text" size="xs" weight="medium" color={palette.blue[700]}>
             Support
           </Typography>

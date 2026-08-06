@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
@@ -79,7 +79,7 @@ function ActionButton({ action }: { action: VisitCardAction }) {
         {action.label}
       </Typography>
       {action.variant === 'primary' ? (
-        <SymbolView name="location.fill" size={12} tintColor={palette.white} />
+        <HwSymbol name="location.fill" size={12} tintColor={palette.white} />
       ) : null}
     </Pressable>
   );
@@ -164,7 +164,7 @@ export function VisitCard({
               style={[styles.carouselButton, styles.carouselButtonLeft]}
               accessibilityRole="button"
               accessibilityLabel="Previous photo">
-              <SymbolView name="chevron.left" size={14} weight="semibold" tintColor={palette.white} />
+              <HwSymbol name="chevron.left" size={14} weight="semibold" tintColor={palette.white} />
             </Pressable>
             <Pressable
               onPress={(event) => {
@@ -174,7 +174,7 @@ export function VisitCard({
               style={[styles.carouselButton, styles.carouselButtonRight]}
               accessibilityRole="button"
               accessibilityLabel="Next photo">
-              <SymbolView name="chevron.right" size={14} weight="semibold" tintColor={palette.white} />
+              <HwSymbol name="chevron.right" size={14} weight="semibold" tintColor={palette.white} />
             </Pressable>
             <View style={styles.dotsRow} pointerEvents="none">
               {imageSources.map((_, index) => (
@@ -255,7 +255,7 @@ export function VisitCard({
                   style={styles.callButton}
                   accessibilityRole="button"
                   accessibilityLabel="Call property manager">
-                  <SymbolView name="phone.fill" size={18} tintColor={palette.lime[700]} />
+                  <HwSymbol name="phone.fill" size={18} tintColor={palette.lime[700]} />
                 </Pressable>
               </View>
             </>
