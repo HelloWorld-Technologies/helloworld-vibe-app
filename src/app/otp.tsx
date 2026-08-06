@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -18,9 +18,11 @@ import { OtpInput } from '@/components/ui/otp-input';
 import { Typography } from '@/components/ui/typography';
 import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
-import { useVerifyOtpMutation } from '@/queries/use-auth';
+import { useSendOtpMutation, useVerifyOtpMutation } from '@/queries/use-auth';
 import { useTenantStore } from '@/stores/tenant-store';
 import { getDefaultTabRoute } from '@/utils/tenant-routing';
+
+const RESEND_COOLDOWN_SECONDS = 30;
 
 export default function OtpScreen() {
   const router = useRouter();
@@ -28,7 +30,19 @@ export default function OtpScreen() {
   const { mobile = '' } = useLocalSearchParams<{ mobile: string }>();
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
+  const [secondsLeft, setSecondsLeft] = useState(RESEND_COOLDOWN_SECONDS);
   const verifyOtp = useVerifyOtpMutation();
+  const sendOtp = useSendOtpMutation();
+
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+
+    const id = setTimeout(() => {
+      setSecondsLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(id);
+  }, [secondsLeft]);
 
   async function onVerify() {
     if (otp.length !== 6) {
@@ -46,6 +60,19 @@ export default function OtpScreen() {
       router.replace(getDefaultTabRoute(isTenant));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Please enter correct OTP');
+    }
+  }
+
+  async function onResendSms() {
+    if (secondsLeft > 0 || sendOtp.isPending || !mobile) return;
+
+    setError('');
+    try {
+      await sendOtp.mutateAsync(mobile);
+      setOtp('');
+      setSecondsLeft(RESEND_COOLDOWN_SECONDS);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resend OTP');
     }
   }
 
@@ -104,22 +131,44 @@ export default function OtpScreen() {
             </Typography>
 
             <View style={styles.resendRow}>
-              <Typography variant="text" size="sm" color={palette.gray[400]}>
-                Resend SMS in 30s
-              </Typography>
-              <View style={styles.resendDivider} />
+              {secondsLeft > 0 ? (
+                <Typography variant="text" size="sm" color={palette.gray[400]}>
+                  Resend SMS in {secondsLeft}s
+                </Typography>
+              ) : (
+                <Pressable
+                  onPress={onResendSms}
+                  disabled={sendOtp.isPending}
+                  accessibilityRole="button"
+                  accessibilityLabel="Resend SMS">
+                  <Typography
+                    variant="text"
+                    size="sm"
+                    weight="medium"
+                    color={sendOtp.isPending ? palette.gray[400] : palette.helloLime}>
+                    {sendOtp.isPending ? 'Sending…' : 'Resend SMS'}
+                  </Typography>
+                </Pressable>
+              )}
+              {/* <View style={styles.resendDivider} />
               <Pressable style={styles.whatsappRow} accessibilityRole="button">
                 <HwIcon name="whatsapp" size={20} />
                 <Typography variant="text" size="sm" weight="medium" color={palette.helloLime}>
                   Resend via Whatsapp
                 </Typography>
-              </Pressable>
+              </Pressable> */}
             </View>
           </View>
         </ScrollView>
 
         <View style={styles.footer}>
-          <Button label="Continue" loading={verifyOtp.isPending} onPress={onVerify} style={styles.continueButton} />
+          <Button
+            label="Continue"
+            loading={verifyOtp.isPending}
+            disabled={verifyOtp.isPending}
+            onPress={onVerify}
+            style={styles.continueButton}
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

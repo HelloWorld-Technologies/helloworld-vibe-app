@@ -37,14 +37,15 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         isPrimary ? styles.primary : isOutline ? styles.outline : styles.textVariant,
-        (disabled || loading) && styles.disabled,
-        pressed && isPrimary && styles.primaryPressed,
-        pressed && isOutline && styles.outlinePressed,
+        disabled && !loading && styles.disabled,
+        loading && styles.loading,
+        pressed && !loading && isPrimary && styles.primaryPressed,
+        pressed && !loading && isOutline && styles.outlinePressed,
         style,
       ]}
       {...props}>
       {loading ? (
-        <ActivityIndicator color={palette.gray[800]} />
+        <ActivityIndicator color={isPrimary ? palette.gray[800] : isOutline ? palette.gray[800] : palette.helloLime} />
       ) : (
         <Text
           numberOfLines={1}
@@ -93,6 +94,9 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
+  },
+  loading: {
+    opacity: 1,
   },
   label: {
     fontSize: 16,
