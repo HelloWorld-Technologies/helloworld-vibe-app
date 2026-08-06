@@ -44,16 +44,21 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFFFFF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "android": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 200
-          },
+          "backgroundColor": "#0BA5EC",
+          "image": "./assets/images/splash-gradient.png",
+          "resizeMode": "cover",
+          "enableFullScreenImage_legacy": true,
           "ios": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 200
+            "backgroundColor": "#0BA5EC",
+            "image": "./assets/images/splash-gradient.png",
+            "resizeMode": "cover",
+            "enableFullScreenImage_legacy": true
+          },
+          "android": {
+            "backgroundColor": "#0BA5EC",
+            "image": "./assets/images/splash-transparent.png",
+            "imageWidth": 1,
+            "resizeMode": "native"
           }
         }
       ],
@@ -80,7 +85,12 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/Satoshi-Variable.ttf"
+            "./assets/fonts/Satoshi-Variable.ttf",
+            "./assets/fonts/Satoshi-Light.ttf",
+            "./assets/fonts/Satoshi-Regular.ttf",
+            "./assets/fonts/Satoshi-Medium.ttf",
+            "./assets/fonts/Satoshi-Bold.ttf",
+            "./assets/fonts/Satoshi-Black.ttf"
           ]
         }
       ],

@@ -19,16 +19,29 @@ export const TypeScale = {
   },
 } as const;
 
-/** Registered family name for Satoshi Variable (must match useFonts key). */
+/**
+ * iOS: Satoshi Variable + fontWeight axis.
+ * Android: static faces — variable fonts ignore fontWeight and fall back to Roboto.
+ */
 export const Fonts = {
   satoshi: 'Satoshi Variable',
+  light: 'Satoshi-Light',
+  regular: 'Satoshi-Regular',
+  medium: 'Satoshi-Medium',
+  bold: 'Satoshi-Bold',
+  black: 'Satoshi-Black',
 } as const;
 
 export const FontAssets = {
   [Fonts.satoshi]: require('../../assets/fonts/Satoshi-Variable.ttf'),
+  [Fonts.light]: require('../../assets/fonts/Satoshi-Light.ttf'),
+  [Fonts.regular]: require('../../assets/fonts/Satoshi-Regular.ttf'),
+  [Fonts.medium]: require('../../assets/fonts/Satoshi-Medium.ttf'),
+  [Fonts.bold]: require('../../assets/fonts/Satoshi-Bold.ttf'),
+  [Fonts.black]: require('../../assets/fonts/Satoshi-Black.ttf'),
 } as const;
 
-/** CSS-style weight names mapped to Satoshi variable axis values. */
+/** CSS-style weight names mapped to Satoshi weights. */
 export const FONT_WEIGHTS = [
   'thin',
   'extralight',
@@ -43,7 +56,7 @@ export const FONT_WEIGHTS = [
 
 export type FontWeight = (typeof FONT_WEIGHTS)[number];
 
-/** Numeric CSS weight for each token. */
+/** Numeric CSS weight for each token (iOS / web variable axis). */
 export const FONT_WEIGHT_VALUES: Record<FontWeight, TextStyle['fontWeight']> = {
   thin: '100',
   extralight: '200',
@@ -56,13 +69,37 @@ export const FONT_WEIGHT_VALUES: Record<FontWeight, TextStyle['fontWeight']> = {
   black: '900',
 };
 
+const ANDROID_FAMILY_BY_WEIGHT: Record<FontWeight, string> = {
+  thin: Fonts.light,
+  extralight: Fonts.light,
+  light: Fonts.light,
+  regular: Fonts.regular,
+  medium: Fonts.medium,
+  semibold: Fonts.bold,
+  bold: Fonts.bold,
+  extrabold: Fonts.black,
+  black: Fonts.black,
+};
+
 /** @deprecated Use `fontStyleForWeight` — kept for legacy imports. */
-export function fontFamilyForWeight(_weight: FontWeight = 'regular'): string {
-  return Fonts.satoshi;
+export function fontFamilyForWeight(weight: FontWeight = 'regular'): string {
+  return Platform.OS === 'android' ? ANDROID_FAMILY_BY_WEIGHT[weight] : Fonts.satoshi;
 }
 
-/** Satoshi Variable: one family + numeric weight axis. */
+/**
+ * Cross-platform Satoshi styles.
+ * iOS: variable family + numeric weight.
+ * Android: static face for that weight + fontWeight normal.
+ */
 export function fontStyleForWeight(weight: FontWeight = 'regular'): TextStyle {
+  if (Platform.OS === 'android') {
+    return {
+      fontFamily: ANDROID_FAMILY_BY_WEIGHT[weight],
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+    };
+  }
+
   return {
     fontFamily: Fonts.satoshi,
     fontWeight: FONT_WEIGHT_VALUES[weight],

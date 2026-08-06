@@ -1,10 +1,17 @@
+import { Image } from 'react-native';
+
 import config from '@/config';
+import { ImageAssets } from '@/constants/assets';
 
 function encodeImageUrl(url: string) {
   return url.replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/ /g, '%20');
 }
 
+/** Bundled "Image coming soon" placeholder (local asset). */
+export const COMING_SOON_IMAGE = ImageAssets.comingSoon;
+
 const FALLBACK_IMAGE =
+  Image.resolveAssetSource(COMING_SOON_IMAGE)?.uri ??
   'https://hello-assets-items.s3.ap-south-1.amazonaws.com/images/coming-soon.jpg';
 
 export const COMING_SOON_IMAGE_URI = FALLBACK_IMAGE;

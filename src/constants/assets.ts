@@ -34,6 +34,7 @@ export const LottieAssets = {
 } as const;
 
 export const ImageAssets = {
+  comingSoon: require('../../assets/bundled/coming-soon.jpg'),
   loginBento1: require('../../assets/bundled/login/Login Bento 1.png'),
   loginBento2: require('../../assets/bundled/login/Login Bento 2.png'),
   loginBento3: require('../../assets/bundled/login/Login Bento 3.png'),

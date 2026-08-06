@@ -93,7 +93,8 @@
     "build:dev:local:ios": "eas build --profile development --platform ios --local",
     "build:preview:android": "eas build --profile preview --platform android",
     "build:preview:ios": "eas build --profile preview --platform ios",
-    "build:prod:android": "eas build --profile production --platform android"
+    "build:prod:android": "eas build --profile production --platform android",
+    "screenshots:android": "adb exec-out screencap -p > ~/Desktop/screenshot.png"
   },
   "private": true
 }

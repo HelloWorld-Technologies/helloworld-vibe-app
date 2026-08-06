@@ -9,6 +9,7 @@ import { FontAssets } from '@/constants/fonts';
 import { AppProviders } from '@/providers/app-providers';
 
 SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ duration: 200, fade: true });
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   return (

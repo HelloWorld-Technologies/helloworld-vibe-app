@@ -21,5 +21,6 @@ export const EVENT_REQUEST_CATEGORIES = [
   'Others',
 ] as const;
 
-export const EVENT_FALLBACK_IMAGE =
-  'https://hello-assets-items.s3.ap-south-1.amazonaws.com/images/coming-soon.jpg';
+import { COMING_SOON_IMAGE_URI } from '@/utils/images';
+
+export const EVENT_FALLBACK_IMAGE = COMING_SOON_IMAGE_URI;

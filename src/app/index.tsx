@@ -9,11 +9,14 @@ import { HwLottie } from '@/components/hw-lottie';
 import { Typography } from '@/components/ui/typography';
 import { LottieAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
+import {
+  SPLASH_GRADIENT,
+  SPLASH_GRADIENT_END,
+  SPLASH_GRADIENT_START,
+} from '@/constants/splash';
 import { useAuthHydrated, useIsAuthenticated } from '@/stores/auth-store';
 import { useTenantStore } from '@/stores/tenant-store';
 import { getDefaultTabRoute } from '@/utils/tenant-routing';
-
-const SPLASH_GRADIENT = [palette.lime[400], palette.blue[500], palette.purpleScale[500]] as const;
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -51,8 +54,8 @@ export default function SplashScreen() {
   return (
     <LinearGradient
       colors={[...SPLASH_GRADIENT]}
-      start={{ x: 1, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
+      start={SPLASH_GRADIENT_START}
+      end={SPLASH_GRADIENT_END}
       style={styles.gradient}>
       <StatusBar style="light" />
       <SafeAreaView style={styles.safe}>

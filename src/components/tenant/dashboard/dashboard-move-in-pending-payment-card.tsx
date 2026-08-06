@@ -6,10 +6,10 @@ import { Typography } from '@/components/ui/typography';
 import { DASHBOARD_RENT_CARD_GRADIENT } from '@/constants/dashboard';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
+import { COMING_SOON_IMAGE_URI } from '@/utils/images';
 import { priceFormatter } from '@/utils/tenant-format';
 
-const PROPERTY_FALLBACK_IMAGE =
-  'https://hello-assets-items.s3.ap-south-1.amazonaws.com/images/coming-soon.jpg';
+const PROPERTY_FALLBACK_IMAGE = COMING_SOON_IMAGE_URI;
 
 type DashboardMoveInPendingPaymentCardProps = {
   propertyName: string;
