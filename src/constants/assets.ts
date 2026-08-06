@@ -1,6 +1,7 @@
 /**
  * Bundled HelloWorld assets (copied from ~/Desktop/HW vibe assets).
- * Run `npm run sync:assets` after updating the Desktop source folder.
+ * Run `npm run sync:assets` after updating the Desktop source folder
+ * (sync also compresses raster images). Or run `npm run compress:assets`.
  */
 
 export const LoginIcons = {

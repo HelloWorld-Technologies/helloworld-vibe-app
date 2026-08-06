@@ -261,3 +261,4 @@ function main() {
 }
 
 main();
+// Compression runs via `npm run sync:assets` / postinstall (compress-assets.js).
