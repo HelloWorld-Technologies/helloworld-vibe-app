@@ -93,7 +93,8 @@
         }
       ],
       "expo-video",
-      "expo-sharing"
+      "expo-sharing",
+      "./plugins/with-android-release-signing.js"
     ],
     "experiments": {
       "typedRoutes": true,

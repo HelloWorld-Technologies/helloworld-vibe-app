@@ -71,6 +71,18 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "android:prebuild": "expo prebuild --platform android",
+    "android:assemble:debug": "cd android && ./gradlew assembleDebug",
+    "android:assemble:release": "cd android && ./gradlew assembleRelease",
+    "android:assemble": "npm run android:assemble:release",
+    "android:apk": "npm run android:assemble:release",
+    "android:bundle:release": "cd android && ./gradlew bundleRelease",
+    "android:bundle": "npm run android:bundle:release",
+    "android:build:debug": "npm run android:prebuild && npm run android:assemble:debug",
+    "android:build:release": "npm run android:prebuild && npm run android:assemble:release",
+    "android:build:apk": "npm run android:prebuild && npm run android:apk",
+    "android:build:bundle": "npm run android:prebuild && npm run android:bundle:release",
+    "android:build": "npm run android:build:release",
     "build:dev": "eas build --profile development --platform all",
     "build:dev:android": "eas build --profile development --platform android",
     "build:dev:ios": "eas build --profile development --platform ios",
@@ -78,7 +90,8 @@
     "build:dev:local:android": "eas build --profile development --platform android --local",
     "build:dev:local:ios": "eas build --profile development --platform ios --local",
     "build:preview:android": "eas build --profile preview --platform android",
-    "build:preview:ios": "eas build --profile preview --platform ios"
+    "build:preview:ios": "eas build --profile preview --platform ios",
+    "build:prod:android": "eas build --profile production --platform android"
   },
   "private": true
 }

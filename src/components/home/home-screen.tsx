@@ -10,14 +10,14 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  View,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SelectCitySheet } from '@/components/city/select-city-sheet';
-import { HwIcon } from '@/components/hw-icon';
 import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer';
+import { HwIcon } from '@/components/hw-icon';
 import { LocalityCardImage } from '@/components/locality/locality-card-image';
 import { PropertyCard } from '@/components/property/property-card';
 import { HwCarousel, HwParallaxCarousel, ParallaxLayer } from '@/components/ui/carousel';
@@ -91,8 +91,7 @@ export function HomeScreen() {
   const [feedStoryOpen, setFeedStoryOpen] = useState(false);
   const [feedStoryIndex, setFeedStoryIndex] = useState(0);
   const [citySheetVisible, setCitySheetVisible] = useState(false);
-  const scrollBottomPadding =
-    tabBarInset + (showFeedback ? FEEDBACK_BANNER_HEIGHT + FEEDBACK_BANNER_GAP : 0);
+  const scrollBottomPadding = 70
 
   const cardWidth = width - 48;
   const slideWidth = cardWidth + ITEM_GAP;
@@ -346,7 +345,7 @@ export function HomeScreen() {
         </View>
       </View>
 
-      {showFeedback ? (
+      {/* {showFeedback ? (
         <View style={[styles.feedbackBanner, { bottom: tabBarInset + FEEDBACK_BANNER_GAP }]}>
           <Typography variant="text" size="xs" color={palette.textSecondary} style={styles.feedbackText}>
             How was your visit to HW Mahaveer? ›
@@ -358,7 +357,7 @@ export function HomeScreen() {
             <SymbolView name="xmark" size={14} tintColor={palette.gray[500]} />
           </Pressable>
         </View>
-      ) : null}
+      ) : null} */}
 
       <HdpMomentsStoryViewer
         visible={feedStoryOpen}
