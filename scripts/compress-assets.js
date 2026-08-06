@@ -3,7 +3,7 @@
  * Compresses raster images under assets/bundled (and optionally assets/images).
  * - Resizes if either side exceeds MAX_DIMENSION
  * - JPEG: mozjpeg quality
- * - PNG: palette + high compression (keeps alpha)
+ * - PNG: truecolor + high compression (keeps alpha; palette PNGs break on iOS)
  * Only replaces a file when the output is smaller.
  *
  * Usage:
@@ -15,7 +15,6 @@ const path = require('path');
 
 const MAX_DIMENSION = 1600;
 const JPEG_QUALITY = 80;
-const PNG_QUALITY = 80;
 
 const projectRoot = path.join(__dirname, '..');
 const includeImages = process.argv.includes('--include-images');
@@ -66,12 +65,11 @@ async function compressFile(sharp, filePath) {
     if (ext === '.jpg' || ext === '.jpeg') {
       await pipeline.jpeg({ quality: JPEG_QUALITY, mozjpeg: true }).toFile(tmpPath);
     } else if (ext === '.png') {
+      // Avoid palette PNGs — expo-image/SDWebImage often fails to decode them on iOS.
       await pipeline
         .png({
           compressionLevel: 9,
-          palette: true,
-          quality: PNG_QUALITY,
-          effort: 10,
+          palette: false,
         })
         .toFile(tmpPath);
     } else if (ext === '.webp') {

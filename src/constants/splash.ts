@@ -2,7 +2,12 @@ import palette from '@/constants/palette';
 
 /**
  * Native + in-app splash gradient (lime → blue → purple).
- * Keep native splash image (`assets/images/splash-gradient.png`) in sync with these colors.
+ * Image asset: `assets/images/splash-gradient.png` (also copied to Android
+ * `drawable-nodpi/splashscreen_full.png` via `with-android-splash-gradient`).
+ *
+ * Note: Android 12+ system splash API only allows a solid color + icon.
+ * The gradient bitmap is used as `windowBackground` (pre-12 / post-splash)
+ * and the in-app splash uses the same colors via LinearGradient.
  */
 export const SPLASH_GRADIENT = [
   palette.lime[400],

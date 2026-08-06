@@ -64,15 +64,31 @@ function main() {
     process.exit(0);
   }
 
+  const loginRasterRename = {
+    'Login Bento 1.png': null, // managed as login-bento-1.jpg (no spaces; iOS Metro-safe)
+    'Login Bento 2.png': null,
+    'Login Bento 3.png': null,
+    'Login Bento 4.png': null,
+    'OTP 3d Illustration.png': 'otp-illustration.png',
+  };
+
   for (const file of fs.readdirSync(sourceRoot)) {
     const src = path.join(sourceRoot, file);
     if (!fs.statSync(src).isFile()) continue;
     if (/\.(svg|json|png)$/i.test(file)) {
       if (file === 'Logo Animation_White.json') {
         copyWhiteLogoLottie(src, path.join(targetRoot, file));
-      } else {
-        copyFile(src, path.join(targetRoot, file));
+        continue;
       }
+
+      if (Object.prototype.hasOwnProperty.call(loginRasterRename, file)) {
+        const destName = loginRasterRename[file];
+        if (!destName) continue; // skip spaced photo PNGs — use committed kebab JPEGs
+        copyFile(src, path.join(targetRoot, destName));
+        continue;
+      }
+
+      copyFile(src, path.join(targetRoot, file));
     }
   }
 

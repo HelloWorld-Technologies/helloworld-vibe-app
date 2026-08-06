@@ -23,7 +23,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
+        "backgroundColor": "#08A4ED",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -104,7 +104,8 @@
       ],
       "expo-video",
       "expo-sharing",
-      "./plugins/with-android-release-signing.js"
+      "./plugins/with-android-release-signing.js",
+      "./plugins/with-android-splash-gradient.js"
     ],
     "experiments": {
       "typedRoutes": true,
