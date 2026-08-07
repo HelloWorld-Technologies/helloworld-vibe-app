@@ -7,8 +7,13 @@ import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import type { PropertyListing } from '@/types/property';
 
-const ITEM_GAP = 12;
+const ITEM_GAP = 10;
 const PROPERTY_CAROUSEL_HEIGHT = 540;
+const PARALLAX_MODE_CONFIG = {
+  parallaxScrollingScale: 0.92,
+  parallaxScrollingOffset: 28,
+  parallaxAdjacentItemScale: 0.86,
+};
 
 type HdpSimilarPropertiesSectionProps = {
   listings: PropertyListing[];
@@ -56,6 +61,7 @@ export function HdpSimilarPropertiesSection({ listings }: HdpSimilarPropertiesSe
         width={slideWidth}
         height={PROPERTY_CAROUSEL_HEIGHT}
         showPagination={false}
+        modeConfig={PARALLAX_MODE_CONFIG}
         style={styles.carousel}
         renderItem={({ item }) => (
           <PropertyCard

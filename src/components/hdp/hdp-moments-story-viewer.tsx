@@ -17,6 +17,8 @@ import Animated, {
   FadeIn,
   FadeOut,
   runOnJS,
+  type SharedValue,
+  useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -43,29 +45,31 @@ type HdpMomentsStoryViewerProps = {
 };
 
 type PlaybackIcon = 'pause' | 'play' | null;
+type SegmentState = 'done' | 'active' | 'pending';
 
 function ProgressSegment({
   state,
   progress,
 }: {
-  state: 'done' | 'active' | 'pending';
-  progress: number;
+  state: SegmentState;
+  progress: SharedValue<number>;
 }) {
-  const fill = Math.min(Math.max(state === 'done' ? 1 : state === 'active' ? progress : 0, 0), 1);
+  const fillStyle = useAnimatedStyle(() => {
+    const fill =
+      state === 'done' ? 1 : state === 'active' ? Math.min(Math.max(progress.value, 0), 1) : 0;
+    return { width: `${fill * 100}%` };
+  }, [state]);
 
   return (
     <View style={styles.segmentTrack}>
-      {fill > 0 ? (
-        <View style={[styles.segmentFillWrap, { flex: Math.max(fill, 0.001) }]}>
-          <LinearGradient
-            colors={[...PROGRESS_GRADIENT]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={styles.segmentFill}
-          />
-        </View>
-      ) : null}
-      <View style={{ flex: Math.max(1 - fill, 0.001) }} />
+      <Animated.View style={[styles.segmentFillWrap, fillStyle]}>
+        <LinearGradient
+          colors={PROGRESS_GRADIENT}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.segmentFill}
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -77,20 +81,14 @@ function StoryProgressBar({
 }: {
   count: number;
   activeIndex: number;
-  progress: number;
+  progress: SharedValue<number>;
 }) {
   return (
     <View style={styles.progressRow}>
       {Array.from({ length: count }, (_, index) => {
-        const state =
+        const state: SegmentState =
           index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'pending';
-        return (
-          <ProgressSegment
-            key={index}
-            state={state}
-            progress={state === 'active' ? progress : 0}
-          />
-        );
+        return <ProgressSegment key={index} state={state} progress={progress} />;
       })}
     </View>
   );
@@ -127,14 +125,13 @@ export function HdpMomentsStoryViewer({
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(initialIndex);
-  const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(false);
   const [playbackIcon, setPlaybackIcon] = useState<PlaybackIcon>(null);
   const [storyEpoch, setStoryEpoch] = useState(0);
   const [canMountVideo, setCanMountVideo] = useState(false);
 
-  const imageProgress = useSharedValue(0);
+  const progress = useSharedValue(0);
   const onCloseRef = useRef(onClose);
   const momentsLengthRef = useRef(moments.length);
   const widthRef = useRef(width);
@@ -218,9 +215,15 @@ export function HdpMomentsStoryViewer({
     clearPlayIconTimer();
     setPaused(true);
     setPlaybackIcon('pause');
-    cancelAnimation(imageProgress);
-    setProgress(imageProgress.value);
-  }, [clearPlayIconTimer, imageProgress]);
+    cancelAnimation(progress);
+  }, [clearPlayIconTimer, progress]);
+
+  const handleVideoProgress = useCallback(
+    (value: number) => {
+      progress.value = value;
+    },
+    [progress],
+  );
 
   const resumeStory = useCallback(() => {
     const wasHolding = holdingRef.current;
@@ -256,38 +259,31 @@ export function HdpMomentsStoryViewer({
     if (!visible) return;
     setIndex(Math.min(Math.max(initialIndex, 0), Math.max(moments.length - 1, 0)));
     setPaused(false);
-    setProgress(0);
     setPlaybackIcon(null);
     holdingRef.current = false;
-    imageProgress.value = 0;
-  }, [visible, initialIndex, moments.length, imageProgress]);
+    progress.value = 0;
+  }, [visible, initialIndex, moments.length, progress]);
 
   useEffect(() => {
-    setProgress(0);
+    progress.value = 0;
     setPlaybackIcon(null);
     holdingRef.current = false;
     setPaused(false);
-  }, [index, storyEpoch, videoUri]);
-
-  useEffect(() => {
-    if (!visible || isVideo) return;
-    imageProgress.value = 0;
-    setProgress(0);
-  }, [visible, index, storyEpoch, isVideo, imageProgress]);
+  }, [index, storyEpoch, videoUri, progress]);
 
   useEffect(() => {
     if (!visible || !current || isVideo) {
-      cancelAnimation(imageProgress);
+      cancelAnimation(progress);
       return;
     }
 
     if (paused) {
-      cancelAnimation(imageProgress);
+      cancelAnimation(progress);
       return;
     }
 
-    const remainingMs = Math.max((1 - imageProgress.value) * IMAGE_DURATION_MS, 80);
-    imageProgress.value = withTiming(
+    const remainingMs = Math.max((1 - progress.value) * IMAGE_DURATION_MS, 80);
+    progress.value = withTiming(
       1,
       { duration: remainingMs, easing: Easing.linear },
       (finished) => {
@@ -296,17 +292,9 @@ export function HdpMomentsStoryViewer({
     );
 
     return () => {
-      cancelAnimation(imageProgress);
+      cancelAnimation(progress);
     };
-  }, [visible, index, storyEpoch, isVideo, paused, current, imageProgress, finishImageStory]);
-
-  useEffect(() => {
-    if (!visible || isVideo) return;
-    const id = setInterval(() => {
-      setProgress(imageProgress.value);
-    }, 40);
-    return () => clearInterval(id);
-  }, [visible, isVideo, index, storyEpoch, imageProgress]);
+  }, [visible, index, storyEpoch, isVideo, paused, current, progress, finishImageStory]);
 
   const tapGesture = Gesture.Tap()
     .maxDuration(220)
@@ -372,16 +360,13 @@ export function HdpMomentsStoryViewer({
               playing={visible && !paused}
               loop={false}
               muted={muted}
-              posterUri={current.imageUri}
               style={styles.media}
               timeUpdateInterval={0.05}
-              onProgress={setProgress}
+              onProgress={handleVideoProgress}
               onEnded={goNext}
               onError={goNext}
             />
-          ) : videoUri ? (
-            <Image source={{ uri: current.imageUri }} style={styles.media} contentFit="cover" />
-          ) : (
+          ) : videoUri ? null : (
             <Image
               source={{ uri: current.mediaUrl || current.imageUri }}
               style={styles.media}
@@ -493,7 +478,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.28)',
     overflow: 'hidden',
-    flexDirection: 'row',
   },
   segmentFillWrap: {
     height: '100%',
@@ -501,8 +485,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   segmentFill: {
-    flex: 1,
-    height: '100%',
+    ...StyleSheet.absoluteFill,
   },
   metaRow: {
     flexDirection: 'row',

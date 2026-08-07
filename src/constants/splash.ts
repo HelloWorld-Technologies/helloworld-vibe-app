@@ -6,8 +6,9 @@ import palette from '@/constants/palette';
  * `drawable-nodpi/splashscreen_full.png` via `with-android-splash-gradient`).
  *
  * Note: Android 12+ system splash API only allows a solid color + icon.
- * The gradient bitmap is used as `windowBackground` (pre-12 / post-splash)
- * and the in-app splash uses the same colors via LinearGradient.
+ * Our Android plugin overlays `splashscreen_full` and dismisses that system
+ * splash immediately so the gradient is visible during launch. The in-app
+ * splash uses the same colors via LinearGradient.
  */
 export const SPLASH_GRADIENT = [
   palette.lime[400],
