@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { VibeChip, type VibeChipVariant } from '@/components/vibe/vibe-chip';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -24,11 +23,7 @@ type VibeSelectionListProps = {
   scrollable?: boolean;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
-  animateOnMount?: boolean;
 };
-
-const CHIP_ENTER_MS = 220;
-const CHIP_STAGGER_MS = 45;
 
 export function VibeSelectionList({
   vibes,
@@ -42,7 +37,6 @@ export function VibeSelectionList({
   scrollable = true,
   style,
   contentContainerStyle,
-  animateOnMount = true,
 }: VibeSelectionListProps) {
   function toggleVibe(id: string) {
     const isSelected = selectedIds.includes(id);
@@ -59,20 +53,15 @@ export function VibeSelectionList({
     onChange(isSelected ? [] : [id]);
   }
 
-  const chips = vibes.map((vibe, index) => (
-    <Animated.View
+  const chips = vibes.map((vibe) => (
+    <VibeChip
       key={vibe.id}
-      entering={
-        animateOnMount ? FadeInDown.duration(CHIP_ENTER_MS).delay(index * CHIP_STAGGER_MS) : undefined
-      }>
-      <VibeChip
-        label={vibe.label}
-        emoji={vibe.emoji}
-        selected={selectedIds.includes(vibe.id)}
-        onPress={() => toggleVibe(vibe.id)}
-        variant={variant}
-      />
-    </Animated.View>
+      label={vibe.label}
+      emoji={vibe.emoji}
+      selected={selectedIds.includes(vibe.id)}
+      onPress={() => toggleVibe(vibe.id)}
+      variant={variant}
+    />
   ));
 
   return (
@@ -96,6 +85,9 @@ export function VibeSelectionList({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          // Keep scale-spring / check-badge from being clipped by the scroll viewport.
+          clipToPadding={false}
+          style={styles.scroll}
           contentContainerStyle={[styles.row, contentContainerStyle]}>
           {chips}
         </ScrollView>
@@ -113,10 +105,14 @@ export function isVibeId(id: string): id is VibeId {
 
 const styles = StyleSheet.create({
   hint: {
-    marginBottom: 10,
+    marginBottom: 8,
+  },
+  scroll: {
+    overflow: 'visible',
   },
   row: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
     paddingBottom: 4,
   },

@@ -6,7 +6,6 @@ import Animated, {
   useSharedValue,
   withSequence,
   withSpring,
-  ZoomIn,
 } from 'react-native-reanimated';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { fontStyleForWeight } from '@/constants/fonts';
@@ -76,11 +75,7 @@ export function VibeChip({
       ]}>
       <Text style={styles.emoji}>{emoji}</Text>
       <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
-      {selected ? (
-        <Animated.View entering={ZoomIn.duration(180).springify()}>
-          <CheckBadge />
-        </Animated.View>
-      ) : null}
+      {selected ? <CheckBadge /> : null}
     </View>
   );
 

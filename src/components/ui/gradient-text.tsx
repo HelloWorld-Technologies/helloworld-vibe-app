@@ -13,6 +13,10 @@ type GradientTextProps = Omit<TypographyProps, 'color' | 'children'> & {
   style?: StyleProp<TextStyle>;
 };
 
+/**
+ * Gradient-filled text. Uses the same Typography metrics as adjacent plain
+ * text — keep size/weight identical to neighboring copy so they match.
+ */
 export function GradientText({
   children,
   style,
@@ -22,7 +26,7 @@ export function GradientText({
   weight = 'bold',
   ...props
 }: GradientTextProps) {
-  const typographyProps = { variant, size, weight, style, ...props };
+  const typographyProps = { variant, size, weight, ...props };
 
   if (Platform.OS === 'web') {
     const webStyle = {
@@ -41,12 +45,20 @@ export function GradientText({
 
   return (
     <MaskedView
+      style={styles.maskedView}
       maskElement={
-        <Typography {...typographyProps} style={[style, styles.maskText]}>
+        <Typography
+          {...typographyProps}
+          color="#000000"
+          style={[style, styles.maskText]}>
           {children}
         </Typography>
       }>
-      <LinearGradient colors={[...colors]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}>
+      <LinearGradient
+        colors={[...colors]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.gradient}>
         <Typography {...typographyProps} style={[style, styles.hiddenText]}>
           {children}
         </Typography>
@@ -56,6 +68,14 @@ export function GradientText({
 }
 
 const styles = StyleSheet.create({
+  maskedView: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  gradient: {
+    // Hug the text bounds instead of stretching like a block.
+    flexDirection: 'row',
+  },
   maskText: {
     backgroundColor: 'transparent',
   },

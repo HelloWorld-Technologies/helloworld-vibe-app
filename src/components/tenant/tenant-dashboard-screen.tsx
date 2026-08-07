@@ -209,7 +209,7 @@ export function TenantDashboardScreen() {
         style={styles.sheet}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: tabBarInset + TAB_SCREEN_EXTRA_PADDING },
+          { paddingBottom: Platform.OS === 'ios' ? tabBarInset -100 + TAB_SCREEN_EXTRA_PADDING : tabBarInset + TAB_SCREEN_EXTRA_PADDING },
         ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}>

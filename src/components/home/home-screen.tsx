@@ -53,12 +53,21 @@ function SectionTitle({
       <Typography variant="text" size="xl" weight="medium">
         {prefix}
       </Typography>
-      <GradientText variant="text" size="xl" weight="black" style={styles.sectionHighlight}>
+      <GradientText variant="text" size="xl" weight="medium" style={styles.sectionHighlight}>
         {highlight}
       </GradientText>
     </View>
   );
 }
+
+/** Home screen spacing scale — use these instead of one-off margins. */
+const SPACE = {
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 24,
+} as const;
 
 const ITEM_GAP = 12;
 const PROPERTY_CAROUSEL_HEIGHT = 540;
@@ -92,13 +101,13 @@ export function HomeScreen() {
   const [feedStoryOpen, setFeedStoryOpen] = useState(false);
   const [feedStoryIndex, setFeedStoryIndex] = useState(0);
   const [citySheetVisible, setCitySheetVisible] = useState(false);
-  const scrollBottomPadding = Platform.OS === 'ios' ? 70 : 130;
+  const scrollBottomPadding = Platform.OS === 'ios' ? tabBarInset - 100  : tabBarInset ;
 
-  const cardWidth = width - 48;
+  const cardWidth = width - SPACE.xl * 2;
   const slideWidth = cardWidth + ITEM_GAP;
   const feedSlideWidth = FEED_CARD_WIDTH + FEED_CARD_GAP;
-  const stickyHeaderHeight = insets.top + 8 + 56 + 12;
-  const gradientHeight = Math.max(380, height * 0.52);
+  const stickyHeaderHeight = insets.top + SPACE.xs + 56 + SPACE.sm;
+  const gradientHeight = Math.max(360, height * 0.48);
 
   function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const scrolled = event.nativeEvent.contentOffset.y > HEADER_SHADOW_THRESHOLD;
@@ -191,119 +200,123 @@ export function HomeScreen() {
 
         <View style={styles.bodySheet}>
           <View style={styles.body}>
-          <SectionTitle prefix="Find your " highlight="Neighborhood!" />
-          <HwParallaxCarousel
-            data={[...NEIGHBORHOODS]}
-            width={slideWidth}
-            height={200}
-            style={styles.carouselWrap}
-            renderItem={({ item, animationValue }) => (
-              <View style={[styles.neighborhoodCard, { width: cardWidth }]}>
-                <ParallaxLayer animationValue={animationValue} style={styles.neighborhoodImageWrap}>
-                  <LocalityCardImage imageKey={item.image} style={styles.neighborhoodImage} />
-                </ParallaxLayer>
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.75)']}
-                  style={styles.neighborhoodOverlay}>
-                  <Typography variant="text" size="lg" weight="bold" color={palette.white}>
-                    {item.name}
-                  </Typography>
-                  <View style={styles.neighborhoodMeta}>
-                    <Typography variant="text" size="xs" color={palette.gray[200]}>
-                      Starting {item.price} | {item.properties} Properties
-                    </Typography>
-                    <HwSymbol name="arrow.right" size={12} tintColor={palette.white} />
+            <View style={styles.section}>
+              <SectionTitle prefix="Find your " highlight="Neighborhood!" />
+              <HwParallaxCarousel
+                data={[...NEIGHBORHOODS]}
+                width={slideWidth}
+                height={200}
+                style={styles.carouselWrap}
+                renderItem={({ item, animationValue }) => (
+                  <View style={[styles.neighborhoodCard, { width: cardWidth }]}>
+                    <ParallaxLayer animationValue={animationValue} style={styles.neighborhoodImageWrap}>
+                      <LocalityCardImage imageKey={item.image} style={styles.neighborhoodImage} />
+                    </ParallaxLayer>
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.75)']}
+                      style={styles.neighborhoodOverlay}>
+                      <Typography variant="text" size="lg" weight="bold" color={palette.white}>
+                        {item.name}
+                      </Typography>
+                      <View style={styles.neighborhoodMeta}>
+                        <Typography variant="text" size="xs" color={palette.gray[200]}>
+                          Starting {item.price} | {item.properties} Properties
+                        </Typography>
+                        <HwSymbol name="arrow.right" size={12} tintColor={palette.white} />
+                      </View>
+                    </LinearGradient>
                   </View>
-                </LinearGradient>
-              </View>
-            )}
-          />
-
-          <SectionTitle prefix="This could be your " highlight="Home!" />
-          {isLoadingProperties ? (
-            <View style={styles.propertiesLoader}>
-              <ActivityIndicator color={palette.helloLime} />
+                )}
+              />
             </View>
-          ) : properties.length > 0 ? (
-            <HwCarousel
-              key={city}
-              data={properties}
-              width={slideWidth}
-              height={PROPERTY_CAROUSEL_HEIGHT}
-              style={styles.carouselWrap}
-              renderItem={({ item }) => (
-                <PropertyCard
-                  property={item}
-                  style={{ width: cardWidth, alignSelf: 'center' }}
-                  onPress={() => openProperty(item)}
-                />
-              )}
-            />
-          ) : (
-            <EmptyState
-              compact
-              title={`No properties found in ${city}`}
-              subtitle="Try another city or check back soon."
-              actionLabel="Change City"
-              onAction={() => setCitySheetVisible(true)}
-            />
-          )}
 
-          {(isLoadingFeed || feedMoments.length > 0) ? (
-            <>
-              <SectionTitle prefix="Straight from the " highlight="Feed!" />
-              {isLoadingFeed ? (
-                <View style={styles.feedLoader}>
+            <View style={styles.section}>
+              <SectionTitle prefix="This could be your " highlight="Home!" />
+              {isLoadingProperties ? (
+                <View style={styles.propertiesLoader}>
                   <ActivityIndicator color={palette.helloLime} />
                 </View>
-              ) : (
+              ) : properties.length > 0 ? (
                 <HwCarousel
-                  data={feedMoments}
-                  width={feedSlideWidth}
-                  height={FEED_CARD_HEIGHT + 12}
-                  style={styles.feedCarouselWrap}
-                  renderItem={({ item, index }) => (
-                    <Pressable
-                      onPress={() => {
-                        setFeedStoryIndex(index);
-                        setFeedStoryOpen(true);
-                      }}
-                      style={[styles.feedCard, { width: FEED_CARD_WIDTH }]}
-                      accessibilityRole="button"
-                      accessibilityLabel={item.label || 'Watch moment'}>
-                      <View style={styles.feedCardInner}>
-                        <Image
-                          source={{ uri: item.imageUri }}
-                          style={styles.feedImage}
-                          contentFit="cover"
-                        />
-                        <LinearGradient
-                          colors={['transparent', 'rgba(0,0,0,0.55)']}
-                          style={styles.feedOverlay}>
-                          {item.label ? (
-                            <Typography
-                              variant="text"
-                              size="md"
-                              weight="bold"
-                              color={palette.white}
-                              numberOfLines={2}
-                              style={styles.feedCaption}>
-                              {item.label}
-                            </Typography>
-                          ) : null}
-                        </LinearGradient>
-                        {item.mediaType === 'video' ? (
-                          <View style={styles.videoBadge} pointerEvents="none">
-                            <HwSymbol name="video.fill" size={14} tintColor={palette.white} />
-                          </View>
-                        ) : null}
-                      </View>
-                    </Pressable>
+                  key={city}
+                  data={properties}
+                  width={slideWidth}
+                  height={PROPERTY_CAROUSEL_HEIGHT}
+                  style={styles.carouselWrap}
+                  renderItem={({ item }) => (
+                    <PropertyCard
+                      property={item}
+                      style={{ width: cardWidth, alignSelf: 'center' }}
+                      onPress={() => openProperty(item)}
+                    />
                   )}
                 />
+              ) : (
+                <EmptyState
+                  compact
+                  title={`No properties found in ${city}`}
+                  subtitle="Try another city or check back soon."
+                  actionLabel="Change City"
+                  onAction={() => setCitySheetVisible(true)}
+                />
               )}
-            </>
-          ) : null}
+            </View>
+
+            {isLoadingFeed || feedMoments.length > 0 ? (
+              <View style={styles.section}>
+                <SectionTitle prefix="Straight from the " highlight="Feed!" />
+                {isLoadingFeed ? (
+                  <View style={styles.feedLoader}>
+                    <ActivityIndicator color={palette.helloLime} />
+                  </View>
+                ) : (
+                  <HwCarousel
+                    data={feedMoments}
+                    width={feedSlideWidth}
+                    height={FEED_CARD_HEIGHT + 12}
+                    style={styles.carouselWrap}
+                    renderItem={({ item, index }) => (
+                      <Pressable
+                        onPress={() => {
+                          setFeedStoryIndex(index);
+                          setFeedStoryOpen(true);
+                        }}
+                        style={[styles.feedCard, { width: FEED_CARD_WIDTH }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={item.label || 'Watch moment'}>
+                        <View style={styles.feedCardInner}>
+                          <Image
+                            source={{ uri: item.imageUri }}
+                            style={styles.feedImage}
+                            contentFit="cover"
+                          />
+                          <LinearGradient
+                            colors={['transparent', 'rgba(0,0,0,0.55)']}
+                            style={styles.feedOverlay}>
+                            {item.label ? (
+                              <Typography
+                                variant="text"
+                                size="md"
+                                weight="bold"
+                                color={palette.white}
+                                numberOfLines={2}
+                                style={styles.feedCaption}>
+                                {item.label}
+                              </Typography>
+                            ) : null}
+                          </LinearGradient>
+                          {item.mediaType === 'video' ? (
+                            <View style={styles.videoBadge} pointerEvents="none">
+                              <HwSymbol name="video.fill" size={14} tintColor={palette.white} />
+                            </View>
+                          ) : null}
+                        </View>
+                      </Pressable>
+                    )}
+                  />
+                )}
+              </View>
+            ) : null}
           </View>
         </View>
       </ScrollView>
@@ -311,7 +324,7 @@ export function HomeScreen() {
       <View
         style={[
           styles.stickyHeader,
-          { paddingTop: insets.top + 8 },
+          { paddingTop: insets.top + SPACE.xs },
           headerScrolled && styles.stickyHeaderScrolled,
         ]}>
         <View style={styles.headerTop}>
@@ -393,8 +406,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingHorizontal: SPACE.lg,
+    paddingBottom: SPACE.sm,
     zIndex: 10,
     backgroundColor: 'transparent',
   },
@@ -407,8 +420,10 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   heroSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 50,
+    paddingHorizontal: SPACE.lg,
+    // Overlaps body sheet (-SPACE.xl) with a small remaining cushion.
+    paddingBottom: SPACE.xl + SPACE.sm,
+    zIndex: 2,
   },
   headerTop: {
     flexDirection: 'row',
@@ -421,7 +436,7 @@ const styles = StyleSheet.create({
   cityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACE.xs / 2,
   },
   profileButton: {
     width: 40,
@@ -433,23 +448,26 @@ const styles = StyleSheet.create({
   },
   hero: {
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: SPACE.md,
   },
-  heroItalic: {
-    fontStyle: 'italic',
-  },
+  // Satoshi has no italic face. On Android, fontStyle:'italic' can blank the glyphs.
+  heroItalic: Platform.select({
+    ios: { fontStyle: 'italic' as const },
+    default: {},
+  }),
   searchInputMargin: {
-    marginBottom: 16,
+    marginBottom: SPACE.sm,
   },
-  vibeHintOptional: {
-    fontStyle: 'italic',
-  },
+  vibeHintOptional: Platform.select({
+    ios: { fontStyle: 'italic' as const },
+    default: {},
+  }),
   scroll: {
     flex: 1,
     zIndex: 1,
   },
   bodySheet: {
-    marginTop: -32,
+    marginTop: -SPACE.xl,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     backgroundColor: palette.white,
@@ -457,36 +475,33 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
-    // elevation: 12,
+    zIndex: 1,
   },
   body: {
-    paddingTop: 32,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    gap: 28,
+    paddingTop: SPACE.xl,
+    paddingHorizontal: SPACE.lg,
+    paddingBottom: SPACE.md,
+    gap: SPACE.xl,
     flex: 1,
     overflow: 'visible',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
   },
+  section: {
+    gap: SPACE.sm,
+  },
   sectionTitleRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
-    marginTop: 8,
   },
-  sectionHighlight: {
-    fontStyle: 'italic',
-  },
+  sectionHighlight: Platform.select({
+    // ios: { fontStyle: 'italic' as const },
+    default: {},
+  }),
   carouselWrap: {
     marginHorizontal: -4,
-    marginBottom: 8,
-  },
-  feedCarouselWrap: {
-    marginHorizontal: -4,
-    marginBottom: 16,
   },
   propertiesLoader: {
     height: PROPERTY_CAROUSEL_HEIGHT,
@@ -517,7 +532,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    padding: 16,
+    padding: SPACE.md,
     gap: 4,
   },
   neighborhoodMeta: {
@@ -527,7 +542,7 @@ const styles = StyleSheet.create({
   },
   feedCard: {
     height: FEED_CARD_HEIGHT,
-    borderRadius: 20,
+    borderRadius: Radius.md,
     backgroundColor: palette.white,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -538,7 +553,7 @@ const styles = StyleSheet.create({
   },
   feedCardInner: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: Radius.md,
     overflow: 'hidden',
     backgroundColor: palette.gray[200],
   },
@@ -551,7 +566,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: 14,
-    paddingBottom: 16,
+    paddingBottom: SPACE.md,
     paddingTop: 40,
     justifyContent: 'flex-end',
   },
@@ -560,13 +575,13 @@ const styles = StyleSheet.create({
   },
   videoBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: SPACE.sm,
+    right: SPACE.sm,
   },
   feedbackBanner: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: SPACE.md,
+    right: SPACE.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

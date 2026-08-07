@@ -105,6 +105,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
   const [step, setStep] = useState<Step>('category');
   const [selectedCategory, setSelectedCategory] = useState<SelectedCategory | null>(null);
   const [subCategory, setSubCategory] = useState<TicketCategoryChild | null>(null);
+  const [subcategoryListOpen, setSubcategoryListOpen] = useState(true);
   const [description, setDescription] = useState('');
   const [attachments, setAttachments] = useState<PendingTicketAttachment[]>([]);
   const [error, setError] = useState('');
@@ -127,6 +128,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
     setStep('category');
     setSelectedCategory(null);
     setSubCategory(null);
+    setSubcategoryListOpen(true);
     setDescription('');
     setAttachments([]);
     setError('');
@@ -157,8 +159,20 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
     }
 
     setError('');
-    setSubCategory(subcategories.length === 1 ? subcategories[0] : null);
+    if (subcategories.length === 1) {
+      setSubCategory(subcategories[0]);
+      setSubcategoryListOpen(false);
+    } else {
+      setSubCategory(null);
+      setSubcategoryListOpen(true);
+    }
     setStep('details');
+  }
+
+  function selectSubcategory(item: TicketCategoryChild) {
+    setSubCategory(item);
+    setSubcategoryListOpen(false);
+    setError('');
   }
 
   async function handleSubmit() {
@@ -201,6 +215,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
   return (
     <BottomSheet visible={visible} onClose={handleClose}>
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
@@ -286,6 +301,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
               onPress={() => {
                 setError('');
                 setStep('category');
+                setSubcategoryListOpen(true);
               }}
               accessibilityRole="button"
               accessibilityLabel="Change category">
@@ -295,19 +311,29 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
               <HwSymbol name="chevron.down" size={14} tintColor={palette.gray[500]} />
             </Pressable>
 
-            <View style={styles.subcategoryList}>
-              {subcategories.map((item) => (
-                <SubcategoryRow
-                  key={item.id}
-                  item={item}
-                  selected={subCategory?.id === item.id}
-                  onPress={() => {
-                    setSubCategory(item);
-                    setError('');
-                  }}
-                />
-              ))}
-            </View>
+            {subCategory && !subcategoryListOpen ? (
+              <Pressable
+                style={styles.dropdown}
+                onPress={() => setSubcategoryListOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Change issue type">
+                <Typography variant="text" size="md" weight="medium" color={palette.gray[800]}>
+                  {subCategory.name}
+                </Typography>
+                <HwSymbol name="chevron.down" size={14} tintColor={palette.gray[500]} />
+              </Pressable>
+            ) : (
+              <View style={styles.subcategoryList}>
+                {subcategories.map((item) => (
+                  <SubcategoryRow
+                    key={item.id}
+                    item={item}
+                    selected={subCategory?.id === item.id}
+                    onPress={() => selectSubcategory(item)}
+                  />
+                ))}
+              </View>
+            )}
 
             <TextField
               label="Describe your issue"
@@ -338,6 +364,7 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
                 onPress={() => {
                   setError('');
                   setStep('category');
+                  setSubcategoryListOpen(true);
                 }}
                 style={styles.actionButton}
               />
@@ -383,6 +410,10 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
   content: {
     paddingHorizontal: 24,
     paddingTop: 24,

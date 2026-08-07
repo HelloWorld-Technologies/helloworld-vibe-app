@@ -17,7 +17,11 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  initialWindowMetrics,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 import palette from '@/constants/palette';
 
@@ -45,6 +49,13 @@ export function BottomSheet({
   const progress = useSharedValue(0);
   const dragY = useSharedValue(0);
   const [mounted, setMounted] = useState(visible);
+
+  // Modal can report 0 bottom inset on Android — fall back to window metrics.
+  const bottomInset = Math.max(
+    insets.bottom,
+    initialWindowMetrics?.insets.bottom ?? 0,
+    Platform.OS === 'android' ? 16 : 12,
+  );
 
   useEffect(() => {
     if (visible) {
@@ -123,6 +134,8 @@ export function BottomSheet({
     return null;
   }
 
+  const sheetMaxHeight = screenHeight * 0.88;
+
   return (
     <Modal
       transparent
@@ -131,51 +144,66 @@ export function BottomSheet({
       presentationStyle="overFullScreen"
       statusBarTranslucent
       onRequestClose={requestClose}>
-      <GestureHandlerRootView style={styles.root}>
-        <Animated.View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}
-        />
+      {/*
+        Provider lives INSIDE the Modal only. Wrapping outside caused an empty
+        flex:1 SafeAreaProvider view on the host screen (tab bar mid-screen).
+      */}
+      <SafeAreaProvider
+        initialMetrics={initialWindowMetrics}
+        style={styles.modalSafeArea}>
+        <GestureHandlerRootView style={styles.root}>
+          <Animated.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}
+          />
 
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={requestClose}
-          accessibilityLabel="Close"
-        />
-
-        {showCloseButton ? (
           <Pressable
+            style={StyleSheet.absoluteFill}
             onPress={requestClose}
-            style={[styles.closeButton, { top: insets.top + 12 }]}
-            accessibilityRole="button"
-            accessibilityLabel="Close">
-            <HwSymbol name="xmark" size={14} weight="bold" tintColor={palette.white} />
-          </Pressable>
-        ) : null}
+            accessibilityLabel="Close"
+          />
 
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.sheetTranslate, sheetStyle]}>
-            <View
-              style={[styles.sheetSurface, { paddingBottom: Math.max(insets.bottom, 12) }]}
-              collapsable={false}>
-              <View style={styles.handleHitArea} accessibilityRole="adjustable">
-                <View style={styles.handle} />
+          {showCloseButton ? (
+            <Pressable
+              onPress={requestClose}
+              style={[styles.closeButton, { top: insets.top + 12 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Close">
+              <HwSymbol name="xmark" size={14} weight="bold" tintColor={palette.white} />
+            </Pressable>
+          ) : null}
+
+          <GestureDetector gesture={panGesture}>
+            <Animated.View
+              style={[styles.sheetTranslate, { maxHeight: sheetMaxHeight }, sheetStyle]}>
+              <View
+                style={[
+                  styles.sheetSurface,
+                  { paddingBottom: bottomInset, maxHeight: sheetMaxHeight },
+                ]}
+                collapsable={false}>
+                <View style={styles.handleHitArea} accessibilityRole="adjustable">
+                  <View style={styles.handle} />
+                </View>
+                <KeyboardAvoidingView
+                  behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                  keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+                  style={styles.keyboardAvoid}>
+                  {children}
+                </KeyboardAvoidingView>
               </View>
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-                style={styles.keyboardAvoid}>
-                {children}
-              </KeyboardAvoidingView>
-            </View>
-          </Animated.View>
-        </GestureDetector>
-      </GestureHandlerRootView>
+            </Animated.View>
+          </GestureDetector>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalSafeArea: {
+    flex: 1,
+  },
   root: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -197,7 +225,6 @@ const styles = StyleSheet.create({
   },
   sheetTranslate: {
     width: '100%',
-    maxHeight: '88%',
     backgroundColor: 'transparent',
     zIndex: 1,
   },
@@ -222,7 +249,7 @@ const styles = StyleSheet.create({
   },
   keyboardAvoid: {
     width: '100%',
-    maxHeight: '100%',
+    flexShrink: 1,
     backgroundColor: 'transparent',
   },
 });
