@@ -1,7 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   RefreshControl,
@@ -13,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { rechargeSmartMeter } from '@/api/smart-meter';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { SmartMeterRoomSkeleton } from '@/components/skeleton';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -109,9 +109,7 @@ export function SmartMeterRechargeScreen() {
           />
         </View>
       ) : isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={palette.lime[700]} />
-        </View>
+        <SmartMeterRoomSkeleton style={styles.loader} />
       ) : isError || rooms.length === 0 ? (
         <ScrollView
           contentContainerStyle={styles.emptyScroll}
@@ -224,6 +222,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+  },
+  loader: {
+    paddingHorizontal: 20,
+    marginTop: 16,
   },
   emptyScroll: {
     flexGrow: 1,

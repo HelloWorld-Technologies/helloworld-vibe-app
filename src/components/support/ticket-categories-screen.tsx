@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { getKbCategories } from '@/api/tickets';
 import { CreateTicketBanner } from '@/components/support/create-ticket-banner';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { CategoryListSkeleton } from '@/components/skeleton';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
@@ -44,7 +45,7 @@ export function TicketCategoriesScreen() {
         <CreateTicketBanner />
 
         {categories === null ? (
-          <ActivityIndicator color={palette.lime[700]} style={styles.loader} />
+          <CategoryListSkeleton style={styles.loader} />
         ) : (
           <View style={styles.list}>
             {categories.map((category, index) => {

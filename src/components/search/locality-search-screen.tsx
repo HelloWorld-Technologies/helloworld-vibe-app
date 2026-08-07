@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Keyboard,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LocalityResultSkeleton } from '@/components/skeleton';
 import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/ui/search-input';
 import { Typography } from '@/components/ui/typography';
@@ -161,9 +161,7 @@ export function LocalitySearchScreen() {
       </View>
 
       {isFetching ? (
-        <View style={styles.loader}>
-          <ActivityIndicator size="small" color={palette.helloLime} />
-        </View>
+        <LocalityResultSkeleton style={styles.loader} />
       ) : null}
 
       <ScrollView
@@ -290,8 +288,8 @@ const styles = StyleSheet.create({
     marginLeft: 52,
   },
   loader: {
-    paddingVertical: 8,
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 8,
   },
   results: {
     paddingHorizontal: 20,

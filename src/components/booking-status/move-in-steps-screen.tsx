@@ -15,6 +15,7 @@ import { MoveInCompletedSection } from '@/components/booking-status/move-in-comp
 import { MoveInPendingCard } from '@/components/booking-status/move-in-pending-card';
 import { MoveInProgressCard } from '@/components/booking-status/move-in-progress-card';
 import { MoveInStepsHeader } from '@/components/booking-status/move-in-steps-header';
+import { StepsListSkeleton } from '@/components/skeleton';
 import { DashboardMoveInPendingPaymentCard } from '@/components/tenant/dashboard/dashboard-move-in-pending-payment-card';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -108,9 +109,7 @@ export function MoveInStepsScreen() {
       <MoveInStepsHeader onBack={handleBack} />
 
       {isLoading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={palette.helloLime} />
-        </View>
+        <StepsListSkeleton style={styles.stepsLoader} />
       ) : isError || !status ? (
         <View style={styles.loader}>
           <Typography variant="body" color={palette.textSecondary} style={styles.errorText}>
@@ -203,6 +202,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+  },
+  stepsLoader: {
+    paddingHorizontal: 24,
+    marginTop: 24,
   },
   errorText: {
     textAlign: 'center',

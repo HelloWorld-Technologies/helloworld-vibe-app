@@ -17,6 +17,7 @@ import { RateVisitSheet } from '@/components/my-visits/rate-visit-sheet';
 import { RescheduleVisitSheet } from '@/components/my-visits/reschedule-visit-sheet';
 import { VisitCard } from '@/components/my-visits/visit-card';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { VisitListSkeleton } from '@/components/skeleton';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
@@ -120,7 +121,7 @@ function VisitsTabList({
   }
 
   if (isLoading) {
-    return <ActivityIndicator color={palette.lime[700]} style={styles.loader} />;
+    return <VisitListSkeleton style={styles.loader} />;
   }
 
   if (isError) {
@@ -327,6 +328,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   loader: {
+    paddingHorizontal: 24,
     marginTop: 32,
   },
 });

@@ -185,13 +185,13 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: 24,
     paddingBottom: 16,
   },
   illustration: {
     width: '100%',
     height: 220,
-    marginTop: 4,
     alignSelf: 'center',
   },
   content: {

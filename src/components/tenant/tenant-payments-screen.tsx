@@ -1,7 +1,6 @@
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { openInvoice, PaymentCard } from '@/components/tenant/payment-card';
+import { PaymentListSkeleton } from '@/components/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
 import { SwipeableTabPager } from '@/components/ui/swipeable-tab-pager';
@@ -159,7 +159,7 @@ export function TenantPaymentsScreen() {
         }
         showsVerticalScrollIndicator={false}>
         {isLoading ? (
-          <ActivityIndicator color={palette.lime[700]} style={styles.loader} />
+          <PaymentListSkeleton />
         ) : list.length > 0 ? (
           tabId === 'pending' ? (
             renderPendingList(list)
@@ -313,8 +313,5 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 16,
-  },
-  loader: {
-    marginTop: 32,
   },
 });

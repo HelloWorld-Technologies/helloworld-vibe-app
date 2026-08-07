@@ -13,6 +13,7 @@ import {
 import { CommunityEventCard } from '@/components/community/community-event-card';
 import { CommunityPromoCard } from '@/components/community/community-promo-card';
 import { CommunityRequestSheet } from '@/components/community/community-request-sheet';
+import { EventGridSkeleton } from '@/components/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
@@ -79,7 +80,7 @@ function CommunityEventsTabPage({
   }
 
   if (isLoading) {
-    return <ActivityIndicator color={palette.lime[700]} style={styles.loader} />;
+    return <EventGridSkeleton style={styles.loader} />;
   }
 
   if (showEmpty) {

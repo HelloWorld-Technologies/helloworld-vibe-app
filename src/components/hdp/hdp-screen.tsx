@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import {
-  ActivityIndicator,
   Linking,
   Pressable,
   StyleSheet,
@@ -15,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HdpScreenSkeleton } from '@/components/skeleton';
 import { HdpSimilarPropertiesSection } from '@/components/hdp/hdp-similar-properties-section';
 import { HdpDayFromHereSection } from '@/components/hdp/hdp-day-from-here-section';
 import { HdpMomentsSection } from '@/components/hdp/hdp-moments-section';
@@ -319,9 +319,7 @@ export function HdpScreen() {
       />
 
       {isLoading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={palette.helloLime} />
-        </View>
+        <HdpScreenSkeleton />
       ) : showError ? (
         <View style={styles.loader}>
           <Typography variant="text" size="md" color={palette.textSecondary} style={styles.errorText}>

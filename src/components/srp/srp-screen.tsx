@@ -3,7 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   View,
@@ -13,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScrollRevealHeader } from '@/components/navigation/scroll-reveal-header';
 import { PropertyCard } from '@/components/property/property-card';
+import { SrpListSkeleton } from '@/components/skeleton';
 import { CityDetailsTab, SrpContactBar } from '@/components/srp/locality-details-tab';
 import { LocalityRatingsGrid } from '@/components/srp/locality-ratings-grid';
 import { SrpFiltersSheet } from '@/components/srp/srp-filters-sheet';
@@ -168,11 +168,7 @@ export function SrpScreen() {
                 </Typography>
               </Pressable>
 
-              {isLoading ? (
-                <View style={styles.loader}>
-                  <ActivityIndicator color={palette.helloLime} />
-                </View>
-              ) : null}
+              {isLoading ? <SrpListSkeleton /> : null}
 
               <View style={styles.propertyList}>
                 {properties.map((property) => (
@@ -325,10 +321,6 @@ const styles = StyleSheet.create({
   clearAll: {
     alignSelf: 'flex-end',
     marginTop: -8,
-  },
-  loader: {
-    paddingVertical: 24,
-    alignItems: 'center',
   },
   propertyList: {
     gap: 16,

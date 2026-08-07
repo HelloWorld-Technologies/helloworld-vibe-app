@@ -74,6 +74,8 @@ export function OtpInput({ value, onChange, autoFocus = false }: OtpInputProps) 
 const styles = StyleSheet.create({
   box: {
     width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
     minHeight: 56,
     borderWidth: 1,
     borderColor: palette.borderDefault,

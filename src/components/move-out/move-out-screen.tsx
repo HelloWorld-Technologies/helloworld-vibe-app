@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { getMoveOutInformation, postMoveOutInit } from '@/api/moveout';
 import { getBankDetails } from '@/api/user';
@@ -10,6 +10,7 @@ import { MoveOutFormView } from '@/components/move-out/move-out-form-view';
 import { MoveOutInitiatedView } from '@/components/move-out/move-out-initiated-view';
 import { MoveOutPlanningSheet } from '@/components/move-out/move-out-planning-sheet';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { FormSkeleton } from '@/components/skeleton';
 import palette from '@/constants/palette';
 import type { BankDetails } from '@/types/bank-details';
 import type { MoveOutInfo, MoveOutStatus } from '@/types/move-out';
@@ -132,11 +133,7 @@ export function MoveOutScreen() {
       ? 'Move-out Initiated'
       : 'Move-Out';
 
-  let content = (
-    <View style={styles.loaderWrap}>
-      <ActivityIndicator color={palette.lime[700]} size="large" />
-    </View>
-  );
+  let content = <FormSkeleton style={styles.loaderWrap} />;
 
   if (screenStatus === 'form') {
     content = (
@@ -191,9 +188,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   loaderWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 48,
+    marginTop: 24,
   },
 });

@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabScreen } from '@/components/navigation/tab-screen';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { WishlistListSkeleton } from '@/components/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PropertyCard } from '@/components/property/property-card';
 import { Button } from '@/components/ui/button';
@@ -148,7 +149,7 @@ export function WishlistScreen({ variant = 'tab' }: WishlistScreenProps) {
       return (
         <View style={styles.flex}>
           {renderHeader()}
-          <ActivityIndicator color={palette.helloLime} style={styles.loader} />
+          <WishlistListSkeleton />
         </View>
       );
     }
@@ -243,9 +244,6 @@ const styles = StyleSheet.create({
   cta: {
     minWidth: 160,
     marginTop: 8,
-  },
-  loader: {
-    marginTop: 32,
   },
   list: {
     paddingHorizontal: 20,

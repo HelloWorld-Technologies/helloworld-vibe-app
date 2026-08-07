@@ -2,7 +2,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { MateListSkeleton } from '@/components/skeleton';
 import { AddMateSheet } from '@/components/tenant/mates/add-visitor-sheet';
 import { RoommateCard } from '@/components/tenant/mates/roommate-card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -42,9 +42,7 @@ export function RoommatesScreen() {
     <ProfileStackScreen title="My Roommates" centerTitle style={styles.screenBody}>
       <View style={styles.content}>
         {isLoading ? (
-          <View style={styles.loader}>
-            <ActivityIndicator color={palette.lime[700]} />
-          </View>
+          <MateListSkeleton style={styles.loader} />
         ) : hasRoommates ? (
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -107,9 +105,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loader: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 16,
   },
   footer: {
     position: 'absolute',

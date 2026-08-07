@@ -3,7 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Linking,
   Platform,
   Pressable,
@@ -67,7 +66,7 @@ export function TenantDashboardScreen() {
   const { startMoveInPayment } = useMoveInPayment();
   const profile = useTenantProfile();
   const { data: bookingStatus, refetch: refetchBookingStatus } = useBookingStatus();
-  const { data: invoices, isLoading: invoicesLoading, refetch: refetchInvoices } = useTenantInvoices();
+  const { data: invoices, refetch: refetchInvoices } = useTenantInvoices();
   const { data: tickets, refetch: refetchTickets } = useDashboardSupportTickets();
   const { data: events, isLoading: eventsLoading, refetch: refetchEvents } = useUpcomingEvents();
   const {
@@ -258,10 +257,6 @@ export function TenantDashboardScreen() {
           onViewRewards={() => router.push('/profile/referral')}
           onCopied={() => setCopySnackbarVisible(true)}
         />
-
-        {invoicesLoading ? (
-          <ActivityIndicator color={palette.lime[700]} style={styles.loader} />
-        ) : null}
       </ScrollView>
 
       <RaiseRequestSheet
@@ -340,8 +335,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     gap: DASHBOARD_SECTION_GAP,
-  },
-  loader: {
-    marginTop: 8,
   },
 });

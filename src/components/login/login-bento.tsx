@@ -1,6 +1,6 @@
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, useWindowDimensions, View } from 'react-native'
 
 import { Typography } from '@/components/ui/typography'
 import { ImageAssets } from '@/constants/assets'
@@ -14,9 +14,12 @@ type LoginBentoProps = {
 }
 
 export function LoginBento ({ compact = false }: LoginBentoProps) {
+  const { width, height } = useWindowDimensions()
+  const isTablet = Math.min(width, height) >= 600
+
   if (compact) {
     return (
-      <View style={styles.root}>
+      <View style={styles.compactRoot}>
         <View style={styles.compactLeft}>
           <Image
             source={ImageAssets.loginBento1}
@@ -30,7 +33,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
             style={styles.compactCities}
           >
             <Typography
-              variant='text'
+              variant={isTablet ? 'display' : 'text'}
               size='sm'
               weight='bold'
               color={palette.white}
@@ -39,7 +42,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
             </Typography>
             <Typography
               variant='text'
-              size='xs'
+              size={isTablet ? 'md' : 'xs'}
               weight='medium'
               color={palette.white}
             >
@@ -65,7 +68,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
               style={StyleSheet.absoluteFill}
             />
             <Typography
-              variant='text'
+              variant={isTablet ? 'display' : 'text'}
               size='sm'
               weight='bold'
               color={palette.white}
@@ -74,7 +77,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
             </Typography>
             <Typography
               variant='text'
-              size='xs'
+              size={isTablet ? 'md' : 'xs'}
               weight='medium'
               color={palette.white}
             >
@@ -103,7 +106,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
           >
             <Typography
               variant='display'
-              size='md'
+              size={isTablet ? 'lg' : 'md'}
               weight='bold'
               color={palette.white}
             >
@@ -111,7 +114,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
             </Typography>
             <Typography
               variant='text'
-              size='xs'
+              size={isTablet ? 'md' : 'xs'}
               weight='medium'
               color={palette.white}
             >
@@ -154,7 +157,6 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
           contentFit='cover'
         />
         <View style={styles.coliving}>
-          {/* <Image source={ImageAssets.loginColivingBg} style={StyleSheet.absoluteFill} contentFit="cover" /> */}
           <LinearGradient
             colors={['#53C55E', '#11A8DA', '#903DC0']}
             start={{ x: 1, y: 0 }}
@@ -163,7 +165,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
           />
           <Typography
             variant='display'
-            size='md'
+            size={isTablet ? 'lg' : 'md'}
             weight='bold'
             color={palette.white}
           >
@@ -171,7 +173,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
           </Typography>
           <Typography
             variant='text'
-            size='md'
+            size={isTablet ? 'lg' : 'md'}
             weight='medium'
             color={palette.white}
             style={styles.center}
@@ -191,11 +193,16 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
     flexDirection: 'row',
     gap: GAP,
     width: '100%',
-    // maxWidth: 390,
-    alignSelf: 'center'
+    minHeight: 0
+  },
+  compactRoot: {
+    flexDirection: 'row',
+    gap: GAP,
+    width: '100%'
   },
   compactLeft: {
     flex: 1,
@@ -233,21 +240,25 @@ const styles = StyleSheet.create({
   left: {
     flex: 244,
     gap: GAP,
-    alignItems: 'flex-end'
+    alignItems: 'flex-end',
+    minHeight: 0
   },
   hero: {
     width: '90%',
-    height: 130,
-    borderRadius: RADIUS
+    flex: 130,
+    borderRadius: RADIUS,
+    minHeight: 0
   },
   leftRow: {
     width: '90%',
+    flex: 92,
     flexDirection: 'row',
-    gap: GAP
+    gap: GAP,
+    minHeight: 0
   },
   citiesTile: {
-    width: 85,
-    minHeight: 92,
+    width: '36%',
+    maxWidth: 120,
     borderRadius: RADIUS,
     padding: 8,
     alignItems: 'center',
@@ -255,56 +266,61 @@ const styles = StyleSheet.create({
   },
   bedroom: {
     flex: 1,
-    minHeight: 92,
-    borderRadius: RADIUS
+    borderRadius: RADIUS,
+    minHeight: 0
   },
   liveBetter: {
     width: '100%',
-    height: 242,
+    flex: 242,
     borderTopRightRadius: RADIUS,
     borderBottomRightRadius: RADIUS,
     borderBottomLeftRadius: RADIUS,
-    paddingHorizontal: 25,
-    paddingTop: 23,
-    overflow: 'hidden'
+    paddingHorizontal: '8%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    minHeight: 0
   },
   liveBetterText: {
-    width: 201,
-    height: 86
+    width: '82%',
+    aspectRatio: 201 / 86
   },
   wordmark: {
-    width: 217,
-    height: 124,
-    marginTop: 12,
-    marginLeft: 4
+    width: '88%',
+    aspectRatio: 217 / 124,
+    marginTop: '4%'
   },
   right: {
     flex: 138,
-    gap: GAP
+    gap: GAP,
+    minHeight: 0
   },
   dining: {
-    height: 163,
+    flex: 163,
     borderRadius: RADIUS,
     alignSelf: 'flex-start',
     width: '90%',
+    minHeight: 0
   },
   coliving: {
-    height: 151,
+    flex: 151,
     borderTopLeftRadius: RADIUS,
     borderBottomLeftRadius: RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    paddingHorizontal: 8
+    paddingHorizontal: 8,
+    minHeight: 0
   },
   colivingOverlay: {
     opacity: 0.9
   },
   living: {
     width: '90%',
-    height: 150,
+    flex: 150,
     borderRadius: RADIUS,
     alignSelf: 'flex-start',
+    minHeight: 0
   },
   center: {
     textAlign: 'center'

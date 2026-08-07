@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Platform,
@@ -21,6 +20,7 @@ import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer
 import { HwIcon } from '@/components/hw-icon';
 import { LocalityCardImage } from '@/components/locality/locality-card-image';
 import { PropertyCard } from '@/components/property/property-card';
+import { HomeFeedSkeleton, HomePropertiesSkeleton } from '@/components/skeleton';
 import { HwCarousel, HwParallaxCarousel, ParallaxLayer } from '@/components/ui/carousel';
 import { EmptyState } from '@/components/ui/empty-state';
 import { GradientText } from '@/components/ui/gradient-text';
@@ -233,9 +233,7 @@ export function HomeScreen() {
             <View style={styles.section}>
               <SectionTitle prefix="This could be your " highlight="Home!" />
               {isLoadingProperties ? (
-                <View style={styles.propertiesLoader}>
-                  <ActivityIndicator color={palette.helloLime} />
-                </View>
+                <HomePropertiesSkeleton />
               ) : properties.length > 0 ? (
                 <HwCarousel
                   key={city}
@@ -266,9 +264,7 @@ export function HomeScreen() {
               <View style={styles.section}>
                 <SectionTitle prefix="Straight from the " highlight="Feed!" />
                 {isLoadingFeed ? (
-                  <View style={styles.feedLoader}>
-                    <ActivityIndicator color={palette.helloLime} />
-                  </View>
+                  <HomeFeedSkeleton />
                 ) : (
                   <HwCarousel
                     data={feedMoments}
@@ -502,16 +498,6 @@ const styles = StyleSheet.create({
   }),
   carouselWrap: {
     marginHorizontal: -4,
-  },
-  propertiesLoader: {
-    height: PROPERTY_CAROUSEL_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  feedLoader: {
-    height: FEED_CARD_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   neighborhoodCard: {
     height: 200,

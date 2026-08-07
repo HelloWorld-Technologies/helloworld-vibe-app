@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { CommunityEventCard } from '@/components/community/community-event-card';
+import { DashboardEventsSkeleton } from '@/components/skeleton';
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
 import { HwCarousel } from '@/components/ui/carousel';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { CommunityEvent } from '@/types/community';
-import palette from '@/constants/palette';
 
 const EVENT_CARD_GAP = 12;
 const EVENT_IMAGE_HEIGHT = 168;
@@ -34,7 +34,7 @@ export function DashboardEventsSection({ events, isLoading }: DashboardEventsSec
       />
 
       {isLoading ? (
-        <ActivityIndicator color={palette.lime[700]} style={styles.loader} />
+        <DashboardEventsSkeleton />
       ) : events.length > 0 ? (
         <HwCarousel
           data={events}
@@ -69,8 +69,5 @@ export function DashboardEventsSection({ events, isLoading }: DashboardEventsSec
 const styles = StyleSheet.create({
   section: {
     gap: 16,
-  },
-  loader: {
-    marginVertical: 24,
   },
 });

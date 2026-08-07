@@ -1,10 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { VibeGridSkeleton } from '@/components/skeleton';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
@@ -174,9 +175,7 @@ export function MoveInAboutYouScreen() {
         </Typography>
 
         {isLoadingOptions ? (
-          <View style={styles.loading}>
-            <ActivityIndicator size="large" color={palette.lime[500]} />
-          </View>
+          <VibeGridSkeleton />
         ) : (
           <VibeSelectionList
             vibes={vibeOptions}
@@ -234,10 +233,6 @@ const styles = StyleSheet.create({
   },
   vibeList: {
     marginTop: 4,
-  },
-  loading: {
-    paddingVertical: 48,
-    alignItems: 'center',
   },
   footerWrap: {
     position: 'absolute',

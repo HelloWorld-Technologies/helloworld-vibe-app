@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -129,51 +129,54 @@ export function HwBottomTabBar({
           : { paddingBottom: Math.max(insets.bottom, 12) },
       ]}
       pointerEvents="box-none">
-      <View
-        style={[styles.bar, floating ? styles.barFloating : null, { padding: barPad }]}
-        onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
-        pointerEvents="auto">
-        <Animated.View
-          style={[styles.activePill, { top: barPad, bottom: barPad }, pillAnimatedStyle]}
-          pointerEvents="none"
-        />
+      {/* Elevation on an outer shell — overflow:hidden on the bar would clip Android shadows. */}
+      <View style={floating ? styles.barElevation : null}>
+        <View
+          style={[styles.bar, floating ? styles.barFloating : null, { padding: barPad }]}
+          onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
+          pointerEvents="auto">
+          <Animated.View
+            style={[styles.activePill, { top: barPad, bottom: barPad }, pillAnimatedStyle]}
+            pointerEvents="none"
+          />
 
-        {visibleTabs.map(({ route, meta }) => {
-          const isFocused = focusedName === route.name;
+          {visibleTabs.map(({ route, meta }) => {
+            const isFocused = focusedName === route.name;
 
-          function onPress() {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
+            function onPress() {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
 
-            if (!isFocused && !event.defaultPrevented) {
-              if (typeof navigation.jumpTo === 'function') {
-                navigation.jumpTo(route.name, route.params);
-              } else {
-                navigation.navigate(route.name, route.params);
+              if (!isFocused && !event.defaultPrevented) {
+                if (typeof navigation.jumpTo === 'function') {
+                  navigation.jumpTo(route.name, route.params);
+                } else {
+                  navigation.navigate(route.name, route.params);
+                }
               }
             }
-          }
 
-          const color = isFocused ? palette.lime[700] : palette.black;
+            const color = isFocused ? palette.lime[700] : palette.black;
 
-          return (
-            <Pressable
-              key={route.key}
-              onPress={onPress}
-              style={[styles.tab, floating ? styles.tabFloating : null]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isFocused }}
-              accessibilityLabel={meta.label}>
-              <TabBarIcon name={meta.icon} size={22} color={color} />
-              <Text style={[styles.label, { color }, isFocused && styles.labelActive]}>
-                {meta.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+            return (
+              <Pressable
+                key={route.key}
+                onPress={onPress}
+                style={[styles.tab, floating ? styles.tabFloating : null]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isFocused }}
+                accessibilityLabel={meta.label}>
+                <TabBarIcon name={meta.icon} size={22} color={color} />
+                <Text style={[styles.label, { color }, isFocused && styles.labelActive]}>
+                  {meta.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -206,16 +209,17 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     position: 'relative',
   },
+  barElevation: {
+    borderRadius: 999,
+    backgroundColor: palette.white,
+    // Android shadow
+    elevation: Platform.OS === 'android' ? 2 : 0,
+  },
   barFloating: {
     backgroundColor: palette.white,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: palette.gray[200],
     overflow: 'hidden',
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 0,
   },
   tab: {
     flex: 1,

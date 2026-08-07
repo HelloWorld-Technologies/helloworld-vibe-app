@@ -2,7 +2,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -13,6 +12,7 @@ import Animated from 'react-native-reanimated';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { getCategoryDescription, postCreateTicket } from '@/api/tickets';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { CreateTicketSkeleton } from '@/components/skeleton';
 import {
   getUploadedAttachmentUrls,
   hasFailedAttachments,
@@ -160,7 +160,7 @@ export function CreateNewTicketScreen() {
   if (faqs === null) {
     return (
       <ProfileStackScreen title={subCategory} centerTitle style={styles.screen}>
-        <ActivityIndicator color={palette.lime[700]} style={styles.loader} />
+        <CreateTicketSkeleton />
       </ProfileStackScreen>
     );
   }
@@ -243,9 +243,6 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 20,
     paddingBottom: 32,
-  },
-  loader: {
-    marginTop: 48,
   },
   faqSection: {
     gap: 8,

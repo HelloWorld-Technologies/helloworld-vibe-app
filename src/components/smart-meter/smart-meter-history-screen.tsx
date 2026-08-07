@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -8,6 +7,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { PaymentListSkeleton } from '@/components/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -39,9 +39,7 @@ export function SmartMeterHistoryScreen() {
           />
         </View>
       ) : isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={palette.lime[700]} />
-        </View>
+        <PaymentListSkeleton style={styles.loader} />
       ) : isError || history.length === 0 ? (
         <ScrollView
           contentContainerStyle={styles.emptyScroll}
@@ -133,6 +131,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+  },
+  loader: {
+    paddingHorizontal: 20,
+    marginTop: 16,
   },
   emptyScroll: {
     flexGrow: 1,

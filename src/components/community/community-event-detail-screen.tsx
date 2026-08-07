@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   Platform,
@@ -17,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getHwEventDetail, getRegisteredEvents, postBookEvent } from '@/api/community';
 import { WhosAttendingCard } from '@/components/community/whos-attending-card';
+import { EventDetailSkeleton } from '@/components/skeleton';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
@@ -229,8 +229,8 @@ export function CommunityEventDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={palette.lime[700]} />
+      <View style={styles.root}>
+        <EventDetailSkeleton />
       </View>
     );
   }

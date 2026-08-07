@@ -67,78 +67,82 @@ export function LoginScreen () {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.page}>
-        <View style={styles.bentoArea} pointerEvents='box-none'>
-          <LoginBento />
+      <KeyboardAvoidingView
+        style={styles.page}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={insets.top}
+      >
+        <View
+          style={[
+            styles.bentoArea,
+            keyboardVisible ? styles.bentoAreaCompact : null
+          ]}
+          pointerEvents='box-none'
+        >
+          <LoginBento compact={keyboardVisible} />
         </View>
 
-        <KeyboardAvoidingView
-          style={styles.sheetAvoid}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={insets.top}
+        <View
+          style={[
+            styles.sheet,
+            keyboardVisible ? styles.sheetCompact : null,
+            {
+              paddingBottom: keyboardVisible
+                ? 12
+                : Math.max(insets.bottom, 16) + 8
+            }
+          ]}
         >
-          <View
-            style={[
-              styles.sheet,
-              keyboardVisible ? styles.sheetCompact : null,
-              {
-                paddingBottom: keyboardVisible
-                  ? 12
-                  : Math.max(insets.bottom, 16) + 8
-              }
-            ]}
+          <Text style={styles.title}>Get Started!</Text>
+          <Text style={styles.label}>Please enter your phone number</Text>
+
+          <Pressable
+            style={[styles.inputBox, error ? styles.inputError : null]}
+            onPress={() => inputRef.current?.focus()}
           >
-            <Text style={styles.title}>Get Started!</Text>
-            <Text style={styles.label}>Please enter your phone number</Text>
-
-            <Pressable
-              style={[styles.inputBox, error ? styles.inputError : null]}
-              onPress={() => inputRef.current?.focus()}
-            >
-              <TextInput
-                ref={inputRef}
-                value={phone}
-                onChangeText={text => {
-                  setPhone(text.replace(/\D/g, '').slice(0, 10))
-                  if (error) setError('')
-                }}
-                placeholder='Mobile number'
-                placeholderTextColor={palette.gray[400]}
-                keyboardType='phone-pad'
-                textContentType='telephoneNumber'
-                autoComplete='tel'
-                maxLength={10}
-                returnKeyType='done'
-                blurOnSubmit={false}
-                onSubmitEditing={onLogin}
-                inputAccessoryViewID={
-                  Platform.OS === 'ios' ? PHONE_ACCESSORY_ID : undefined
-                }
-                style={styles.input}
-              />
-              <Text pointerEvents='none' style={styles.prefix}>
-                +91-
-              </Text>
-            </Pressable>
-
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-
-            <Button
-              label='Login'
-              onPress={onLogin}
-              loading={sendOtp.isPending}
-              style={styles.button}
+            <TextInput
+              ref={inputRef}
+              value={phone}
+              onChangeText={text => {
+                setPhone(text.replace(/\D/g, '').slice(0, 10))
+                if (error) setError('')
+              }}
+              placeholder='Mobile number'
+              placeholderTextColor={palette.gray[400]}
+              keyboardType='phone-pad'
+              textContentType='telephoneNumber'
+              autoComplete='tel'
+              maxLength={10}
+              returnKeyType='done'
+              blurOnSubmit={false}
+              onSubmitEditing={onLogin}
+              inputAccessoryViewID={
+                Platform.OS === 'ios' ? PHONE_ACCESSORY_ID : undefined
+              }
+              style={styles.input}
             />
-
-            <Text style={styles.terms}>
-              <Text style={styles.termsMuted}>By continuing you agree to </Text>
-              <Text style={styles.termsLink}>
-                HelloWorld&apos;s Terms and conditions.
-              </Text>
+            <Text pointerEvents='none' style={styles.prefix}>
+              +91-
             </Text>
-          </View>
-        </KeyboardAvoidingView>
-      </View>
+          </Pressable>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <Button
+            label='Login'
+            onPress={onLogin}
+            loading={sendOtp.isPending}
+            style={styles.button}
+          />
+
+          <Text style={styles.terms}>
+            <Text style={styles.termsMuted}>By continuing you agree to </Text>
+            <Text style={styles.termsLink}>
+              HelloWorld&apos;s Terms and conditions.
+            </Text>
+          </Text>
+        </View>
+      </KeyboardAvoidingView>
       {/* 
       {Platform.OS === 'ios' ? (
         <InputAccessoryView nativeID={PHONE_ACCESSORY_ID}>
@@ -162,17 +166,13 @@ const styles = StyleSheet.create({
     flex: 1
   },
   bentoArea: {
-    position: 'absolute',
-    top: 8,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 0,
-    zIndex: 0
-  },
-  sheetAvoid: {
     flex: 1,
-    justifyContent: 'flex-end',
-    zIndex: 1
+    paddingTop: 8,
+    minHeight: 0
+  },
+  bentoAreaCompact: {
+    flex: 0,
+    paddingTop: 8
   },
   sheet: {
     backgroundColor: palette.white,
@@ -181,11 +181,6 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingHorizontal: 24,
     gap: 12
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: -4 },
-    // shadowOpacity: 0.08,
-    // shadowRadius: 12,
-    // elevation: 10,
   },
   sheetCompact: {
     paddingTop: 16,

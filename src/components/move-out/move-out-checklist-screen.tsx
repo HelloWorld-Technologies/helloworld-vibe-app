@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getMoveOutChecklist, updateMoveOutChecklist } from '@/api/moveout';
 import { MoveInChecklistSection } from '@/components/move-in/move-in-checklist-section';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { ChecklistSkeleton } from '@/components/skeleton';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { Typography } from '@/components/ui/typography';
@@ -132,7 +133,15 @@ export function MoveOutChecklistScreen() {
     setScreenStatus('readonly');
   }
 
-  if (screenStatus === 'loading' || screenStatus === 'submitting') {
+  if (screenStatus === 'loading') {
+    return (
+      <ProfileStackScreen title="Move-out Checklist" centerTitle style={styles.screen}>
+        <ChecklistSkeleton />
+      </ProfileStackScreen>
+    );
+  }
+
+  if (screenStatus === 'submitting') {
     return (
       <ProfileStackScreen title="Move-out Checklist" centerTitle style={styles.screen}>
         <View style={styles.loaderWrap}>

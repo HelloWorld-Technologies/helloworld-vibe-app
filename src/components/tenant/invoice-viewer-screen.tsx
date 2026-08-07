@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { InvoiceDetailSkeleton } from '@/components/skeleton';
 import { RedeemCreditsSheet } from '@/components/tenant/redeem-credits-sheet';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Button } from '@/components/ui/button';
@@ -264,9 +264,7 @@ export function InvoiceViewerScreen() {
           </Typography>
         </View>
       ) : isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={palette.lime[700]} />
-        </View>
+        <InvoiceDetailSkeleton />
       ) : isError || !data ? (
         <View style={styles.centered}>
           <Typography variant="text" size="md" color={palette.textSecondary} style={styles.errorText}>

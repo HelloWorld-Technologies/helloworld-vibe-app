@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HelpDeskCard } from '@/components/support/help-desk-card';
+import { TicketListSkeleton } from '@/components/skeleton';
 import { RaiseRequestSheet } from '@/components/tenant/raise-request-sheet';
 import { SupportTicketCard } from '@/components/tenant/support-ticket-card';
 import { Button } from '@/components/ui/button';
@@ -77,7 +78,7 @@ function SupportTicketList({
   }
 
   if (isLoading) {
-    return <ActivityIndicator color={palette.lime[700]} style={styles.loader} />;
+    return <TicketListSkeleton style={styles.loader} />;
   }
 
   if (isError) {
@@ -191,6 +192,7 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 24,
+    paddingHorizontal: 20,
   },
   centered: {
     flex: 1,

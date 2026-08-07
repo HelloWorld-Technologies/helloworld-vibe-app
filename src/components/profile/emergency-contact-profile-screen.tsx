@@ -1,7 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { FormSkeleton } from '@/components/skeleton';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { Typography } from '@/components/ui/typography';
@@ -152,9 +152,7 @@ export function EmergencyContactProfileScreen() {
   return (
     <ProfileStackScreen title="Emergency Contact Details" style={styles.screen}>
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={palette.lime[700]} />
-        </View>
+        <FormSkeleton style={styles.centered} />
       ) : (
         <KeyboardAvoidingView
           style={styles.flex}
@@ -219,9 +217,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 24,
   },
   scroll: {
     paddingHorizontal: 24,

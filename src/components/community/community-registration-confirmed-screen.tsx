@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getHwEventDetail } from '@/api/community';
+import { FormSkeleton } from '@/components/skeleton';
 import { Typography } from '@/components/ui/typography';
 import { CommunityAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
@@ -213,9 +214,7 @@ export function CommunityRegistrationConfirmedScreen() {
       </View>
 
       {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={palette.lime[700]} />
-        </View>
+        <FormSkeleton style={styles.loader} />
       ) : (
         <ScrollView
           bounces={false}
@@ -389,9 +388,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   loader: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 32,
   },
   content: {
     alignItems: 'center',

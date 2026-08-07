@@ -2,7 +2,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { postVerifyVisitor } from '@/api/roommate';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { MateListSkeleton } from '@/components/skeleton';
 import { AddMateSheet } from '@/components/tenant/mates/add-visitor-sheet';
 import { ToastBanner } from '@/components/tenant/mates/toast-banner';
 import { VisitorCard } from '@/components/tenant/mates/visitor-card';
@@ -69,9 +69,7 @@ export function VisitorsScreen() {
     <ProfileStackScreen title="My Visitors" centerTitle style={styles.screenBody}>
       <View style={styles.content}>
         {isLoading ? (
-          <View style={styles.loader}>
-            <ActivityIndicator color={palette.lime[700]} />
-          </View>
+          <MateListSkeleton style={styles.loader} />
         ) : hasVisitors ? (
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -142,9 +140,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loader: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 16,
   },
   footer: {
     position: 'absolute',

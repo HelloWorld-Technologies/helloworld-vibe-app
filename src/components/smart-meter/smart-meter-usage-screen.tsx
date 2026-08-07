@@ -3,7 +3,6 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -16,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getSmartMeterConsumption } from '@/api/smart-meter';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { PaymentListSkeleton } from '@/components/skeleton';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Typography } from '@/components/ui/typography';
@@ -272,9 +272,7 @@ export function SmartMeterUsageScreen() {
           </View>
 
           {loading && !hasFetched ? (
-            <View style={styles.centeredInline}>
-              <ActivityIndicator color={palette.lime[700]} />
-            </View>
+            <PaymentListSkeleton style={styles.centeredInline} />
           ) : sortedDeductions.length === 0 ? (
             <EmptyState compact title="No usage records" subtitle="Try a different date range." />
           ) : (
@@ -358,8 +356,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   centeredInline: {
-    paddingVertical: 40,
-    alignItems: 'center',
+    marginTop: 8,
   },
   scroll: {
     paddingHorizontal: 20,

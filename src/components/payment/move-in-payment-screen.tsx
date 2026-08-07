@@ -1,7 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getMoveInPaymentDetails } from '@/api/booking';
+import { MoveInPaymentSkeleton } from '@/components/skeleton';
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
@@ -152,9 +152,7 @@ export function MoveInPaymentScreen() {
       <TenantScreenHeader title="Move-in Payment" onBack={() => router.back()} />
 
       {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={palette.lime[700]} />
-        </View>
+        <MoveInPaymentSkeleton />
       ) : errorMessage ? (
         <View style={styles.centered}>
           <Typography variant="text" size="md" color={palette.textSecondary} style={styles.errorText}>

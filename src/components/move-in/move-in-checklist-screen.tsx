@@ -2,7 +2,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +17,7 @@ import { MoveInChecklistApprovedView } from '@/components/move-in/move-in-checkl
 import { MoveInChecklistSection } from '@/components/move-in/move-in-checklist-section';
 import { MoveInChecklistSubmittedView } from '@/components/move-in/move-in-checklist-submitted-view';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
+import { ChecklistSkeleton } from '@/components/skeleton';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import { fontStyleForWeight } from '@/constants/fonts';
@@ -116,9 +116,7 @@ export function MoveInChecklistScreen() {
   if (screenStatus === 'loading') {
     return (
       <ProfileStackScreen title="Move-in Checklist" centerTitle style={styles.screen}>
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color={palette.lime[500]} />
-        </View>
+        <ChecklistSkeleton />
       </ProfileStackScreen>
     );
   }
@@ -218,11 +216,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   emptyState: {
     flex: 1,

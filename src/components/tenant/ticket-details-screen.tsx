@@ -2,7 +2,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 
 import { getTicketConversations, postTicketComment, reopenSupportTicket } from '@/api/tickets';
+import { ChatThreadSkeleton } from '@/components/skeleton';
 import {
   getUploadedAttachmentUrls,
   hasFailedAttachments,
@@ -178,9 +178,7 @@ export function TicketDetailsScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
         {loading ? (
-          <View style={styles.loader}>
-            <ActivityIndicator color={palette.lime[700]} />
-          </View>
+          <ChatThreadSkeleton style={styles.loader} />
         ) : (
           <ScrollView
             ref={scrollRef}
@@ -245,9 +243,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   loader: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 20,
+    marginTop: 16,
   },
   scroll: {
     paddingHorizontal: 20,
