@@ -98,7 +98,8 @@
     "build:preview:android": "eas build --profile preview --platform android",
     "build:preview:ios": "eas build --profile preview --platform ios",
     "build:prod:android": "eas build --profile production --platform android",
-    "screenshots:android": "adb exec-out screencap -p > ~/Desktop/screenshot.png"
+    "screenshots:android": "adb exec-out screencap -p > ~/Desktop/screenshot.png",
+    "adb:reverse": "adb reverse tcp:8081 tcp:8081"
   },
   "private": true
 }

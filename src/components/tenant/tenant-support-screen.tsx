@@ -19,7 +19,7 @@ import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
 import { SwipeableTabPager } from '@/components/ui/swipeable-tab-pager';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
-import { TAB_SCREEN_EXTRA_PADDING } from '@/constants/tab-bar';
+import { TAB_BAR_HEIGHT, TAB_SCREEN_EXTRA_PADDING } from '@/constants/tab-bar';
 import { useRaiseSupportRequest } from '@/hooks/use-raise-support-request';
 import { useSupportTicketsInfinite } from '@/queries/use-support-tickets';
 import type { SupportTicket } from '@/types/ticket';
@@ -29,7 +29,8 @@ type SupportTab = 'active' | 'resolved';
 const SUPPORT_TABS: SupportTab[] = ['active', 'resolved'];
 const FAB_HEIGHT = 52;
 const FAB_GAP = 12;
-const NATIVE_TAB_BAR_HEIGHT = Platform.select({ ios: 49, android: 56, default: 56 }) ?? 56;
+/** iOS NativeTabs content height (excludes home-indicator inset). */
+const IOS_NATIVE_TAB_BAR_HEIGHT = 5;
 
 function SupportTicketList({
   tabId,
@@ -130,9 +131,11 @@ export function TenantSupportScreen() {
     useRaiseSupportRequest();
   const [tab, setTab] = useState<SupportTab>('active');
 
-  // Native tabs: iOS draws over the scene; Android already insets the screen above the bar.
+  // iOS NativeTabs + Android floating tab bar both overlay the scene — lift FAB above them.
   const fabBottom =
-    Platform.OS === 'ios' ? insets.bottom + NATIVE_TAB_BAR_HEIGHT + FAB_GAP : FAB_GAP;
+    Platform.OS === 'ios'
+      ? insets.bottom + IOS_NATIVE_TAB_BAR_HEIGHT + FAB_GAP
+      : insets.bottom + TAB_BAR_HEIGHT + FAB_GAP;
   const scrollBottomPadding = fabBottom + FAB_HEIGHT + TAB_SCREEN_EXTRA_PADDING;
 
   return (

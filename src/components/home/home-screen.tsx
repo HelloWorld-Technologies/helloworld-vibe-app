@@ -1,12 +1,13 @@
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -91,7 +92,7 @@ export function HomeScreen() {
   const [feedStoryOpen, setFeedStoryOpen] = useState(false);
   const [feedStoryIndex, setFeedStoryIndex] = useState(0);
   const [citySheetVisible, setCitySheetVisible] = useState(false);
-  const scrollBottomPadding = 70
+  const scrollBottomPadding = Platform.OS === 'ios' ? 70 : 130;
 
   const cardWidth = width - 48;
   const slideWidth = cardWidth + ITEM_GAP;
@@ -456,7 +457,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
-    elevation: 12,
+    // elevation: 12,
   },
   body: {
     paddingTop: 32,
