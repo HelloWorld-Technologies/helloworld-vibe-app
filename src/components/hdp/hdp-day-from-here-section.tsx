@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
   },
   timelineCell: {
     height: 12,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   timelineDot: {
     width: 10,
@@ -190,15 +190,17 @@ const styles = StyleSheet.create({
   },
   timelineLineLeft: {
     position: 'absolute',
-    left: -CARD_GAP / 2,
-    right: '50%',
+    left: -CARD_GAP,
+    width: CARD_GAP,
+    top: 5,
     height: 2,
     backgroundColor: palette.blue[700],
   },
   timelineLineRight: {
     position: 'absolute',
-    left: '50%',
-    right: -CARD_GAP / 2,
+    left: 5,
+    right: -CARD_GAP,
+    top: 5,
     height: 2,
     backgroundColor: palette.blue[700],
   },

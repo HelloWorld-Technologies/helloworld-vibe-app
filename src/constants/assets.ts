@@ -105,6 +105,14 @@ export const DashboardIcons = {
   notification: require('../../assets/bundled/dashboard/notification.svg').default,
 } as const;
 
+export const SrpAmenityIcons = {
+  cctv: require('../../assets/bundled/srp/amenities/cctv-camera.svg').default,
+  biometric: require('../../assets/bundled/srp/amenities/biometric-access.svg').default,
+  communityEvents: require('../../assets/bundled/srp/amenities/community-events.svg').default,
+  powerBackup: require('../../assets/bundled/srp/amenities/power-backup.svg').default,
+  fullyFurnished: require('../../assets/bundled/srp/amenities/fully-furnished.svg').default,
+} as const;
+
 export const PaymentLottieAssets = {
   pending: require('../../assets/bundled/payments/payment-pending.json'),
 } as const;

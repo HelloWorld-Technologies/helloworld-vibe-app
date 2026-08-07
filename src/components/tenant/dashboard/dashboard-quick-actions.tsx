@@ -7,6 +7,7 @@ import { DASHBOARD_SOS_GRADIENT } from '@/constants/dashboard';
 import palette from '@/constants/palette';
 import { TENANT_QUICK_ACTIONS } from '@/constants/tenant';
 import { Radius } from '@/constants/theme';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 
 type DashboardQuickActionsProps = {
   onActionPress: (id: string) => void;
@@ -17,15 +18,21 @@ function QuickActionTile({
   icon,
   variant,
   onPress,
+  isTablet,
 }: {
   label: string;
   icon: DashboardIconName;
   variant: 'sos' | 'default';
   onPress: () => void;
+  isTablet: boolean;
 }) {
   const content = (
     <>
-      <DashboardIcon name={icon} size={36} color={variant === 'sos' ? palette.red[600] : palette.blue[800]} />
+      <DashboardIcon
+        name={icon}
+        size={isTablet ? 40 : 36}
+        color={variant === 'sos' ? palette.red[600] : palette.blue[800]}
+      />
       <Typography variant="label" size="xs" style={styles.label}>
         {label}
       </Typography>
@@ -34,12 +41,15 @@ function QuickActionTile({
 
   if (variant === 'sos') {
     return (
-      <Pressable style={styles.item} onPress={onPress} accessibilityRole="button">
+      <Pressable
+        style={[styles.item, isTablet ? styles.itemTablet : null]}
+        onPress={onPress}
+        accessibilityRole="button">
         <LinearGradient
           colors={[...DASHBOARD_SOS_GRADIENT.colors]}
           start={DASHBOARD_SOS_GRADIENT.start}
           end={DASHBOARD_SOS_GRADIENT.end}
-          style={styles.tile}>
+          style={[styles.tile, isTablet ? styles.tileTablet : null]}>
           {content}
         </LinearGradient>
       </Pressable>
@@ -47,15 +57,22 @@ function QuickActionTile({
   }
 
   return (
-    <Pressable style={styles.item} onPress={onPress} accessibilityRole="button">
-      <View style={[styles.tile, styles.tileDefault]}>{content}</View>
+    <Pressable
+      style={[styles.item, isTablet ? styles.itemTablet : null]}
+      onPress={onPress}
+      accessibilityRole="button">
+      <View style={[styles.tile, styles.tileDefault, isTablet ? styles.tileTablet : null]}>
+        {content}
+      </View>
     </Pressable>
   );
 }
 
 export function DashboardQuickActions({ onActionPress }: DashboardQuickActionsProps) {
+  const isTablet = useIsTablet();
+
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, isTablet ? styles.rowTablet : null]}>
       {TENANT_QUICK_ACTIONS.map((action) => (
         <QuickActionTile
           key={action.id}
@@ -63,6 +80,7 @@ export function DashboardQuickActions({ onActionPress }: DashboardQuickActionsPr
           icon={action.icon}
           variant={action.id === 'sos' ? 'sos' : 'default'}
           onPress={() => onActionPress(action.id)}
+          isTablet={isTablet}
         />
       ))}
     </View>
@@ -75,9 +93,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
+  rowTablet: {
+    gap: 16,
+  },
   item: {
     width: 80,
     alignItems: 'center',
+  },
+  itemTablet: {
+    flex: 1,
+    width: undefined,
   },
   tile: {
     width: 80,
@@ -87,6 +112,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingHorizontal: 4,
+  },
+  tileTablet: {
+    width: '100%',
+    height: 96,
   },
   tileDefault: {
     backgroundColor: palette.blue[50],

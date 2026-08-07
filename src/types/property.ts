@@ -11,6 +11,8 @@ export type PropertyListing = {
   id: string;
   name: string;
   location: string;
+  city?: string;
+  locality?: string;
   rating: number;
   vibeMatchPercent: number;
   startingRent: number;
@@ -41,7 +43,9 @@ export type ApiProperty = {
     line1?: string;
     line2?: string;
     locality?: string;
+    city?: string;
   };
+  city?: string;
   locality?: string;
   is_filling_fast?: boolean;
   filling_fast?: boolean;
@@ -62,13 +66,18 @@ export type PropertyListPayload = {
   } | null;
 };
 
+export type PropertyListPageInfo = {
+  total?: number;
+  count?: number;
+  page?: number;
+  pageSize?: number;
+  nextPage?: number | boolean | null;
+};
+
 export type PropertyListResponse = {
   success: boolean;
   data?: ApiProperty[];
-  pageInfo?: {
-    total?: number;
-    nextPage?: number | null;
-  };
+  pageInfo?: PropertyListPageInfo;
   nearBy?: ApiProperty[];
   message?: string;
 };

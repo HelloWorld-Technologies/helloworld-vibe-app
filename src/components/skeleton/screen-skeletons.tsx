@@ -1,45 +1,110 @@
 import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EventCardSkeleton } from '@/components/skeleton/card-skeletons';
 import { PropertyCardSkeleton } from '@/components/skeleton/property-card-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HDP_HERO_TOTAL_HEIGHT } from '@/components/hdp/hdp-hero-media';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 
+const HDP_SHEET_OVERLAP = 48;
+
 export function HdpScreenSkeleton() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <ScrollView style={styles.flex} showsVerticalScrollIndicator={false}>
-      <Skeleton height={320} borderRadius={0} />
-      <View style={styles.hdpSheet}>
-        <Skeleton width="70%" height={24} />
-        <Skeleton width="40%" height={18} />
-        <Skeleton height={72} borderRadius={Radius.md} />
-        <Skeleton height={56} borderRadius={Radius.md} />
-        <View style={styles.navRow}>
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} width={72} height={28} borderRadius={Radius.full} />
-          ))}
+    <View style={styles.flex}>
+      <ScrollView style={styles.flex} showsVerticalScrollIndicator={false}>
+        <View style={styles.hdpHero}>
+          <Skeleton height={HDP_HERO_TOTAL_HEIGHT} borderRadius={0} />
+          <View style={styles.hdpHeroTabs}>
+            <Skeleton width={110} height={32} borderRadius={Radius.full} />
+            <Skeleton width={84} height={32} borderRadius={Radius.full} />
+            <Skeleton width={72} height={32} borderRadius={Radius.full} />
+          </View>
         </View>
-        <Skeleton width="35%" height={18} />
-        <Skeleton height={80} />
-        <Skeleton width="45%" height={18} />
-        <View style={styles.chipRow}>
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} width={88} height={36} borderRadius={Radius.full} />
-          ))}
+
+        <View style={styles.hdpSheet}>
+          <View style={styles.hdpTitleRow}>
+            <Skeleton width="68%" height={28} />
+            <Skeleton width={28} height={28} borderRadius={Radius.full} />
+          </View>
+          <Skeleton width="42%" height={14} />
+
+          <View style={styles.hdpPricingRow}>
+            <View style={styles.hdpPricingCol}>
+              <Skeleton width="70%" height={12} />
+              <Skeleton width="55%" height={24} />
+            </View>
+            <View style={styles.hdpPricingDivider} />
+            <View style={styles.hdpPricingCol}>
+              <Skeleton width="65%" height={12} />
+              <Skeleton width="60%" height={24} />
+            </View>
+          </View>
+
+          <View style={styles.hdpRatingCard}>
+            <Skeleton width={88} height={24} borderRadius={Radius.full} />
+            <Skeleton width="90%" height={20} />
+            <Skeleton width="70%" height={16} />
+            <View style={styles.hdpStatsRow}>
+              {Array.from({ length: 3 }, (_, i) => (
+                <View key={i} style={styles.hdpStatCol}>
+                  <Skeleton width={40} height={22} />
+                  <Skeleton width={56} height={12} />
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <Skeleton height={72} borderRadius={Radius.md} />
+
+          <View style={styles.navRow}>
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} width={84} height={36} borderRadius={Radius.full} />
+            ))}
+          </View>
+
+          <View style={styles.hdpBodySection}>
+            <Skeleton width="40%" height={20} />
+            <Skeleton width="100%" height={14} />
+            <Skeleton width="92%" height={14} />
+            <Skeleton width="78%" height={14} />
+          </View>
+
+          <View style={styles.hdpBodySection}>
+            <Skeleton width="48%" height={20} />
+            <View style={styles.chipRow}>
+              {Array.from({ length: 6 }, (_, i) => (
+                <Skeleton key={i} width={96} height={32} borderRadius={Radius.full} />
+              ))}
+            </View>
+          </View>
         </View>
+      </ScrollView>
+
+      <View style={[styles.hdpFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <Skeleton height={48} borderRadius={Radius.sm} style={styles.hdpFooterButton} />
+        <Skeleton height={48} borderRadius={Radius.sm} style={styles.hdpFooterButton} />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 export function HomePropertiesSkeleton() {
-  const { width } = useWindowDimensions();
-  const cardWidth = Math.min(width - 48, 340);
+  const { width, height } = useWindowDimensions();
+  const isTablet = Math.min(width, height) >= 600;
+  const contentWidth = width - 48;
+  const gap = 12;
+  const cardWidth = isTablet ? (contentWidth - gap) / 2 : Math.min(contentWidth, 340);
 
   return (
-    <View style={styles.homeProperties}>
+    <View style={[styles.homeProperties, isTablet ? styles.homePropertiesTablet : null]}>
       <PropertyCardSkeleton style={{ width: cardWidth, alignSelf: 'center' }} />
+      {isTablet ? (
+        <PropertyCardSkeleton style={{ width: cardWidth, alignSelf: 'center' }} />
+      ) : null}
     </View>
   );
 }
@@ -57,10 +122,20 @@ export function HomeFeedSkeleton() {
 }
 
 export function SrpListSkeleton({ count = 3 }: { count?: number }) {
+  const { width, height } = useWindowDimensions();
+  const isTablet = Math.min(width, height) >= 600;
+  const contentWidth = width - 48;
+  const gap = 16;
+  const cardWidth = isTablet ? (contentWidth - gap) / 2 : contentWidth;
+  const skeletonCount = isTablet ? Math.max(count, 4) : count;
+
   return (
-    <View style={styles.srpList}>
-      {Array.from({ length: count }, (_, i) => (
-        <PropertyCardSkeleton key={i} />
+    <View style={[styles.srpList, isTablet ? styles.srpListTablet : null]}>
+      {Array.from({ length: skeletonCount }, (_, i) => (
+        <PropertyCardSkeleton
+          key={i}
+          style={isTablet ? { width: cardWidth } : undefined}
+        />
       ))}
     </View>
   );
@@ -189,15 +264,85 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+  hdpHero: {
+    position: 'relative',
+  },
+  hdpHeroTabs: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: HDP_SHEET_OVERLAP + 16,
+    flexDirection: 'row',
+    gap: 8,
+  },
   hdpSheet: {
-    marginTop: -28,
+    marginTop: -HDP_SHEET_OVERLAP,
     backgroundColor: palette.white,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 40,
+    paddingBottom: 120,
+    gap: 24,
+  },
+  hdpTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  hdpPricingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 16,
+  },
+  hdpPricingCol: {
+    flex: 1,
+    gap: 8,
+  },
+  hdpPricingDivider: {
+    width: 1,
+    height: 44,
+    backgroundColor: palette.gray[200],
+  },
+  hdpRatingCard: {
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: palette.blue[100],
+    backgroundColor: palette.blue[25],
+    padding: 16,
+    gap: 12,
+  },
+  hdpStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.gray[200],
+  },
+  hdpStatCol: {
+    flex: 1,
+    gap: 6,
+    alignItems: 'flex-start',
+  },
+  hdpBodySection: {
+    gap: 12,
+  },
+  hdpFooter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    backgroundColor: palette.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.gray[200],
+  },
+  hdpFooterButton: {
+    flex: 1,
   },
   navRow: {
     flexDirection: 'row',
@@ -213,6 +358,11 @@ const styles = StyleSheet.create({
     minHeight: 420,
     justifyContent: 'center',
   },
+  homePropertiesTablet: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'flex-start',
+  },
   feedRow: {
     flexDirection: 'row',
     gap: 12,
@@ -224,6 +374,11 @@ const styles = StyleSheet.create({
   srpList: {
     gap: 20,
     paddingTop: 8,
+  },
+  srpListTablet: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
   },
   wishlistList: {
     gap: 20,

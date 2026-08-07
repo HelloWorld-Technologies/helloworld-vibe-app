@@ -5,6 +5,7 @@ import { PropertyCard } from '@/components/property/property-card';
 import { HwParallaxCarousel } from '@/components/ui/carousel';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 import type { PropertyListing } from '@/types/property';
 
 const ITEM_GAP = 10;
@@ -21,9 +22,14 @@ type HdpSimilarPropertiesSectionProps = {
 
 export function HdpSimilarPropertiesSection({ listings }: HdpSimilarPropertiesSectionProps) {
   const router = useRouter();
+  const isTablet = useIsTablet();
   const { width } = useWindowDimensions();
-  const cardWidth = width - 48;
+  const contentWidth = width - 48;
+  const visibleCards = isTablet ? 2 : 1;
+  const cardWidth =
+    visibleCards === 2 ? (contentWidth - ITEM_GAP) / 2 : contentWidth;
   const slideWidth = cardWidth + ITEM_GAP;
+  const carouselWindowWidth = visibleCards === 2 ? contentWidth : undefined;
 
   if (listings.length === 0) {
     return null;
@@ -59,9 +65,10 @@ export function HdpSimilarPropertiesSection({ listings }: HdpSimilarPropertiesSe
       <HwParallaxCarousel
         data={listings}
         width={slideWidth}
+        windowWidth={carouselWindowWidth}
         height={PROPERTY_CAROUSEL_HEIGHT}
         showPagination={false}
-        modeConfig={PARALLAX_MODE_CONFIG}
+        modeConfig={isTablet ? undefined : PARALLAX_MODE_CONFIG}
         style={styles.carousel}
         renderItem={({ item }) => (
           <PropertyCard

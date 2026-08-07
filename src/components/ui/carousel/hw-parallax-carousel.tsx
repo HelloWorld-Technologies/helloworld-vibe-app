@@ -22,6 +22,8 @@ export type HwParallaxCarouselProps<T> = {
   data: T[];
   width: number;
   height: number;
+  /** Viewport width. When larger than `width`, multiple items are visible. */
+  windowWidth?: number;
   renderItem: (info: HwParallaxCarouselRenderInfo<T>) => ReactNode;
   loop?: boolean;
   showPagination?: boolean;
@@ -37,20 +39,29 @@ const DEFAULT_MODE_CONFIG: HwParallaxModeConfig = {
   parallaxAdjacentItemScale: 0.86,
 };
 
+const FLAT_MODE_CONFIG: HwParallaxModeConfig = {
+  parallaxScrollingScale: 1,
+  parallaxScrollingOffset: 0,
+  parallaxAdjacentItemScale: 1,
+};
+
 export function HwParallaxCarousel<T extends object>({
   data,
   width,
   height,
+  windowWidth,
   renderItem,
   loop = false,
   showPagination = true,
-  modeConfig = DEFAULT_MODE_CONFIG,
+  modeConfig,
   style,
   onSnapToItem,
   enabled = true,
 }: HwParallaxCarouselProps<T>) {
   const carouselRef = useRef<ICarouselInstance>(null);
   const progress = useSharedValue(0);
+  const resolvedModeConfig =
+    modeConfig ?? (windowWidth != null && windowWidth > width ? FLAT_MODE_CONFIG : DEFAULT_MODE_CONFIG);
 
   const handlePaginationPress = useCallback((index: number) => {
     carouselRef.current?.scrollTo({ index, animated: true });
@@ -65,7 +76,7 @@ export function HwParallaxCarousel<T extends object>({
         data={data}
         loop={loop}
         mode="parallax"
-        modeConfig={modeConfig}
+        modeConfig={resolvedModeConfig}
         pagingEnabled
         snapEnabled
         enabled={enabled}
@@ -73,7 +84,7 @@ export function HwParallaxCarousel<T extends object>({
         onConfigurePanGesture={configureCarouselPanGesture}
         onProgressChange={progress}
         onSnapToItem={onSnapToItem}
-        style={styles.carousel}
+        style={[styles.carousel, windowWidth != null ? { width: windowWidth } : null]}
         renderItem={({ item, index, animationValue }) => (
           <View style={styles.item}>{renderItem({ item, index, animationValue })}</View>
         )}

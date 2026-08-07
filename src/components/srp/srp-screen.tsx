@@ -1,13 +1,19 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScrollRevealHeader } from '@/components/navigation/scroll-reveal-header';
@@ -27,6 +33,7 @@ import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
 import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
 import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 import { usePropertyList } from '@/queries/use-property-list';
 import { useVibesList } from '@/queries/use-vibes';
 import { useSrpFiltersStore } from '@/stores/srp-filters-store';
@@ -39,14 +46,23 @@ const HERO_HEIGHT = 398;
 const SHEET_OVERLAP = 45;
 const BOTTOM_BAR_HEIGHT = 84;
 const HEADER_REVEAL_THRESHOLD = HERO_HEIGHT - SHEET_OVERLAP + 16;
+const SHEET_PADDING_H = 24;
+const PROPERTY_GAP = 16;
+/** Distance from bottom of scroll content that triggers the next page fetch. */
+const INFINITE_SCROLL_THRESHOLD = 480;
 
 export function SrpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isTenant = useIsTenant();
+  const isTablet = useIsTablet();
+  const { width } = useWindowDimensions();
   const city = useSelectedCity();
   const locality = useSelectedLocality();
   const isCityOnly = !locality;
+
+  const contentWidth = width - SHEET_PADDING_H * 2;
+  const cardWidth = isTablet ? (contentWidth - PROPERTY_GAP) / 2 : contentWidth;
 
   const [activeTab, setActiveTab] = useState<SrpTab>('properties');
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
@@ -69,18 +85,18 @@ export function SrpScreen() {
     setDidInitVibes(true);
   }, [didInitVibes, isLoadingVibes, vibeOptions]);
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
-
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } = usePropertyList(
     city,
     locality ?? '',
     filters,
     sort,
   );
+
+  const loadMore = useCallback(() => {
+    if (activeTab !== 'properties') return;
+    if (!hasNextPage || isFetchingNextPage) return;
+    void fetchNextPage();
+  }, [activeTab, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const firstPage = data?.pages[0];
   const properties = useMemo(
@@ -106,6 +122,19 @@ export function SrpScreen() {
 
   const scrollBottomPadding =
     activeTab === 'properties' ? BOTTOM_BAR_HEIGHT + insets.bottom : 120 + insets.bottom;
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+
+      const { layoutMeasurement, contentOffset, contentSize } = event;
+      const distanceFromEnd =
+        contentSize.height - layoutMeasurement.height - contentOffset.y;
+      if (distanceFromEnd < INFINITE_SCROLL_THRESHOLD) {
+        runOnJS(loadMore)();
+      }
+    },
+  });
 
   function handlePressFilters() {
     setFiltersOpen(true);
@@ -139,7 +168,11 @@ export function SrpScreen() {
             <LocalityRatingsGrid />
           </View>
 
-          <SrpTabToggle value={activeTab} onChange={setActiveTab} />
+          <SrpTabToggle
+            value={activeTab}
+            onChange={setActiveTab}
+            hasLocality={!isCityOnly}
+          />
 
           {activeTab === 'properties' ? (
             <View key={`${city}-${locality ?? ''}`} style={styles.tabContent}>
@@ -170,11 +203,12 @@ export function SrpScreen() {
 
               {isLoading ? <SrpListSkeleton /> : null}
 
-              <View style={styles.propertyList}>
+              <View style={[styles.propertyList, isTablet ? styles.propertyListTablet : null]}>
                 {properties.map((property) => (
                   <PropertyCard
                     key={property.id}
                     property={property}
+                    style={isTablet ? { width: cardWidth } : undefined}
                     onPress={() =>
                       router.push({
                         pathname: '/hdp',
@@ -202,11 +236,12 @@ export function SrpScreen() {
                   <Typography variant="text" size="sm" color={palette.textSecondary}>
                     Properties near {locality}
                   </Typography>
-                  <View style={styles.propertyList}>
+                  <View style={[styles.propertyList, isTablet ? styles.propertyListTablet : null]}>
                     {nearByProperties.map((property) => (
                       <PropertyCard
                         key={`nearby-${property.id}`}
                         property={property}
+                        style={isTablet ? { width: cardWidth } : undefined}
                         onPress={() =>
                           router.push({
                             pathname: '/hdp',
@@ -228,19 +263,18 @@ export function SrpScreen() {
                 </View>
               ) : null}
 
-              {hasNextPage ? (
-                <Pressable
-                  onPress={() => fetchNextPage()}
-                  style={styles.loadMore}
-                  disabled={isFetchingNextPage}>
-                  <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
-                    {isFetchingNextPage ? 'Loading…' : 'Load more properties'}
-                  </Typography>
-                </Pressable>
+              {isFetchingNextPage ? (
+                <View style={styles.pageFooter}>
+                  <ActivityIndicator color={palette.lime[700]} />
+                </View>
               ) : null}
             </View>
           ) : (
-            <CityDetailsTab locality={locality} city={city} />
+            <CityDetailsTab
+              locality={locality}
+              city={city}
+              onSelectLocality={() => setActiveTab('properties')}
+            />
           )}
         </View>
       </Animated.ScrollView>
@@ -271,7 +305,11 @@ export function SrpScreen() {
           onPressSort={() => setSort((current) => nextSortOption(current))}
         />
       ) : (
-        <SrpContactBar />
+        <SrpContactBar
+          propertyName={locality ?? city}
+          location={title}
+          city={city}
+        />
       )}
 
       <SrpFiltersSheet
@@ -325,12 +363,18 @@ const styles = StyleSheet.create({
   propertyList: {
     gap: 16,
   },
+  propertyListTablet: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: PROPERTY_GAP,
+  },
   nearbySection: {
     gap: 8,
     marginTop: 8,
   },
-  loadMore: {
+  pageFooter: {
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
 });

@@ -10,6 +10,7 @@ import { GradientText } from '@/components/ui/gradient-text';
 import { Typography } from '@/components/ui/typography';
 import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 import type { HdpMomentItem } from '@/types/hdp-moments';
 import { COMING_SOON_IMAGE_URI } from '@/utils/images';
 
@@ -84,8 +85,12 @@ function MomentCard({
 
 export function HdpMomentsSection({ propertyName, moments, carouselWidth }: HdpMomentsSectionProps) {
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
-  const cardWidth = carouselWidth - CARD_GAP;
+  const isTablet = useIsTablet();
+  const visibleCards = isTablet ? 2 : 1;
+  const cardWidth =
+    visibleCards === 2 ? (carouselWidth - CARD_GAP) / 2 : carouselWidth - CARD_GAP;
   const slideWidth = cardWidth + CARD_GAP;
+  const carouselWindowWidth = visibleCards === 2 ? carouselWidth : undefined;
 
   if (moments.length === 0) {
     return null;
@@ -111,6 +116,7 @@ export function HdpMomentsSection({ propertyName, moments, carouselWidth }: HdpM
       <HwCarousel
         data={moments}
         width={slideWidth}
+        windowWidth={carouselWindowWidth}
         height={CARD_HEIGHT + 36}
         showPagination={moments.length > 1}
         style={styles.carousel}

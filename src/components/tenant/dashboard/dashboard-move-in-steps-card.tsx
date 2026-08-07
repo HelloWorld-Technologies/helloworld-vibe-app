@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   subtext: {
-    maxWidth: 188,
+    maxWidth: '100%',
   },
   illustration: {
     width: 109,

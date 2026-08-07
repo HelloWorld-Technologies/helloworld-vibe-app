@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { fetchPropertyList, mapApiPropertyToListing } from '@/api/property';
+import { fetchPropertyList, mapApiPropertyToListing, resolveNextPropertyPage } from '@/api/property';
 import type { SortOption } from '@/components/srp/srp-filter-sort-bar';
 import { SRP_PAGE_SIZE } from '@/queries/use-srp-properties';
 import { queryKeys } from '@/queries/keys';
@@ -11,7 +11,12 @@ import {
   serializeSrpFilters,
 } from '@/utils/build-srp-api-payload';
 
-export function usePropertyList(city: string, locality: string, filters: SrpFilters, sort: SortOption) {
+export function usePropertyList(
+  city: string,
+  locality: string,
+  filters: SrpFilters,
+  sort: SortOption,
+) {
   const filtersKey = serializeSrpFilters(filters, sort);
   const apiFilter = buildSrpApiFilter(filters);
   const apiSorting = buildSrpApiSorting(sort);
@@ -29,7 +34,13 @@ export function usePropertyList(city: string, locality: string, filters: SrpFilt
         },
         { page: pageParam, page_size: SRP_PAGE_SIZE },
       ),
-    getNextPageParam: (lastPage) => lastPage.pageInfo?.nextPage ?? undefined,
+    getNextPageParam: (lastPage, _pages, lastPageParam) =>
+      resolveNextPropertyPage(
+        lastPage.pageInfo,
+        lastPageParam,
+        lastPage.data?.length ?? 0,
+        SRP_PAGE_SIZE,
+      ),
     enabled: Boolean(city),
     select: (data) => ({
       pages: data.pages.map((page) => ({

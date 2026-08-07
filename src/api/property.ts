@@ -4,6 +4,7 @@ import type {
   PropertyBadge,
   PropertyCategoriesResponse,
   PropertyDetailResponse,
+  PropertyListPageInfo,
   PropertyListPayload,
   PropertyListResponse,
 } from '@/types/property';
@@ -62,11 +63,108 @@ export async function fetchPropertyList(
     const { data } = await http.put<PropertyListResponse>('v3/property/list', payload, {
       params,
     });
-    return data;
+    return {
+      ...data,
+      pageInfo: parsePropertyPageInfo(data) ?? parsePropertyPageInfo(data?.data) ?? data.pageInfo,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to load properties';
     return { success: false, message };
   }
+}
+
+function parsePropertyPageInfo(payload: unknown): PropertyListPageInfo | undefined {
+  if (!payload || typeof payload !== 'object') return undefined;
+  const record = payload as Record<string, unknown>;
+  const raw = (record.pageInfo ?? record.pagination ?? record.meta ?? record) as Record<
+    string,
+    unknown
+  >;
+  if (!raw || typeof raw !== 'object') return undefined;
+
+  const nextPage =
+    raw.nextPage ??
+    raw.next_page ??
+    (typeof raw.hasMore === 'boolean'
+      ? raw.hasMore
+      : typeof raw.has_next === 'boolean'
+        ? raw.has_next
+        : typeof raw.hasNextPage === 'boolean'
+          ? raw.hasNextPage
+          : undefined);
+
+  const total =
+    typeof raw.total === 'number'
+      ? raw.total
+      : typeof raw.totalCount === 'number'
+        ? raw.totalCount
+        : undefined;
+
+  const count =
+    typeof raw.count === 'number'
+      ? raw.count
+      : typeof raw.pageSize === 'number'
+        ? raw.pageSize
+        : typeof raw.page_size === 'number'
+          ? raw.page_size
+          : undefined;
+
+  const page =
+    typeof raw.page === 'number'
+      ? raw.page
+      : typeof raw.currentPage === 'number'
+        ? raw.currentPage
+        : undefined;
+
+  const pageSize =
+    typeof raw.pageSize === 'number'
+      ? raw.pageSize
+      : typeof raw.page_size === 'number'
+        ? raw.page_size
+        : typeof count === 'number'
+          ? count
+          : undefined;
+
+  if (
+    nextPage === undefined &&
+    total === undefined &&
+    count === undefined &&
+    page === undefined &&
+    pageSize === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    nextPage: nextPage as PropertyListPageInfo['nextPage'],
+    total,
+    count,
+    page,
+    pageSize,
+  };
+}
+
+/** Resolve the next page param for infinite property list queries. */
+export function resolveNextPropertyPage(
+  pageInfo: PropertyListPageInfo | undefined,
+  lastPageParam: number,
+  lastPageCount: number,
+  pageSize: number,
+): number | undefined {
+  const next = pageInfo?.nextPage;
+  if (next === false || next === null) return undefined;
+  if (typeof next === 'number' && next > lastPageParam) return next;
+  if (next === true) return lastPageParam + 1;
+
+  if (typeof pageInfo?.total === 'number' && pageInfo.total >= 0) {
+    const loaded = lastPageParam * pageSize;
+    if (loaded < pageInfo.total) return lastPageParam + 1;
+    return undefined;
+  }
+
+  // Fallback when API omits pageInfo: a full page usually means more may exist.
+  if (lastPageCount >= pageSize) return lastPageParam + 1;
+  return undefined;
 }
 
 function titleCase(value: string) {
@@ -100,6 +198,8 @@ export function mapApiPropertyToListing(property: ApiProperty) {
     property.sharing_types?.map(titleCase) ??
     ['Private', 'Double', 'Triple'];
 
+  const locality = property.locality || property.address?.locality || undefined;
+  const city = property.city || property.address?.city || undefined;
   const location =
     property.address?.line2 ||
     property.address?.locality ||
@@ -110,6 +210,8 @@ export function mapApiPropertyToListing(property: ApiProperty) {
     id: String(property.id),
     name: property.display_name ?? property.name ?? 'HelloWorld Property',
     location,
+    city,
+    locality,
     rating: property.rating ?? property.google_rating ?? 4.5,
     vibeMatchPercent: property.vibe_match ?? property.vibeMatch ?? 90,
     startingRent: property.min_rent ?? property.starting_rent ?? property.price ?? 0,

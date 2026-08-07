@@ -1,17 +1,30 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { HwParallaxCarousel } from '@/components/ui/carousel';
-import { Button } from '@/components/ui/button';
-import { Typography } from '@/components/ui/typography';
+import { RequestCallbackSheet } from '@/components/callback/request-callback-sheet';
 import { LocalityCardImage } from '@/components/locality/locality-card-image';
-import { ImageAssets } from '@/constants/assets';
+import { Button } from '@/components/ui/button';
+import { HwCarousel } from '@/components/ui/carousel';
+import { Typography } from '@/components/ui/typography';
+import { ImageAssets, SrpAmenityIcons } from '@/constants/assets';
 import { NEIGHBORHOODS } from '@/constants/home';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import { formatAmenityLabel } from '@/utils/amenity-format';
+import { useIsTablet } from '@/hooks/use-is-tablet';
+import { useAuthStore } from '@/stores/auth-store';
+
+/** Matches `srp-screen` sheet horizontal padding. */
+const SHEET_PAD = 24;
+const LOCALITY_CARD_GAP = 12;
+const LOCALITY_CARD_HEIGHT = 180;
+const AMENITY_ICON_SIZE = 48;
+/** Fixed width so labels aren't crushed when 5 items share one phone row. */
+const AMENITY_ITEM_WIDTH = 88;
+const AMENITY_ITEM_GAP = 16;
+const AMENITY_WRAP_COLUMNS = 3;
 
 const DAY_CARDS = [
   {
@@ -32,16 +45,40 @@ const DAY_CARDS = [
   },
 ] as const;
 
-const AMENITIES = ['CCTV Camera', 'Biometric Access', 'Community Events'] as const;
+const AMENITIES = [
+  { id: 'cctv', label: 'CCTV Camera', Icon: SrpAmenityIcons.cctv },
+  { id: 'biometric', label: 'Biometric Access', Icon: SrpAmenityIcons.biometric },
+  { id: 'community-events', label: 'Community Events', Icon: SrpAmenityIcons.communityEvents },
+  { id: 'power-backup', label: '24/7 Power Backup', Icon: SrpAmenityIcons.powerBackup },
+  { id: 'fully-furnished', label: 'Fully Furnished', Icon: SrpAmenityIcons.fullyFurnished },
+] as const;
 
 type CityDetailsTabProps = {
   locality: string | null;
   city: string;
+  onSelectLocality?: (locality: string) => void;
 };
 
-export function CityDetailsTab({ locality, city }: CityDetailsTabProps) {
+export function CityDetailsTab({ locality, city, onSelectLocality }: CityDetailsTabProps) {
+  const { width: screenWidth } = useWindowDimensions();
+  const isTablet = useIsTablet();
+  const setSelectedLocality = useAuthStore((state) => state.setSelectedLocality);
   const placeLabel = locality ?? city;
   const aboutTitle = locality ? `About ${locality}` : `About ${city}`;
+
+  const contentWidth = screenWidth - SHEET_PAD * 2;
+  const localityCardWidth = Math.min(260, Math.max(200, contentWidth * 0.72));
+  const localitySlideWidth = localityCardWidth + LOCALITY_CARD_GAP;
+  const amenitiesFitInRow =
+    isTablet ||
+    contentWidth >= AMENITIES.length * AMENITY_ITEM_WIDTH + (AMENITIES.length - 1) * AMENITY_ITEM_GAP;
+  const amenityWrapWidth =
+    (contentWidth - AMENITY_ITEM_GAP * (AMENITY_WRAP_COLUMNS - 1)) / AMENITY_WRAP_COLUMNS;
+
+  function openLocality(name: string) {
+    setSelectedLocality(name);
+    onSelectLocality?.(name);
+  }
 
   return (
     <View style={styles.container}>
@@ -80,12 +117,19 @@ export function CityDetailsTab({ locality, city }: CityDetailsTabProps) {
       <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
         Included Across Our Homes
       </Typography>
-      <View style={styles.amenitiesRow}>
-        {AMENITIES.map((item) => (
-          <View key={item} style={styles.amenityItem}>
-            <View style={styles.amenityIcon} />
+      <View style={[styles.amenitiesRow, !amenitiesFitInRow && styles.amenitiesWrap]}>
+        {AMENITIES.map(({ id, label, Icon }) => (
+          <View
+            key={id}
+            style={[
+              styles.amenityItem,
+              !amenitiesFitInRow && [styles.amenityItemWrapped, { width: amenityWrapWidth }],
+            ]}>
+            <View style={styles.amenityIcon}>
+              <Icon width={AMENITY_ICON_SIZE} height={AMENITY_ICON_SIZE} />
+            </View>
             <Typography variant="text" size="xs" weight="medium" style={styles.amenityLabel}>
-              {formatAmenityLabel(item)}
+              {label}
             </Typography>
           </View>
         ))}
@@ -106,12 +150,18 @@ export function CityDetailsTab({ locality, city }: CityDetailsTabProps) {
       <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
         Popular {city} Localities
       </Typography>
-      <HwParallaxCarousel
+      <HwCarousel
         data={[...NEIGHBORHOODS]}
-        width={220}
-        height={180}
+        width={localitySlideWidth}
+        windowWidth={contentWidth}
+        height={LOCALITY_CARD_HEIGHT}
+        style={styles.localityCarousel}
         renderItem={({ item }) => (
-          <View style={styles.localityCard}>
+          <Pressable
+            onPress={() => openLocality(item.name)}
+            style={[styles.localityCard, { width: localityCardWidth }]}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.name}, starting ${item.price}`}>
             <LocalityCardImage imageKey={item.image} style={styles.localityImage} />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.75)']}
@@ -123,20 +173,43 @@ export function CityDetailsTab({ locality, city }: CityDetailsTabProps) {
                 Starting {item.price} | {item.properties} Properties
               </Typography>
             </LinearGradient>
-          </View>
+          </Pressable>
         )}
       />
     </View>
   );
 }
 
-export function SrpContactBar() {
+export function SrpContactBar({
+  propertyName,
+  location,
+  city,
+}: {
+  propertyName: string;
+  location?: string;
+  city?: string;
+}) {
   const insets = useSafeAreaInsets();
+  const [callbackOpen, setCallbackOpen] = useState(false);
 
   return (
-    <View style={[styles.contactBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <Button label="Contact Us" onPress={() => {}} style={styles.contactButton} />
-    </View>
+    <>
+      <View style={[styles.contactBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <Button
+          label="Contact Us"
+          onPress={() => setCallbackOpen(true)}
+          style={styles.contactButton}
+        />
+      </View>
+      <RequestCallbackSheet
+        visible={callbackOpen}
+        onClose={() => setCallbackOpen(false)}
+        propertyName={propertyName}
+        location={location ?? propertyName}
+        city={city}
+        srp
+      />
+    </>
   );
 }
 
@@ -174,27 +247,39 @@ const styles = StyleSheet.create({
   amenitiesRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: AMENITY_ITEM_GAP,
+  },
+  amenitiesWrap: {
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    rowGap: 20,
   },
   amenityItem: {
     flex: 1,
     alignItems: 'center',
     gap: 8,
   },
+  amenityItemWrapped: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   amenityIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: palette.blue[100],
+    width: AMENITY_ICON_SIZE,
+    height: AMENITY_ICON_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   amenityLabel: {
     textAlign: 'center',
   },
+  localityCarousel: {
+    marginHorizontal: -4,
+  },
   localityCard: {
-    width: 220,
-    height: 180,
+    height: LOCALITY_CARD_HEIGHT,
     borderRadius: Radius.md,
     overflow: 'hidden',
+    backgroundColor: palette.gray[200],
   },
   localityImage: {
     width: '100%',

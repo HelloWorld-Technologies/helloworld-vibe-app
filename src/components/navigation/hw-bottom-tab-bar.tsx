@@ -20,6 +20,7 @@ import {
   type TabBarIconName,
   type TenantTabRouteName,
 } from '@/constants/tab-bar';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 
 type TabRoute = { key: string; name: string; params?: object };
 
@@ -70,6 +71,7 @@ export function HwBottomTabBar({
   floating = false,
 }: HwBottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const isTablet = useIsTablet();
   const [barWidth, setBarWidth] = useState(0);
   const activeIndex = useSharedValue(0);
 
@@ -120,6 +122,7 @@ export function HwBottomTabBar({
       style={[
         styles.wrapper,
         floating ? styles.wrapperFloating : null,
+        floating && isTablet ? styles.wrapperFloatingTablet : null,
         floating
           ? {
               paddingTop: FLOATING_OUTER_PAD,
@@ -200,6 +203,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: 0,
     pointerEvents: 'box-none',
+  },
+  wrapperFloatingTablet: {
+    backgroundColor: palette.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.gray[200],
   },
   bar: {
     flexDirection: 'row',

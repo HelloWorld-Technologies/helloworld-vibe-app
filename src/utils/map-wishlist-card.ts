@@ -35,6 +35,8 @@ export function mapWishlistCardToListing(card: WishlistPropertyCard): PropertyLi
     id: String(card.id),
     name: card.display_name ?? card.name ?? 'HelloWorld Property',
     location,
+    city: card.city || card.address?.city || undefined,
+    locality: card.locality || card.address?.locality || undefined,
     rating: card.rating ?? card.google_rating ?? 4.5,
     vibeMatchPercent: 90,
     startingRent: card.min_rent ?? 0,

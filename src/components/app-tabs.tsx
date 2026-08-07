@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import type { SFSymbol } from 'sf-symbols-typescript';
 
 import { HwBottomTabBar } from '@/components/navigation/hw-bottom-tab-bar';
@@ -13,6 +13,7 @@ import {
   type ProspectTabRouteName,
   type TenantTabRouteName,
 } from '@/constants/tab-bar';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 import { useIsTenant } from '@/stores/tenant-store';
 
 const PROSPECT_TAB_ICONS = {
@@ -120,28 +121,44 @@ function NativeAppTabs({ isTenant }: { isTenant: boolean }) {
   );
 }
 
-function FloatingAppTabs({ isTenant }: { isTenant: boolean }) {
+function CustomAppTabs({
+  isTenant,
+  floating,
+}: {
+  isTenant: boolean;
+  floating: boolean;
+}) {
   const visibleTabs = new Set<string>(isTenant ? TENANT_TAB_ORDER : PROSPECT_TAB_ORDER);
 
   return (
     <Tabs
-      tabBar={(props) => <HwBottomTabBar {...props} isTenant={isTenant} floating />}
+      tabBar={(props) => (
+        <HwBottomTabBar {...props} isTenant={isTenant} floating={floating} />
+      )}
       screenOptions={{
         headerShown: false,
         freezeOnBlur: false,
         animation: 'none',
         detachInactiveScreens: false,
         sceneStyle: { backgroundColor: palette.white },
-        tabBarStyle: {
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
+        tabBarStyle: floating
+          ? {
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'transparent',
+              borderTopWidth: 0,
+              elevation: 0,
+              shadowOpacity: 0,
+            }
+          : {
+              backgroundColor: palette.white,
+              borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: palette.gray[200],
+              elevation: 0,
+              shadowOpacity: 0,
+            },
       }}>
       {ALL_TAB_NAMES.map((name) => {
         const isVisible = visibleTabs.has(name);
@@ -164,10 +181,12 @@ function FloatingAppTabs({ isTenant }: { isTenant: boolean }) {
 
 export default function AppTabs() {
   const isTenant = useIsTenant();
+  const isTablet = useIsTablet();
 
-  if (Platform.OS === 'ios') {
+  // NativeTabs stays translucent on iPad — use a solid custom bar on tablet.
+  if (Platform.OS === 'ios' && !isTablet) {
     return <NativeAppTabs isTenant={isTenant} />;
   }
 
-  return <FloatingAppTabs isTenant={isTenant} />;
+  return <CustomAppTabs isTenant={isTenant} floating={Platform.OS === 'android' && !isTablet} />;
 }

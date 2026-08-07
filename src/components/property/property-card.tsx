@@ -149,7 +149,12 @@ export function PropertyCard({
       onSharePress();
       return;
     }
-    void shareProperty({ name: property.name, id: property.id });
+    void shareProperty({
+      name: property.name,
+      id: property.id,
+      city: property.city || city,
+      locality: property.locality,
+    });
   }
 
   function handleRequestCallback() {

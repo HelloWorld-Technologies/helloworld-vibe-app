@@ -43,6 +43,7 @@ import { usePropertyCategories } from '@/queries/use-property-categories';
 import { useWishlist } from '@/providers/wishlist-provider';
 import { useSelectedCity } from '@/stores/auth-store';
 import { useIsTenant } from '@/stores/tenant-store';
+import { normalizeAmenityKey } from '@/utils/amenity-format';
 import {
   extractPropertyPhotos,
   extractPropertyVideos,
@@ -72,7 +73,7 @@ function genderLabel(gender?: string) {
   const value = gender.toLowerCase();
   if (value.includes('female') || value.includes('women')) return 'Female Only';
   if (value.includes('male') || value.includes('men')) return 'Men Only';
-  return gender;
+  return undefined;
 }
 
 function buildAmenities(property: Record<string, any> | null) {
@@ -84,7 +85,16 @@ function buildAmenities(property: Record<string, any> | null) {
     .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     .map((item) => item.trim());
 
-  return fromApi.length > 0 ? fromApi : [...HDP_SAMPLE_AMENITIES];
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const item of fromApi) {
+    const key = normalizeAmenityKey(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    unique.push(item);
+  }
+
+  return unique.length > 0 ? unique : [...HDP_SAMPLE_AMENITIES];
 }
 
 const HEADER_BAR_HEIGHT = 64;
@@ -127,7 +137,8 @@ export function HdpScreen() {
   const autoOpenedBookRef = useRef(false);
   const scrollY = useSharedValue(0);
   const lastScrollYRef = useRef(0);
-  const tabStickScrollYRef = useRef(0);
+  /** Content offset where the inline section nav reaches the sticky header. Unset until measured. */
+  const tabStickScrollYRef = useRef(Number.POSITIVE_INFINITY);
   const tabAnchorRef = useRef<View>(null);
   const scrollRef = useRef<Animated.ScrollView>(null);
   const scrollContentRef = useRef<View>(null);
@@ -135,14 +146,24 @@ export function HdpScreen() {
   const stickyTop = insets.top + HEADER_BAR_HEIGHT;
 
   const updateStickyTabs = useCallback((currentY: number) => {
-    setShowStickyTabs(currentY >= tabStickScrollYRef.current);
+    const threshold = tabStickScrollYRef.current;
+    setShowStickyTabs(Number.isFinite(threshold) && currentY >= threshold);
   }, []);
 
   const measureTabStickThreshold = useCallback(() => {
-    tabAnchorRef.current?.measureInWindow((_x, y) => {
-      tabStickScrollYRef.current = Math.max(0, y - stickyTop);
-      updateStickyTabs(lastScrollYRef.current);
-    });
+    const anchor = tabAnchorRef.current;
+    const content = scrollContentRef.current;
+    if (!anchor || !content) return;
+
+    // Content-relative Y is stable across scroll position (unlike measureInWindow).
+    anchor.measureLayout(
+      content,
+      (_x, y) => {
+        tabStickScrollYRef.current = Math.max(0, y - stickyTop);
+        updateStickyTabs(lastScrollYRef.current);
+      },
+      () => {},
+    );
   }, [stickyTop, updateStickyTabs]);
 
   const handleSectionChange = useCallback(
@@ -286,7 +307,12 @@ export function HdpScreen() {
   const showError = !isLoading && (isError || (data && !data.success && !property));
 
   function handleShare() {
-    void shareProperty({ name: displayName, id: propertyId });
+    void shareProperty({
+      name: (typeof property?.name === 'string' && property.name) || displayName,
+      id: propertyId,
+      city: propertyCity,
+      locality: propertyLocality ?? undefined,
+    });
   }
 
   function handleFavoritePress() {
@@ -373,8 +399,13 @@ export function HdpScreen() {
               <View
                 ref={tabAnchorRef}
                 style={styles.tabBarBleed}
-                onLayout={measureTabStickThreshold}>
-                <HdpSectionNav activeId={activeSection} onChange={handleSectionChange} />
+                onLayout={measureTabStickThreshold}
+                collapsable={false}>
+                <View
+                  style={showStickyTabs ? styles.tabBarPlaceholder : undefined}
+                  pointerEvents={showStickyTabs ? 'none' : 'auto'}>
+                  <HdpSectionNav activeId={activeSection} onChange={handleSectionChange} />
+                </View>
               </View>
 
               <View style={styles.sheetBody}>
@@ -525,6 +556,9 @@ const styles = StyleSheet.create({
   },
   tabBarBleed: {
     marginHorizontal: -24,
+  },
+  tabBarPlaceholder: {
+    opacity: 0,
   },
   stickyTabBar: {
     position: 'absolute',

@@ -12,6 +12,7 @@ import type { ICarouselInstance } from 'react-native-reanimated-carousel';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
 import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer';
+import { HdpPhotosFullscreenCarousel } from '@/components/hdp/hdp-photos-fullscreen-carousel';
 import { HwCarousel } from '@/components/ui/carousel';
 import { HwVideoPlayer } from '@/components/ui/hw-video-player';
 import { Typography } from '@/components/ui/typography';
@@ -115,6 +116,7 @@ export function HdpHeroMedia({
   const [slideIndex, setSlideIndex] = useState(0);
   const [failedIndexes, setFailedIndexes] = useState<Set<string>>(new Set());
   const [storyIndex, setStoryIndex] = useState<number | null>(null);
+  const [photoGalleryIndex, setPhotoGalleryIndex] = useState<number | null>(null);
   /** Wait for tap before mounting expo-video (faster HDP open). */
   const [videoStarted, setVideoStarted] = useState(false);
 
@@ -256,8 +258,13 @@ export function HdpHeroMedia({
   );
 
   function handleSlidePress(index: number) {
-    if (activeTab !== 'moments') return;
-    setStoryIndex(index);
+    if (activeTab === 'moments') {
+      setStoryIndex(index);
+      return;
+    }
+    if (activeTab === 'photos') {
+      setPhotoGalleryIndex(index);
+    }
   }
 
   if (tabs.length === 0) {
@@ -311,7 +318,7 @@ export function HdpHeroMedia({
             return (
               <Pressable
                 onPress={() => handleSlidePress(index)}
-                disabled={activeTab !== 'moments'}
+                disabled={activeTab !== 'moments' && activeTab !== 'photos'}
                 style={{ width, height: HDP_HERO_TOTAL_HEIGHT }}>
                 <HeroImageSlide
                   slide={item}
@@ -446,6 +453,13 @@ export function HdpHeroMedia({
         initialIndex={storyIndex ?? 0}
         propertyName={propertyName}
         onClose={() => setStoryIndex(null)}
+      />
+      <HdpPhotosFullscreenCarousel
+        visible={photoGalleryIndex !== null}
+        photos={photos}
+        initialIndex={photoGalleryIndex ?? 0}
+        propertyName={propertyName}
+        onClose={() => setPhotoGalleryIndex(null)}
       />
     </View>
   );

@@ -41,6 +41,7 @@ import palette from '@/constants/palette';
 import { TAB_BAR_HEIGHT, TAB_SCREEN_EXTRA_PADDING } from '@/constants/tab-bar';
 import { Radius } from '@/constants/theme';
 import { useInvoicePayment } from '@/hooks/use-invoice-payment';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 import { useMoveInPayment } from '@/hooks/use-move-in-payment';
 import { useRaiseSupportRequest } from '@/hooks/use-raise-support-request';
 import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
@@ -61,6 +62,7 @@ export function TenantDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabBarInset = useTabBarInset();
+  const isTablet = useIsTablet();
   const queryClient = useQueryClient();
   const { payInvoice } = useInvoicePayment();
   const { startMoveInPayment } = useMoveInPayment();
@@ -179,7 +181,7 @@ export function TenantDashboardScreen() {
         colors={[...DASHBOARD_HEADER_GRADIENT.colors]}
         start={DASHBOARD_HEADER_GRADIENT.start}
         end={DASHBOARD_HEADER_GRADIENT.end}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        style={[styles.header, { paddingTop: insets.top + 12 }, isTablet ? styles.headerTablet : null]}>
         <View style={styles.headerRow}>
           <View style={styles.greetingBlock}>
             <Typography variant="display" size="xs" weight="bold" color={palette.white}>
@@ -208,6 +210,7 @@ export function TenantDashboardScreen() {
         style={styles.sheet}
         contentContainerStyle={[
           styles.scrollContent,
+          isTablet ? styles.scrollContentTablet : null,
           { paddingBottom: Platform.OS === 'ios' ? tabBarInset -100 + TAB_SCREEN_EXTRA_PADDING : tabBarInset + TAB_SCREEN_EXTRA_PADDING },
         ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -292,6 +295,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: DASHBOARD_SHEET_OVERLAP + 12,
   },
+  headerTablet: {
+    paddingHorizontal: 40,
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -335,5 +341,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     gap: DASHBOARD_SECTION_GAP,
+  },
+  scrollContentTablet: {
+    paddingHorizontal: 40,
+    paddingTop: 32,
+    gap: 40,
   },
 });

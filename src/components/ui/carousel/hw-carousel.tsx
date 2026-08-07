@@ -17,6 +17,8 @@ export type HwCarouselProps<T> = {
   data: T[];
   width: number;
   height: number;
+  /** Viewport width. When larger than `width`, multiple items are visible. */
+  windowWidth?: number;
   renderItem: (info: HwCarouselRenderInfo<T>) => ReactNode;
   loop?: boolean;
   showPagination?: boolean;
@@ -34,6 +36,7 @@ export function HwCarousel<T extends object>({
   data,
   width,
   height,
+  windowWidth,
   renderItem,
   loop = false,
   showPagination = true,
@@ -76,7 +79,7 @@ export function HwCarousel<T extends object>({
         onConfigurePanGesture={handleConfigurePanGesture}
         onProgressChange={progress}
         onSnapToItem={onSnapToItem}
-        style={styles.carousel}
+        style={[styles.carousel, windowWidth != null ? { width: windowWidth } : null]}
         renderItem={({ item, index, animationValue }) => (
           <View style={styles.item}>{renderItem({ item, index, animationValue })}</View>
         )}

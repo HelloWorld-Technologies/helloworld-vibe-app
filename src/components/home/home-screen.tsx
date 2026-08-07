@@ -35,6 +35,7 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
 import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 import { useMomentsFeed } from '@/queries/use-moments-feed';
 import { useSrpProperties } from '@/queries/use-srp-properties';
 import { useVibesList } from '@/queries/use-vibes';
@@ -82,6 +83,7 @@ export function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabBarInset = useTabBarInset();
+  const isTablet = useIsTablet();
   const { width, height } = useWindowDimensions();
 
   const city = useSelectedCity();
@@ -103,8 +105,12 @@ export function HomeScreen() {
   const [citySheetVisible, setCitySheetVisible] = useState(false);
   const scrollBottomPadding = Platform.OS === 'ios' ? tabBarInset - 100  : tabBarInset ;
 
-  const cardWidth = width - SPACE.xl * 2;
+  const contentWidth = width - SPACE.xl * 2;
+  const visibleCards = isTablet ? 2 : 1;
+  const cardWidth =
+    visibleCards === 2 ? (contentWidth - ITEM_GAP) / 2 : contentWidth;
   const slideWidth = cardWidth + ITEM_GAP;
+  const carouselWindowWidth = visibleCards === 2 ? contentWidth : undefined;
   const feedSlideWidth = FEED_CARD_WIDTH + FEED_CARD_GAP;
   const stickyHeaderHeight = insets.top + SPACE.xs + 56 + SPACE.sm;
   const gradientHeight = Math.max(360, height * 0.48);
@@ -205,6 +211,7 @@ export function HomeScreen() {
               <HwParallaxCarousel
                 data={[...NEIGHBORHOODS]}
                 width={slideWidth}
+                windowWidth={carouselWindowWidth}
                 height={200}
                 style={styles.carouselWrap}
                 renderItem={({ item, animationValue }) => (
@@ -239,6 +246,7 @@ export function HomeScreen() {
                   key={city}
                   data={properties}
                   width={slideWidth}
+                  windowWidth={carouselWindowWidth}
                   height={PROPERTY_CAROUSEL_HEIGHT}
                   style={styles.carouselWrap}
                   renderItem={({ item }) => (

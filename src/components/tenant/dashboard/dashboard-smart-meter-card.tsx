@@ -8,6 +8,7 @@ import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
+import { useIsTablet } from '@/hooks/use-is-tablet';
 import { useSmartMeterRooms } from '@/queries/use-smart-meter';
 import { useTenantProfile } from '@/stores/tenant-store';
 import { priceFormatter } from '@/utils/tenant-format';
@@ -48,6 +49,7 @@ const BALANCE_ICON: PlatformSymbolName = {
 
 export function DashboardSmartMeterCard() {
   const router = useRouter();
+  const isTablet = useIsTablet();
   const profile = useTenantProfile();
   const bookingId = profile?.bookingId;
   const { data: rooms = [], isLoading } = useSmartMeterRooms(bookingId);
@@ -57,7 +59,7 @@ export function DashboardSmartMeterCard() {
     <View style={styles.section}>
       <DashboardSectionHeader title="Smart Meter" subtitle="Electricity prepaid balance" />
 
-      <View style={styles.card}>
+      <View style={[styles.card, isTablet ? styles.cardTablet : null]}>
         <View style={styles.balanceRow}>
           <View style={styles.balanceCopy}>
             <Typography variant="label" size="xs" color={palette.gray[500]}>
@@ -76,11 +78,11 @@ export function DashboardSmartMeterCard() {
           </View>
         </View>
 
-        <View style={styles.actionsRow}>
+        <View style={[styles.actionsRow, isTablet ? styles.actionsRowTablet : null]}>
           {ACTIONS.map((action) => (
             <Pressable
               key={action.id}
-              style={styles.actionTile}
+              style={[styles.actionTile, isTablet ? styles.actionTileTablet : null]}
               onPress={() => router.push(action.route)}
               accessibilityRole="button"
               accessibilityLabel={action.label}>
@@ -115,6 +117,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  cardTablet: {
+    padding: 20,
+    gap: 20,
+  },
   balanceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -141,6 +147,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  actionsRowTablet: {
+    gap: 12,
+  },
   actionTile: {
     flex: 1,
     minHeight: 72,
@@ -151,6 +160,10 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 4,
     paddingVertical: 10,
+  },
+  actionTileTablet: {
+    minHeight: 84,
+    paddingVertical: 14,
   },
   actionIcon: {
     width: 32,

@@ -1,6 +1,7 @@
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { type ReactNode, useEffect, useState } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -49,6 +50,7 @@ export function BottomSheet({
   const progress = useSharedValue(0);
   const dragY = useSharedValue(0);
   const [mounted, setMounted] = useState(visible);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Modal can report 0 bottom inset on Android — fall back to window metrics.
   const bottomInset = Math.max(
@@ -78,6 +80,29 @@ export function BottomSheet({
     }
   }, [dragY, mounted, progress, visible]);
 
+  // Transparent Modal often ignores adjustResize on Android — pad manually.
+  useEffect(() => {
+    if (!visible) {
+      setKeyboardHeight(0);
+      return;
+    }
+
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [visible]);
+
   const backdropStyle = useAnimatedStyle(() => {
     const dragFade = 1 - Math.min(dragY.value / (screenHeight * 0.45), 1);
     return {
@@ -90,6 +115,7 @@ export function BottomSheet({
   }));
 
   function requestClose() {
+    Keyboard.dismiss();
     onClose();
   }
 
@@ -103,6 +129,7 @@ export function BottomSheet({
   const panGesture = Gesture.Pan()
     .activeOffsetY(10)
     .failOffsetX([-20, 20])
+    .enabled(keyboardHeight === 0)
     .onUpdate((event) => {
       dragY.value = Math.max(0, event.translationY);
     })
@@ -135,6 +162,8 @@ export function BottomSheet({
   }
 
   const sheetMaxHeight = screenHeight * 0.88;
+  // Lift sheet above keyboard.
+  const keyboardPad = keyboardHeight > 0 ? keyboardHeight : 0;
 
   return (
     <Modal
@@ -159,7 +188,13 @@ export function BottomSheet({
 
           <Pressable
             style={StyleSheet.absoluteFill}
-            onPress={requestClose}
+            onPress={() => {
+              if (keyboardHeight > 0) {
+                Keyboard.dismiss();
+                return;
+              }
+              requestClose();
+            }}
             accessibilityLabel="Close"
           />
 
@@ -175,11 +210,21 @@ export function BottomSheet({
 
           <GestureDetector gesture={panGesture}>
             <Animated.View
-              style={[styles.sheetTranslate, { maxHeight: sheetMaxHeight }, sheetStyle]}>
+              style={[
+                styles.sheetTranslate,
+                {
+                  maxHeight: sheetMaxHeight,
+                  marginBottom: keyboardPad,
+                },
+                sheetStyle,
+              ]}>
               <View
                 style={[
                   styles.sheetSurface,
-                  { paddingBottom: bottomInset, maxHeight: sheetMaxHeight },
+                  {
+                    paddingBottom: keyboardPad > 0 ? 12 : bottomInset,
+                    maxHeight: sheetMaxHeight,
+                  },
                 ]}
                 collapsable={false}>
                 <View style={styles.handleHitArea} accessibilityRole="adjustable">

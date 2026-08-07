@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { HwSymbol } from '@/components/ui/hw-symbol';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -101,6 +101,7 @@ function SubcategoryRow({
 
 export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSheetProps) {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const { data: categories = [], isLoading, isError, refetch } = useKbCategories();
   const [step, setStep] = useState<Step>('category');
   const [selectedCategory, setSelectedCategory] = useState<SelectedCategory | null>(null);
@@ -215,9 +216,11 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
   return (
     <BottomSheet visible={visible} onClose={handleClose}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}>
         {step === 'category' ? (
@@ -343,6 +346,14 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
               multiline
               numberOfLines={5}
               style={styles.textArea}
+              onFocus={() => {
+                // After the sheet lifts above the keyboard, bring the field into view.
+                requestAnimationFrame(() => {
+                  setTimeout(() => {
+                    scrollRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                });
+              }}
             />
 
             <TicketAttachmentsField
