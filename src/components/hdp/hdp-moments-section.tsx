@@ -8,8 +8,10 @@ import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer
 import { HwCarousel } from '@/components/ui/carousel';
 import { GradientText } from '@/components/ui/gradient-text';
 import { Typography } from '@/components/ui/typography';
+import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
 import type { HdpMomentItem } from '@/types/hdp-moments';
+import { COMING_SOON_IMAGE_URI } from '@/utils/images';
 
 const CARD_HEIGHT = 320;
 const CARD_GAP = 12;
@@ -21,6 +23,14 @@ type HdpMomentsSectionProps = {
   carouselWidth: number;
 };
 
+function hasUsableThumbnail(uri?: string) {
+  const value = uri?.trim();
+  if (!value) return false;
+  if (value === COMING_SOON_IMAGE_URI) return false;
+  if (value.includes('coming-soon')) return false;
+  return true;
+}
+
 function MomentCard({
   moment,
   cardWidth,
@@ -31,6 +41,8 @@ function MomentCard({
   onPress: () => void;
 }) {
   const isVideo = moment.mediaType === 'video';
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const showThumbnail = hasUsableThumbnail(moment.imageUri) && !thumbFailed;
 
   return (
     <Pressable
@@ -40,7 +52,12 @@ function MomentCard({
       accessibilityLabel={
         isVideo ? `Open story video: ${moment.label}` : `Open story: ${moment.label}`
       }>
-      <Image source={{ uri: moment.imageUri }} style={styles.cardImage} contentFit="cover" />
+      <Image
+        source={showThumbnail ? { uri: moment.imageUri } : ImageAssets.comingSoon}
+        style={styles.cardImage}
+        contentFit="cover"
+        onError={() => setThumbFailed(true)}
+      />
       <LinearGradient
         colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.75)']}
         style={styles.cardOverlay}>
@@ -54,7 +71,7 @@ function MomentCard({
           <View style={styles.playCircle}>
             <HwSymbol
               name="play.fill"
-              size={22}
+              size={28}
               tintColor={palette.white}
               style={styles.playIcon}
             />
@@ -151,26 +168,33 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    zIndex: 1,
     paddingHorizontal: 16,
     paddingTop: 48,
     paddingBottom: 16,
   },
   playBadge: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
+    elevation: 4,
   },
   playCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingLeft: 3,
+    paddingLeft: 4,
   },
   playIcon: {
-    width: 22,
-    height: 22,
+    width: 28,
+    height: 28,
   },
 });

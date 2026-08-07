@@ -43,6 +43,8 @@ const SF_TO_ANDROID: Record<string, AndroidSymbol> = {
   'exclamationmark.triangle.fill': 'warning',
   'fork.knife': 'restaurant',
   headphones: 'headphones',
+  heart: 'favorite_border',
+  'heart.fill': 'favorite',
   'house.fill': 'home',
   'line.3.horizontal': 'menu',
   'line.3.horizontal.decrease': 'filter_list',
@@ -62,7 +64,7 @@ const SF_TO_ANDROID: Record<string, AndroidSymbol> = {
   'speaker.slash.fill': 'volume_off',
   'speaker.wave.2.fill': 'volume_up',
   'square.and.arrow.down': 'download',
-  'square.and.arrow.up': 'ios_share',
+  'square.and.arrow.up': 'share',
   'star.fill': 'star',
   'video.fill': 'videocam',
   'wrench.and.screwdriver': 'handyman',
@@ -74,6 +76,13 @@ export const BACK_CHEVRON_SYMBOL: PlatformSymbolName = {
   ios: 'chevron.left',
   android: 'chevron_left',
   web: 'chevron_left',
+};
+
+/** iOS share sheet glyph vs Android Material share. */
+export const SHARE_SYMBOL: PlatformSymbolName = {
+  ios: 'square.and.arrow.up',
+  android: 'share',
+  web: 'share',
 };
 
 function platformName(ios: SFSymbol, android: AndroidSymbol): PlatformSymbolName {

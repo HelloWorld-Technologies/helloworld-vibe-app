@@ -17,6 +17,7 @@ import { useSelectedCity } from '@/stores/auth-store';
 import type { PropertyBadge, PropertyListing } from '@/types/property';
 import { COMING_SOON_IMAGE_URI } from '@/utils/images';
 import { getImageUriFromSource, shareProperty } from '@/utils/share-property';
+import { SHARE_SYMBOL } from '@/constants/symbols';
 
 if (UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -312,7 +313,7 @@ export function PropertyCard({
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Share property">
-              <HwSymbol name="square.and.arrow.up" size={20} tintColor={palette.gray[800]} />
+              <HwSymbol name={SHARE_SYMBOL} size={20} tintColor={palette.gray[800]} />
             </Pressable>
           </View>
         </View>

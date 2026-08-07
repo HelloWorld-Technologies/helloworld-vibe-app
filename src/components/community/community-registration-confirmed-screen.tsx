@@ -19,6 +19,7 @@ import { getHwEventDetail } from '@/api/community';
 import { Typography } from '@/components/ui/typography';
 import { CommunityAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
+import { SHARE_SYMBOL } from '@/constants/symbols';
 import { Radius } from '@/constants/theme';
 import { useTenantProfile } from '@/stores/tenant-store';
 import type { CommunityEventDetail } from '@/types/community';
@@ -206,7 +207,7 @@ export function CommunityRegistrationConfirmedScreen() {
           {sharing ? (
             <ActivityIndicator size="small" color={palette.lime[700]} />
           ) : (
-            <HwSymbol name="square.and.arrow.up" size={16} tintColor={palette.lime[700]} />
+            <HwSymbol name={SHARE_SYMBOL} size={16} tintColor={palette.lime[700]} />
           )}
         </Pressable>
       </View>

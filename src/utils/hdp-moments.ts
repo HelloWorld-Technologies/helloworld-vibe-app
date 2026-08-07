@@ -1,4 +1,4 @@
-import { COMING_SOON_IMAGE_URI, formatPropertyImageUrl, getPropertyImageKeys } from '@/utils/images';
+import { formatPropertyImageUrl, getPropertyImageKeys } from '@/utils/images';
 import type { HdpApiMoment, HdpMomentItem, HdpMomentMediaType } from '@/types/hdp-moments';
 
 const DEFAULT_MOMENT_LABELS = [
@@ -52,14 +52,15 @@ function resolvePreviewUri(moment: HdpApiMoment, mediaType: HdpMomentMediaType):
   const url = moment.url?.trim();
 
   if (mediaType === 'video') {
+    // Prefer API thumbnail; UI falls back to bundled coming-soon if missing/broken.
     if (thumb) return formatPropertyImageUrl(thumb, 'hdp');
-    return COMING_SOON_IMAGE_URI;
+    return '';
   }
 
   // Image moments use the media URL as the preview.
   if (url) return formatPropertyImageUrl(url, 'hdp');
   if (thumb) return formatPropertyImageUrl(thumb, 'hdp');
-  return COMING_SOON_IMAGE_URI;
+  return '';
 }
 
 export function mapApiMomentsToItems(moments: HdpApiMoment[]): HdpMomentItem[] {

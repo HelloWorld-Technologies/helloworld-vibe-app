@@ -44,6 +44,8 @@ export function HdpSectionNav({ activeId, onChange }: HdpSectionNavProps) {
 
 const styles = StyleSheet.create({
   wrap: {
+    width: '100%',
+    alignSelf: 'stretch',
     backgroundColor: palette.white,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: palette.gray[200],
@@ -51,6 +53,7 @@ const styles = StyleSheet.create({
   content: {
     gap: 20,
     paddingVertical: 12,
+    paddingHorizontal: 24,
   },
   pill: {
     paddingHorizontal: 16,

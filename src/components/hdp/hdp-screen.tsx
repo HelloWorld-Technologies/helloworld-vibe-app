@@ -314,7 +314,7 @@ export function HdpScreen() {
           }
         }}
         onRightPress={handleShare}
-        rightIcon="square.and.arrow.up"
+        rightIcon="share"
         rightAccessibilityLabel="Share property"
       />
 
@@ -527,14 +527,12 @@ const styles = StyleSheet.create({
   },
   tabBarBleed: {
     marginHorizontal: -24,
-    paddingHorizontal: 24,
   },
   stickyTabBar: {
     position: 'absolute',
     left: 0,
     right: 0,
     zIndex: 15,
-    paddingHorizontal: 24,
     shadowColor: '#101828',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,

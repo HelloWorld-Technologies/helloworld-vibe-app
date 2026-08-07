@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '@/components/ui/typography';
 import { fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
+import { SHARE_SYMBOL } from '@/constants/symbols';
 import { Radius } from '@/constants/theme';
 
 type InlineSearchConfig = {
@@ -26,7 +27,7 @@ type ScrollRevealHeaderProps = {
   onBack: () => void;
   inlineSearch?: InlineSearchConfig;
   onRightPress?: () => void;
-  rightIcon?: 'magnifyingglass' | 'square.and.arrow.up';
+  rightIcon?: 'magnifyingglass' | 'share';
   rightAccessibilityLabel?: string;
 };
 
@@ -138,6 +139,7 @@ export function ScrollRevealHeader({
   });
 
   const rightIconSize = rightIcon === 'magnifyingglass' ? 18 : 17;
+  const resolvedRightIcon = rightIcon === 'share' ? SHARE_SYMBOL : rightIcon;
 
   return (
     <Animated.View
@@ -187,7 +189,7 @@ export function ScrollRevealHeader({
               <View style={styles.rightIconWrap}>
                 <Animated.View style={[styles.rightIconLayer, rightIconAccentStyle]}>
                   <HwSymbol
-                    name={rightIcon}
+                    name={resolvedRightIcon}
                     size={rightIconSize}
                     weight="semibold"
                     tintColor={palette.helloLime}
@@ -195,7 +197,7 @@ export function ScrollRevealHeader({
                 </Animated.View>
                 <Animated.View style={[styles.rightIconLayer, rightIconDefaultStyle]}>
                   <HwSymbol
-                    name={rightIcon}
+                    name={resolvedRightIcon}
                     size={rightIconSize}
                     weight="semibold"
                     tintColor={palette.gray[900]}

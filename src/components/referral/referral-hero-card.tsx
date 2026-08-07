@@ -8,6 +8,7 @@ import { Typography } from '@/components/ui/typography';
 import { DashboardImages } from '@/constants/assets';
 import { DASHBOARD_REFERRAL_GRADIENT } from '@/constants/dashboard';
 import palette from '@/constants/palette';
+import { SHARE_SYMBOL } from '@/constants/symbols';
 import { Radius } from '@/constants/theme';
 import { priceFormatter } from '@/utils/tenant-format';
 
@@ -96,7 +97,7 @@ export function ReferralHeroCard({
               }}
               accessibilityRole="button"
               accessibilityLabel="Share referral code">
-              <HwSymbol name="square.and.arrow.up" size={20} tintColor={palette.lime[900]} />
+              <HwSymbol name={SHARE_SYMBOL} size={20} tintColor={palette.lime[900]} />
             </Pressable>
           </View>
         ) : (
