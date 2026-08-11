@@ -31,12 +31,18 @@ type VibeMatchItem = {
   percent: number
 }
 
+type PropertyVibeItem = {
+  id: string
+  label: string
+  emoji: string
+}
+
 type HdpVibeMatchCardProps = {
-  matchPercent: number
+  matchPercent?: number
   propertyName?: string
   selectedVibeCount?: number
   vibeMatches?: VibeMatchItem[]
-  propertyVibes?: readonly PropertyVibeOption[]
+  propertyVibes?: readonly PropertyVibeItem[]
   workplaces?: string[]
   colleges?: string[]
   extraCount?: number
@@ -176,7 +182,7 @@ function AnimatedPropertyVibes ({
   vibes,
   expanded,
 }: {
-  vibes: readonly PropertyVibeOption[]
+  vibes: readonly PropertyVibeItem[]
   expanded: boolean
 }) {
   const expandProgress = useSharedValue(expanded ? 1 : 0)
@@ -262,15 +268,21 @@ function ResidentInfoCard ({
 export function HdpVibeMatchCard ({
   matchPercent,
   propertyName = 'this property',
-  selectedVibeCount = 5,
+  selectedVibeCount,
   vibeMatches = DEFAULT_VIBE_MATCHES,
   propertyVibes = PROPERTY_VIBE_OPTIONS,
   workplaces = DEFAULT_WORKPLACES,
   colleges = DEFAULT_COLLEGES,
   extraCount = 31
 }: HdpVibeMatchCardProps) {
-  const [showPropertyVibes, setShowPropertyVibes] = useState(false)
-  const chevronProgress = useSharedValue(0)
+  const [showPropertyVibes, setShowPropertyVibes] = useState(true)
+  const chevronProgress = useSharedValue(1)
+  const resolvedSelectedCount = selectedVibeCount ?? vibeMatches.length
+  const score =
+    matchPercent != null && Number.isFinite(matchPercent) && matchPercent > 0
+      ? Math.round(matchPercent)
+      : undefined
+  const visibleMatches = vibeMatches.filter(item => item.percent > 0)
 
   useEffect(() => {
     chevronProgress.value = withTiming(showPropertyVibes ? 1 : 0, {
@@ -301,21 +313,25 @@ export function HdpVibeMatchCard ({
             How well this home matches your vibe
           </Typography>
           <Typography variant='text' size='xs' color={palette.gray[600]}>
-            Based on the {selectedVibeCount} vibes you selected
+            {resolvedSelectedCount > 0
+              ? `Based on the ${resolvedSelectedCount} vibe${resolvedSelectedCount === 1 ? '' : 's'} you selected`
+              : 'Pick vibes on search to see your match score here'}
           </Typography>
         </View>
-        <MatchScoreRing percent={matchPercent} />
+        {score != null ? <MatchScoreRing percent={score} /> : null}
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.vibeRow}
-      >
-        {vibeMatches.map(item => (
-          <VibeMatchTile key={item.id} item={item} />
-        ))}
-      </ScrollView>
+      {visibleMatches.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.vibeRow}
+        >
+          {visibleMatches.map(item => (
+            <VibeMatchTile key={item.id} item={item} />
+          ))}
+        </ScrollView>
+      ) : null}
 
       <View style={styles.residentList}>
         <ResidentInfoCard
@@ -367,7 +383,7 @@ export function HdpVibeMatchCard ({
               name='chevron.down'
               size={12}
               weight='semibold'
-              tintColor={palette.blue[500]}
+              tintColor={palette.blue[600]}
             />
           </Animated.View>
         </Pressable>

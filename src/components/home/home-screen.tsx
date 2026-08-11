@@ -25,21 +25,32 @@ import { HwCarousel, HwParallaxCarousel, ParallaxLayer } from '@/components/ui/c
 import { EmptyState } from '@/components/ui/empty-state';
 import { GradientText } from '@/components/ui/gradient-text';
 import { SearchInput } from '@/components/ui/search-input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Typography } from '@/components/ui/typography';
 import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
-import {
-  HOME_BACKGROUND_GRADIENT,
-  NEIGHBORHOODS,
-} from '@/constants/home';
+import { HOME_BACKGROUND_GRADIENT } from '@/constants/home';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { useIsTablet } from '@/hooks/use-is-tablet';
 import { useMomentsFeed } from '@/queries/use-moments-feed';
+import { usePopularLocalities } from '@/queries/use-popular-localities';
 import { useSrpProperties } from '@/queries/use-srp-properties';
 import { useVibesList } from '@/queries/use-vibes';
-import { useSelectedCity, useSelectedLocality } from '@/stores/auth-store';
+import {
+  useAuthStore,
+  useSelectedCity,
+  useSelectedLocality,
+} from '@/stores/auth-store';
+import {
+  toVibeApiIds,
+  useSelectedVibeIds,
+  useSelectedVibesStore,
+} from '@/stores/selected-vibes-store';
+import { mapLocalityToNeighborhoodCard } from '@/api/localities';
+import type { NeighborhoodCard } from '@/types/locality';
 import type { PropertyListing } from '@/types/property';
 
 function SectionTitle({
@@ -61,6 +72,19 @@ function SectionTitle({
   );
 }
 
+function formatNeighborhoodMeta(item: NeighborhoodCard) {
+  const parts: string[] = [];
+  if (item.startingRent != null && item.startingRent > 0) {
+    parts.push(`Starting ₹${item.startingRent.toLocaleString('en-IN')}`);
+  }
+  if (item.propertyCount != null && item.propertyCount > 0) {
+    parts.push(
+      `${item.propertyCount} Propert${item.propertyCount === 1 ? 'y' : 'ies'}`,
+    );
+  }
+  return parts.join(' | ');
+}
+
 /** Home screen spacing scale — use these instead of one-off margins. */
 const SPACE = {
   xs: 8,
@@ -72,12 +96,14 @@ const SPACE = {
 
 const ITEM_GAP = 12;
 const PROPERTY_CAROUSEL_HEIGHT = 540;
+const NEIGHBORHOOD_CAROUSEL_HEIGHT = 200;
 const FEED_CARD_WIDTH = 172;
 const FEED_CARD_HEIGHT = 268;
 const FEED_CARD_GAP = 16;
 const FEEDBACK_BANNER_HEIGHT = 44;
 const FEEDBACK_BANNER_GAP = 12;
 const HEADER_SHADOW_THRESHOLD = 8;
+const VIBE_FILTER_DEBOUNCE_MS = 400;
 
 export function HomeScreen() {
   const router = useRouter();
@@ -88,16 +114,42 @@ export function HomeScreen() {
 
   const city = useSelectedCity();
   const locality = useSelectedLocality();
-  const { data: srpData, isLoading: isLoadingProperties } = useSrpProperties(city);
+  const setSelectedLocality = useAuthStore((state) => state.setSelectedLocality);
+  const selectedVibes = useSelectedVibeIds();
+  const setSelectedVibes = useSelectedVibesStore((state) => state.setSelectedIds);
+  const vibeIds = useMemo(() => toVibeApiIds(selectedVibes), [selectedVibes]);
+  const vibeKey = vibeIds.join(',');
+  const debouncedVibeKey = useDebounce(vibeKey, VIBE_FILTER_DEBOUNCE_MS);
+  const debouncedVibeIds = useMemo(() => {
+    if (!debouncedVibeKey) return [] as number[];
+    return debouncedVibeKey
+      .split(',')
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id) && id > 0);
+  }, [debouncedVibeKey]);
+  const { data: srpData, isLoading: isLoadingProperties } = useSrpProperties(
+    city,
+    null,
+    debouncedVibeIds,
+  );
+  const { data: localitiesResponse, isLoading: isLoadingLocalities } =
+    usePopularLocalities(city);
   const { data: feedData, isLoading: isLoadingFeed } = useMomentsFeed();
   const { data: apiVibes = [] } = useVibesList();
   const properties = srpData?.listings ?? [];
+  const neighborhoods = useMemo(
+    () =>
+      (localitiesResponse?.data ?? []).map((item) =>
+        mapLocalityToNeighborhoodCard(item, properties),
+      ),
+    [localitiesResponse?.data, properties],
+  );
   const feedMoments = (feedData?.moments ?? []).slice(0, 8);
   const vibeOptions = useMemo(
     () => (apiVibes.length > 0 ? mapVibesToListItems(apiVibes) : [...VIBE_OPTIONS]),
     [apiVibes],
   );
-  const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
+  const vibesPending = vibeKey !== debouncedVibeKey;
   const [showFeedback, setShowFeedback] = useState(true);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [feedStoryOpen, setFeedStoryOpen] = useState(false);
@@ -136,6 +188,11 @@ export function HomeScreen() {
         image,
       },
     });
+  }
+
+  function openNeighborhood(name: string) {
+    setSelectedLocality(name);
+    router.push('/srp');
   }
 
   return (
@@ -208,42 +265,100 @@ export function HomeScreen() {
           <View style={styles.body}>
             <View style={styles.section}>
               <SectionTitle prefix="Find your " highlight="Neighborhood!" />
-              <HwParallaxCarousel
-                data={[...NEIGHBORHOODS]}
-                width={slideWidth}
-                windowWidth={carouselWindowWidth}
-                height={200}
-                style={styles.carouselWrap}
-                renderItem={({ item, animationValue }) => (
-                  <View style={[styles.neighborhoodCard, { width: cardWidth }]}>
-                    <ParallaxLayer animationValue={animationValue} style={styles.neighborhoodImageWrap}>
-                      <LocalityCardImage imageKey={item.image} style={styles.neighborhoodImage} />
-                    </ParallaxLayer>
-                    <LinearGradient
-                      colors={['transparent', 'rgba(0,0,0,0.75)']}
-                      style={styles.neighborhoodOverlay}>
-                      <Typography variant="text" size="lg" weight="bold" color={palette.white}>
-                        {item.name}
-                      </Typography>
-                      <View style={styles.neighborhoodMeta}>
-                        <Typography variant="text" size="xs" color={palette.gray[200]}>
-                          Starting {item.price} | {item.properties} Properties
-                        </Typography>
-                        <HwSymbol name="arrow.right" size={12} tintColor={palette.white} />
-                      </View>
-                    </LinearGradient>
-                  </View>
-                )}
-              />
+              {isLoadingLocalities ? (
+                <View style={[styles.carouselWrap, styles.neighborhoodSkeletonRow]}>
+                  <Skeleton
+                    height={NEIGHBORHOOD_CAROUSEL_HEIGHT}
+                    borderRadius={Radius.md}
+                    style={{ width: cardWidth }}
+                  />
+                  {isTablet ? (
+                    <Skeleton
+                      height={NEIGHBORHOOD_CAROUSEL_HEIGHT}
+                      borderRadius={Radius.md}
+                      style={{ width: cardWidth }}
+                    />
+                  ) : null}
+                </View>
+              ) : neighborhoods.length > 0 ? (
+                <HwParallaxCarousel
+                  key={`${city}:localities`}
+                  data={neighborhoods}
+                  width={slideWidth}
+                  windowWidth={carouselWindowWidth}
+                  height={NEIGHBORHOOD_CAROUSEL_HEIGHT}
+                  style={styles.carouselWrap}
+                  renderItem={({ item, animationValue }) => {
+                    const meta = formatNeighborhoodMeta(item);
+                    return (
+                      <Pressable
+                        onPress={() => openNeighborhood(item.name)}
+                        style={[styles.neighborhoodCard, { width: cardWidth }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={
+                          meta ? `${item.name}, ${meta}` : item.name
+                        }>
+                        <ParallaxLayer
+                          animationValue={animationValue}
+                          style={styles.neighborhoodImageWrap}>
+                          <LocalityCardImage
+                            imageUri={item.imageUri}
+                            style={styles.neighborhoodImage}
+                          />
+                        </ParallaxLayer>
+                        <LinearGradient
+                          colors={['transparent', 'rgba(0,0,0,0.75)']}
+                          style={styles.neighborhoodOverlay}>
+                          <Typography
+                            variant="text"
+                            size="lg"
+                            weight="bold"
+                            color={palette.white}>
+                            {item.name}
+                          </Typography>
+                          <View style={styles.neighborhoodMeta}>
+                            {meta ? (
+                              <Typography
+                                variant="text"
+                                size="xs"
+                                color={palette.gray[200]}>
+                                {meta}
+                              </Typography>
+                            ) : (
+                              <Typography
+                                variant="text"
+                                size="xs"
+                                color={palette.gray[200]}>
+                                Explore homes
+                              </Typography>
+                            )}
+                            <HwSymbol
+                              name="arrow.right"
+                              size={12}
+                              tintColor={palette.white}
+                            />
+                          </View>
+                        </LinearGradient>
+                      </Pressable>
+                    );
+                  }}
+                />
+              ) : (
+                <EmptyState
+                  compact
+                  title={`No localities found in ${city}`}
+                  subtitle="Try another city or check back soon."
+                />
+              )}
             </View>
 
             <View style={styles.section}>
               <SectionTitle prefix="This could be your " highlight="Home!" />
-              {isLoadingProperties ? (
+              {isLoadingProperties || vibesPending ? (
                 <HomePropertiesSkeleton />
               ) : properties.length > 0 ? (
                 <HwCarousel
-                  key={city}
+                  key={`${city}:${debouncedVibeKey}`}
                   data={properties}
                   width={slideWidth}
                   windowWidth={carouselWindowWidth}
@@ -506,6 +621,11 @@ const styles = StyleSheet.create({
   }),
   carouselWrap: {
     marginHorizontal: -4,
+  },
+  neighborhoodSkeletonRow: {
+    flexDirection: 'row',
+    gap: ITEM_GAP,
+    marginHorizontal: 0,
   },
   neighborhoodCard: {
     height: 200,

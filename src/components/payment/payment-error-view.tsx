@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { TenantScreenHeader } from '@/components/tenant/tenant-screen-header';
 import { Button } from '@/components/ui/button';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 
@@ -18,9 +19,9 @@ export function PaymentErrorView({ message, onRetry }: PaymentErrorViewProps) {
     <View style={styles.root}>
       <TenantScreenHeader title="Payment Failed" onBack={() => router.back()} />
       <View style={styles.container}>
-        <Typography variant="display" size="sm" weight="bold" color={palette.red[600]} style={styles.icon}>
-          ✕
-        </Typography>
+        <View style={styles.iconWrap} accessibilityLabel="Payment failed">
+          <HwSymbol name="xmark" size={48} weight="bold" tintColor={palette.red[600]} />
+        </View>
         <Typography variant="text" size="xl" weight="medium" style={styles.title}>
           OOPS! Payment Failed
         </Typography>
@@ -46,9 +47,13 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 12,
   },
-  icon: {
-    fontSize: 56,
+  iconWrap: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 8,
+    overflow: 'visible',
   },
   title: {
     textAlign: 'center',

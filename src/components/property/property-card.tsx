@@ -279,13 +279,17 @@ export function PropertyCard({
         ) : null}
       </View>
 
-      <LinearGradient
-        colors={['#7C3AED', '#38BDF8']}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={styles.vibeBar}>
-        <Text style={styles.vibeText}>✨ {property.vibeMatchPercent}% Vibe Match</Text>
-      </LinearGradient>
+      {property.vibeMatchPercent != null && property.vibeMatchPercent > 0 ? (
+        <LinearGradient
+          colors={['#7C3AED', '#38BDF8']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.vibeBar}>
+          <Text style={styles.vibeText}>
+            ✨ {Math.round(property.vibeMatchPercent)}% Vibe Match
+          </Text>
+        </LinearGradient>
+      ) : null}
 
       <View style={styles.body}>
         <View style={styles.titleRow}>

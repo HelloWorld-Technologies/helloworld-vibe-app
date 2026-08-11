@@ -25,6 +25,7 @@ export function countActiveSrpFilters(filters: SrpFilters = DEFAULT_SRP_FILTERS)
 
 export function buildSrpApiFilter(
   filters: SrpFilters,
+  vibeIds: readonly number[] = [],
 ): PropertyListPayload['filter'] | undefined {
   const hasPrice =
     filters.priceMin > DEFAULT_SRP_FILTERS.priceMin ||
@@ -32,8 +33,9 @@ export function buildSrpApiFilter(
   const hasGender = Boolean(filters.gender);
   const hasFood = filters.food;
   const amenities = filters.amenities;
+  const vibes = vibeIds.filter((id) => Number.isFinite(id) && id > 0);
 
-  if (!hasPrice && !hasGender && !hasFood && amenities.length === 0) {
+  if (!hasPrice && !hasGender && !hasFood && amenities.length === 0 && vibes.length === 0) {
     return undefined;
   }
 
@@ -47,6 +49,7 @@ export function buildSrpApiFilter(
     gender: hasGender ? filters.gender : undefined,
     food: hasFood ? true : undefined,
     amenities,
+    ...(vibes.length > 0 ? { vibes } : {}),
   };
 }
 

@@ -16,13 +16,16 @@ export function usePropertyList(
   locality: string,
   filters: SrpFilters,
   sort: SortOption,
+  vibeIds: readonly number[] = [],
 ) {
   const filtersKey = serializeSrpFilters(filters, sort);
-  const apiFilter = buildSrpApiFilter(filters);
+  const vibes = vibeIds.filter((id) => Number.isFinite(id) && id > 0);
+  const vibesKey = vibes.join(',');
+  const apiFilter = buildSrpApiFilter(filters, vibes);
   const apiSorting = buildSrpApiSorting(sort);
 
   return useInfiniteQuery({
-    queryKey: queryKeys.propertyList(city, locality, filtersKey),
+    queryKey: queryKeys.propertyList(city, locality, filtersKey, vibesKey),
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       fetchPropertyList(

@@ -156,7 +156,10 @@ export function CompletePaymentScreen() {
       onVerify(orderID) {
         const initData = initDataRef.current;
         if (
-          (paymentType === 'booking' || paymentType === 'events') &&
+          (paymentType === 'booking' ||
+            paymentType === 'events' ||
+            paymentType === 'invoice' ||
+            paymentType === 'movein') &&
           initData &&
           verifyPaymentRef.current
         ) {
@@ -184,6 +187,8 @@ export function CompletePaymentScreen() {
     initData: InitPaymentData,
     razorpayData: { razorpay_payment_id: string; razorpay_signature: string },
   ) {
+    const isCashfree = Boolean(initData.paymentObj.paymentSessionId);
+
     if (paymentType === 'booking') {
       return buildBookingVerifyPayload(initData, razorpayData, initData.amount ?? amount);
     }
@@ -192,6 +197,17 @@ export function CompletePaymentScreen() {
       const bookingId =
         (params.bookingId as string) || profile?.bookingId || (params.paymentFor as string) || '';
 
+      if (isCashfree) {
+        return {
+          bookingId,
+          transactionId: initData.paymentObj.transactionId,
+          amount,
+          paymentMethod: 'upi',
+          payment_gateway: 'cashfree',
+          orderId: initData.paymentObj.orderId ?? razorpayData.razorpay_payment_id,
+        };
+      }
+
       return {
         bookingId,
         transactionId: initData.paymentObj.transactionId,
@@ -199,6 +215,17 @@ export function CompletePaymentScreen() {
         paymentMethod: 'UPI',
         razorpayPaymentId: razorpayData.razorpay_payment_id,
         razorpaySignature: razorpayData.razorpay_signature,
+      };
+    }
+
+    if (isCashfree && paymentType === 'invoice') {
+      return {
+        ...paymentPayload,
+        transactionId: initData.paymentObj.transactionId,
+        amount,
+        paymentMethod: 'upi',
+        paymentMode: 'cashfree',
+        orderId: initData.paymentObj.orderId ?? razorpayData.razorpay_payment_id,
       };
     }
 

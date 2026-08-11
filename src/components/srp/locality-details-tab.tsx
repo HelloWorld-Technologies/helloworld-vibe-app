@@ -21,10 +21,9 @@ const SHEET_PAD = 24;
 const LOCALITY_CARD_GAP = 12;
 const LOCALITY_CARD_HEIGHT = 180;
 const AMENITY_ICON_SIZE = 48;
-/** Fixed width so labels aren't crushed when 5 items share one phone row. */
-const AMENITY_ITEM_WIDTH = 88;
 const AMENITY_ITEM_GAP = 16;
-const AMENITY_WRAP_COLUMNS = 3;
+const AMENITY_COLUMNS_PHONE = 3;
+const AMENITY_COLUMNS_TABLET = 5;
 
 const DAY_CARDS = [
   {
@@ -69,11 +68,9 @@ export function CityDetailsTab({ locality, city, onSelectLocality }: CityDetails
   const contentWidth = screenWidth - SHEET_PAD * 2;
   const localityCardWidth = Math.min(260, Math.max(200, contentWidth * 0.72));
   const localitySlideWidth = localityCardWidth + LOCALITY_CARD_GAP;
-  const amenitiesFitInRow =
-    isTablet ||
-    contentWidth >= AMENITIES.length * AMENITY_ITEM_WIDTH + (AMENITIES.length - 1) * AMENITY_ITEM_GAP;
-  const amenityWrapWidth =
-    (contentWidth - AMENITY_ITEM_GAP * (AMENITY_WRAP_COLUMNS - 1)) / AMENITY_WRAP_COLUMNS;
+  const amenityColumns = isTablet ? AMENITY_COLUMNS_TABLET : AMENITY_COLUMNS_PHONE;
+  const amenityItemWidth =
+    (contentWidth - AMENITY_ITEM_GAP * (amenityColumns - 1)) / amenityColumns;
 
   function openLocality(name: string) {
     setSelectedLocality(name);
@@ -117,16 +114,15 @@ export function CityDetailsTab({ locality, city, onSelectLocality }: CityDetails
       <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
         Included Across Our Homes
       </Typography>
-      <View style={[styles.amenitiesRow, !amenitiesFitInRow && styles.amenitiesWrap]}>
+      <View style={styles.amenitiesGrid}>
         {AMENITIES.map(({ id, label, Icon }) => (
-          <View
-            key={id}
-            style={[
-              styles.amenityItem,
-              !amenitiesFitInRow && [styles.amenityItemWrapped, { width: amenityWrapWidth }],
-            ]}>
+          <View key={id} style={[styles.amenityItem, { width: amenityItemWidth }]}>
             <View style={styles.amenityIcon}>
-              <Icon width={AMENITY_ICON_SIZE} height={AMENITY_ICON_SIZE} />
+              <Icon
+                width={AMENITY_ICON_SIZE}
+                height={AMENITY_ICON_SIZE}
+                style={styles.amenityIconSvg}
+              />
             </View>
             <Typography variant="text" size="xs" weight="medium" style={styles.amenityLabel}>
               {label}
@@ -244,30 +240,25 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: Radius.sm,
   },
-  amenitiesRow: {
+  amenitiesGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: AMENITY_ITEM_GAP,
   },
-  amenitiesWrap: {
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    rowGap: 20,
-  },
   amenityItem: {
-    flex: 1,
     alignItems: 'center',
     gap: 8,
-  },
-  amenityItemWrapped: {
-    flexGrow: 0,
-    flexShrink: 0,
   },
   amenityIcon: {
     width: AMENITY_ICON_SIZE,
     height: AMENITY_ICON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  amenityIconSvg: {
+    width: AMENITY_ICON_SIZE,
+    height: AMENITY_ICON_SIZE,
   },
   amenityLabel: {
     textAlign: 'center',

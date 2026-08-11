@@ -40,8 +40,10 @@ import palette from '@/constants/palette';
 import { useSimilarProperties } from '@/hooks/use-similar-properties';
 import { usePropertyDetail } from '@/queries/use-property-detail';
 import { usePropertyCategories } from '@/queries/use-property-categories';
+import { useVibesList } from '@/queries/use-vibes';
 import { useWishlist } from '@/providers/wishlist-provider';
 import { useSelectedCity } from '@/stores/auth-store';
+import { toVibeApiIds, useSelectedVibeIds } from '@/stores/selected-vibes-store';
 import { useIsTenant } from '@/stores/tenant-store';
 import { normalizeAmenityKey } from '@/utils/amenity-format';
 import {
@@ -51,12 +53,20 @@ import {
 } from '@/utils/hdp-media';
 import { extractNearByFromDetail, mapNearByToDayCards } from '@/utils/hdp-nearby';
 import { extractMomentsFromHdp } from '@/utils/hdp-moments';
+import {
+  mapPropertyVibesToInterests,
+  mapVibeBadgesToSelectedMatches,
+  parseVibeMatchScore,
+} from '@/utils/map-hdp-vibes';
 import { shareProperty } from '@/utils/share-property';
 import { getExploreHomeRoute } from '@/utils/tenant-routing';
+import { emojiForVibeCode } from '@/constants/vibes';
+import { useDebounce } from '@/hooks/use-debounce';
 
 const SHEET_OVERLAP = 48;
 const FOOTER_HEIGHT = 96;
 const HEADER_REVEAL_THRESHOLD = HDP_HERO_TOTAL_HEIGHT - SHEET_OVERLAP;
+const VIBE_FILTER_DEBOUNCE_MS = 400;
 
 function formatRent(amount?: number) {
   if (!amount || amount <= 0) return '₹—';
@@ -123,7 +133,19 @@ export function HdpScreen() {
   }>();
 
   const propertyId = id ?? '';
-  const { data, isLoading, isError } = usePropertyDetail(propertyId);
+  const selectedVibes = useSelectedVibeIds();
+  const vibeIds = useMemo(() => toVibeApiIds(selectedVibes), [selectedVibes]);
+  const vibeKey = vibeIds.join(',');
+  const debouncedVibeKey = useDebounce(vibeKey, VIBE_FILTER_DEBOUNCE_MS);
+  const debouncedVibeIds = useMemo(() => {
+    if (!debouncedVibeKey) return [] as number[];
+    return debouncedVibeKey
+      .split(',')
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id) && id > 0);
+  }, [debouncedVibeKey]);
+  const { data: apiVibes = [] } = useVibesList();
+  const { data, isLoading, isError } = usePropertyDetail(propertyId, debouncedVibeIds);
   const { data: categories = [] } = usePropertyCategories(propertyId);
   const { isWishlisted, toggleWishlist } = useWishlist();
   const selectedCity = useSelectedCity();
@@ -275,7 +297,27 @@ export function HdpScreen() {
     return fromProperty.length > 0 ? fromProperty : undefined;
   }, [property]);
   const amenities = buildAmenities(property);
-  const vibeMatch = property?.vibe_match ?? property?.vibeMatch ?? 92;
+  const vibeLabelById = useMemo(() => {
+    const map = new Map<number, { label: string; emoji: string }>();
+    for (const vibe of apiVibes) {
+      map.set(vibe.id, {
+        label: vibe.display_name,
+        emoji: emojiForVibeCode(vibe.code),
+      });
+    }
+    return map;
+  }, [apiVibes]);
+  const vibeMatchScore = parseVibeMatchScore(
+    data?.vibeMatchScore ?? property?.vibe_match ?? property?.vibeMatch,
+  );
+  const selectedVibeMatches = useMemo(
+    () => mapVibeBadgesToSelectedMatches(data?.vibeBadges, vibeLabelById),
+    [data?.vibeBadges, vibeLabelById],
+  );
+  const residentInterests = useMemo(
+    () => mapPropertyVibesToInterests(data?.propertyVibes),
+    [data?.propertyVibes],
+  );
   const visitsToday = property?.visits_today ?? property?.visit_count ?? 7;
   const reviewCount = property?.review_count ?? property?.reviews_count ?? 127;
   const mapUrl = typeof property?.map_url === 'string' ? property.map_url : undefined;
@@ -394,7 +436,22 @@ export function HdpScreen() {
                 reviewCount={reviewCount}
               />
 
-              <HdpVibeMatchCard matchPercent={vibeMatch} propertyName={displayName} />
+              {residentInterests.length > 0 ? (
+                <HdpVibeMatchCard
+                  matchPercent={vibeMatchScore}
+                  propertyName={displayName}
+                  selectedVibeCount={selectedVibeMatches.length || selectedVibes.length}
+                  vibeMatches={selectedVibeMatches
+                    .filter((vibe) => vibe.score > 0)
+                    .map((vibe) => ({
+                      id: vibe.id,
+                      label: vibe.label,
+                      emoji: vibe.emoji,
+                      percent: vibe.score,
+                    }))}
+                  propertyVibes={residentInterests}
+                />
+              ) : null}
 
               <View
                 ref={tabAnchorRef}

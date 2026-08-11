@@ -9,11 +9,25 @@ import type {
   PropertyListResponse,
 } from '@/types/property';
 import { formatPropertyImageUrl, getPropertyImageKeys } from '@/utils/images';
+import { parseVibeMatchScore } from '@/utils/map-hdp-vibes';
 
-export async function getPropertyData(id: number | string): Promise<PropertyDetailResponse> {
+export type FetchPropertyOptions = {
+  /** Selected vibe API ids — sent as `vibes=1,3,6`. */
+  vibes?: readonly number[];
+};
+
+export async function getPropertyData(
+  id: number | string,
+  options?: FetchPropertyOptions,
+): Promise<PropertyDetailResponse> {
   try {
+    const vibes = (options?.vibes ?? []).filter((vibeId) => Number.isFinite(vibeId) && vibeId > 0);
     const { data } = await http.get<PropertyDetailResponse>('v2/hello/house', {
-      params: { active: true, id },
+      params: {
+        active: true,
+        id,
+        ...(vibes.length > 0 ? { vibes: vibes.join(',') } : {}),
+      },
     });
     return data;
   } catch (error) {
@@ -213,7 +227,9 @@ export function mapApiPropertyToListing(property: ApiProperty) {
     city,
     locality,
     rating: property.rating ?? property.google_rating ?? 4.5,
-    vibeMatchPercent: property.vibe_match ?? property.vibeMatch ?? 90,
+    vibeMatchPercent: parseVibeMatchScore(
+      property.vibe_match_score ?? property.vibe_match ?? property.vibeMatch,
+    ),
     startingRent: property.min_rent ?? property.starting_rent ?? property.price ?? 0,
     roomTypes,
     images: imageKeys.length

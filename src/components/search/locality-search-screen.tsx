@@ -160,7 +160,7 @@ export function LocalitySearchScreen() {
         </Typography>
       </View>
 
-      {isFetching ? (
+      {isFetching && hasKeyword ? (
         <LocalityResultSkeleton style={styles.loader} />
       ) : null}
 
@@ -170,11 +170,9 @@ export function LocalitySearchScreen() {
         showsVerticalScrollIndicator={false}>
         {showHistory ? (
           <View style={styles.section}>
-            <Animated.View entering={FadeIn.duration(180)}>
-              <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
-                Recent searches
-              </Typography>
-            </Animated.View>
+            <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
+              Recent searches
+            </Typography>
             {history.map((item, index) => (
               <SearchResultRow
                 key={item.id}
@@ -188,7 +186,7 @@ export function LocalitySearchScreen() {
           </View>
         ) : null}
 
-        {hasKeyword && localities.length > 0 ? (
+        {hasKeyword && !isFetching && localities.length > 0 ? (
           <View key={`localities-${resultSetKey}`} style={styles.section}>
             <Animated.View entering={FadeIn.duration(180)}>
               <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
@@ -208,7 +206,7 @@ export function LocalitySearchScreen() {
           </View>
         ) : null}
 
-        {hasKeyword && properties.length > 0 ? (
+        {hasKeyword && !isFetching && properties.length > 0 ? (
           <View key={`properties-${resultSetKey}`} style={styles.section}>
             <Animated.View entering={FadeIn.duration(180)}>
               <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>

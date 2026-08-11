@@ -14,7 +14,8 @@ export type PropertyListing = {
   city?: string;
   locality?: string;
   rating: number;
-  vibeMatchPercent: number;
+  /** Present when vibes filter is applied; omit/0 hides the card bar. */
+  vibeMatchPercent?: number;
   startingRent: number;
   roomTypes: string[];
   images: ImageSource[];
@@ -33,8 +34,10 @@ export type ApiProperty = {
   price?: number;
   starting_rent?: number;
   min_rent?: number;
-  vibe_match?: number;
-  vibeMatch?: number;
+  vibe_match?: number | null;
+  vibeMatch?: number | null;
+  /** List API score when vibes filter is applied. */
+  vibe_match_score?: number | null;
   gender?: string;
   tags?: string[];
   room_types?: string[];
@@ -59,6 +62,8 @@ export type PropertyListPayload = {
     gender?: string;
     food?: boolean;
     amenities?: string[];
+    /** Selected vibe API ids for ranking / matching. */
+    vibes?: number[];
   };
   sorting?: {
     keyType?: string;
@@ -91,6 +96,21 @@ export type PropertyDetailResponse = {
   moments?: unknown[];
   /** Property gallery media (images + property videos) from `v2/hello/house`. */
   media?: unknown[];
+  /** Overall match % when `vibes` were sent to the house API. */
+  vibeMatchScore?: number | null;
+  /** Per-selected-vibe match cards. */
+  vibeBadges?: {
+    vibeId?: number | string;
+    matchPercent?: number | string;
+  }[];
+  /** Resident interests at the property. */
+  propertyVibes?: {
+    vibe_id?: number | string;
+    code?: string;
+    display_name?: string;
+    count?: number;
+    percentage?: number;
+  }[];
   similarProperties?: ApiProperty[];
   similar_properties?: ApiProperty[];
   similar?: ApiProperty[];

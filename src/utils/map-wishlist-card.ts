@@ -38,7 +38,7 @@ export function mapWishlistCardToListing(card: WishlistPropertyCard): PropertyLi
     city: card.city || card.address?.city || undefined,
     locality: card.locality || card.address?.locality || undefined,
     rating: card.rating ?? card.google_rating ?? 4.5,
-    vibeMatchPercent: 90,
+    vibeMatchPercent: undefined,
     startingRent: card.min_rent ?? 0,
     roomTypes,
     images: card.image ? [{ uri: formatPropertyImageUrl(card.image) }] : [],
