@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import { http } from '@/api/http';
 import type { TenantProfile } from '@/types/tenant';
 
@@ -104,4 +106,51 @@ export async function postEmergencyContactDetails(payload: EmergencyContactPaylo
     error?: string;
   }>('hello/tenant/update/emgdetails', { data: payload });
   return data;
+}
+
+type UserDetailsPayload = {
+  college: string;
+  company: string;
+};
+
+type UserDetailsResponse = {
+  success?: boolean;
+  message?: string;
+  error?: string;
+  data?: unknown;
+};
+
+export async function postUserDetails(payload: UserDetailsPayload): Promise<UserDetailsResponse> {
+  try {
+    const { data } = await http.post<UserDetailsResponse>('user/details', {
+      college: payload.college.trim(),
+      company: payload.company.trim(),
+    });
+
+    if (data?.success === false) {
+      return {
+        success: false,
+        message: data.message ?? data.error ?? 'Failed to save user details',
+      };
+    }
+
+    return { success: true, ...data };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const responseData = error.response?.data as UserDetailsResponse | undefined;
+      return {
+        success: false,
+        message:
+          responseData?.message ??
+          responseData?.error ??
+          error.message ??
+          'Failed to save user details',
+      };
+    }
+
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to save user details',
+    };
+  }
 }

@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { postUserDetails } from '@/api/user';
 import { MoveInSearchableSelect } from '@/components/move-in/move-in-searchable-select';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { Button } from '@/components/ui/button';
@@ -15,9 +16,10 @@ import {
   MOVE_IN_SELF_EMPLOYED_LABEL,
 } from '@/constants/move-in-background';
 import palette from '@/constants/palette';
-import { useTenantStore } from '@/stores/tenant-store';
+import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
 import {
   isMoveInBackgroundComplete,
+  mergeBackgroundWithTenantProfile,
   restoreCollegeSelection,
   restoreWorkplaceSelection,
 } from '@/utils/move-in-background';
@@ -30,10 +32,16 @@ export function MoveInBackgroundScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ from?: string }>();
   const fromMenu = params.from === 'menu';
+  const profile = useTenantProfile();
   const savedBackground = useTenantStore((state) => state.moveInBackground);
   const setMoveInBackground = useTenantStore((state) => state.setMoveInBackground);
-  const restoredCollege = restoreCollegeSelection(savedBackground.college);
-  const restoredWorkplace = restoreWorkplaceSelection(savedBackground);
+  const setProfile = useTenantStore((state) => state.setProfile);
+  const fetchProfile = useTenantStore((state) => state.fetchProfile);
+  const didHydrateFromProfile = useRef(false);
+
+  const initialBackground = mergeBackgroundWithTenantProfile(savedBackground, profile);
+  const restoredCollege = restoreCollegeSelection(initialBackground.college);
+  const restoredWorkplace = restoreWorkplaceSelection(initialBackground);
 
   const [college, setCollege] = useState(restoredCollege.college);
   const [customCollege, setCustomCollege] = useState(restoredCollege.customCollege);
@@ -41,6 +49,32 @@ export function MoveInBackgroundScreen() {
   const [customCompany, setCustomCompany] = useState(restoredWorkplace.customCompany);
   const [isSelfEmployed, setIsSelfEmployed] = useState(restoredWorkplace.isSelfEmployed);
   const [openField, setOpenField] = useState<OpenField>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    void fetchProfile();
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    if (didHydrateFromProfile.current || !profile) return;
+
+    const merged = mergeBackgroundWithTenantProfile(savedBackground, profile);
+    if (!merged.college && !merged.workplace) {
+      didHydrateFromProfile.current = true;
+      return;
+    }
+
+    const nextCollege = restoreCollegeSelection(merged.college);
+    const nextWorkplace = restoreWorkplaceSelection(merged);
+
+    setCollege((current) => current || nextCollege.college);
+    setCustomCollege((current) => current || nextCollege.customCollege);
+    setWorkplace((current) => current || nextWorkplace.workplace);
+    setCustomCompany((current) => current || nextWorkplace.customCompany);
+    setIsSelfEmployed((current) => current || nextWorkplace.isSelfEmployed);
+    setMoveInBackground(merged);
+    didHydrateFromProfile.current = true;
+  }, [profile, savedBackground, setMoveInBackground]);
 
   const resolvedCollege =
     college === MOVE_IN_OTHER_COLLEGE_LABEL ? customCollege.trim() : college.trim();
@@ -58,7 +92,7 @@ export function MoveInBackgroundScreen() {
     workEmailVerified: savedBackground.workEmailVerified,
   };
 
-  function handleSave() {
+  async function handleSave() {
     if (!resolvedCollege) {
       Alert.alert('College required', 'Please select where you studied.');
       return;
@@ -83,7 +117,35 @@ export function MoveInBackgroundScreen() {
       return;
     }
 
+    setSaving(true);
+    const response = await postUserDetails({
+      college: resolvedCollege,
+      company: resolvedWorkplace,
+    });
+    setSaving(false);
+
+    if (!response.success) {
+      Alert.alert(
+        'Unable to save',
+        response.message ?? 'Failed to save your details. Please try again.',
+      );
+      return;
+    }
+
     setMoveInBackground(draftBackground);
+
+    if (profile) {
+      setProfile({
+        ...profile,
+        college: resolvedCollege,
+        company: resolvedWorkplace,
+        userInfo: {
+          ...profile.userInfo,
+          college: resolvedCollege,
+          company: resolvedWorkplace,
+        },
+      });
+    }
 
     if (fromMenu) {
       if (router.canGoBack()) {
@@ -159,7 +221,8 @@ export function MoveInBackgroundScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Button
           label={fromMenu ? 'Save' : 'Save & Continue'}
-          onPress={handleSave}
+          onPress={() => void handleSave()}
+          loading={saving}
           disabled={!isMoveInBackgroundComplete(draftBackground)}
         />
       </View>

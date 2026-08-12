@@ -56,11 +56,14 @@ function SupportTicketList({
     [data],
   );
 
+  const refreshing = isRefetching && !isFetchingNextPage;
+
   function renderTicket({ item }: { item: SupportTicket }) {
     return <SupportTicketCard ticket={item} />;
   }
 
   function renderFooter() {
+    if (tickets.length === 0) return null;
     if (!hasNextPage && !isFetchingNextPage) return null;
     return (
       <View style={styles.footer}>
@@ -77,24 +80,21 @@ function SupportTicketList({
     );
   }
 
-  if (isLoading) {
-    return <TicketListSkeleton style={styles.loader} />;
-  }
+  function renderEmpty() {
+    if (isError) {
+      return (
+        <View style={styles.centered}>
+          <Typography variant="body" color={palette.textSecondary} style={styles.errorText}>
+            Unable to load tickets right now.
+          </Typography>
+          <Button label="Try again" onPress={() => void refetch()} style={styles.retry} />
+        </View>
+      );
+    }
 
-  if (isError) {
-    return (
-      <View style={styles.centered}>
-        <Typography variant="body" color={palette.textSecondary} style={styles.errorText}>
-          Unable to load tickets right now.
-        </Typography>
-        <Button label="Try again" onPress={() => void refetch()} style={styles.retry} />
-      </View>
-    );
-  }
-
-  if (tickets.length === 0) {
     return (
       <EmptyState
+        fill
         title={tabId === 'active' ? 'No active tickets yet' : 'No resolved tickets yet'}
         subtitle={
           tabId === 'active'
@@ -105,22 +105,28 @@ function SupportTicketList({
     );
   }
 
+  if (isLoading) {
+    return <TicketListSkeleton style={styles.loader} />;
+  }
+
   return (
     <FlatList
       data={tickets}
       keyExtractor={(item) => String(item.id)}
       renderItem={renderTicket}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ListEmptyComponent={renderEmpty}
       ListFooterComponent={renderFooter}
       contentContainerStyle={[styles.list, { paddingBottom: bottomPadding }]}
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled
       onEndReached={() => {
+        if (tickets.length === 0) return;
         if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
       }}
       onEndReachedThreshold={0.35}
       refreshControl={
-        <RefreshControl refreshing={isRefetching && !isFetchingNextPage} onRefresh={() => void refetch()} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => void refetch()} />
       }
     />
   );

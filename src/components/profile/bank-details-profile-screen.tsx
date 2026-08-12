@@ -163,7 +163,7 @@ export function BankDetailsProfileScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}>
           <ScrollView
-            contentContainerStyle={styles.scroll}
+            contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom, 12) }]}
             keyboardShouldPersistTaps="handled"
             automaticallyAdjustKeyboardInsets
             showsVerticalScrollIndicator={false}>
@@ -176,6 +176,7 @@ export function BankDetailsProfileScreen() {
                   onChangeText={(value) => updateField('name', value)}
                   error={errors.name}
                   autoCapitalize="words"
+                  containerStyle={styles.field}
                 />
                 <TextField
                   label="Account Number"
@@ -184,6 +185,7 @@ export function BankDetailsProfileScreen() {
                   onChangeText={(value) => updateField('accountNumber', value)}
                   error={errors.accountNumber}
                   keyboardType="number-pad"
+                  containerStyle={styles.field}
                 />
                 <TextField
                   label="Re- Enter Account Number"
@@ -192,6 +194,7 @@ export function BankDetailsProfileScreen() {
                   onChangeText={(value) => updateField('reEnterAccountNumber', value)}
                   error={errors.reEnterAccountNumber}
                   keyboardType="number-pad"
+                  containerStyle={styles.field}
                 />
                 <TextField
                   label="IFSC Code"
@@ -200,20 +203,21 @@ export function BankDetailsProfileScreen() {
                   onChangeText={(value) => updateField('ifscCode', value.toUpperCase())}
                   error={errors.ifscCode}
                   autoCapitalize="characters"
+                  containerStyle={styles.field}
                 />
               </View>
             ) : savedDetails ? (
               <BankDetailsCard details={savedDetails} />
             ) : null}
-          </ScrollView>
 
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-            {isEditing ? (
-              <Button label="Save Details" loading={saving} onPress={handleSave} />
-            ) : (
-              <Button label="Edit Details" onPress={handleEdit} />
-            )}
-          </View>
+            <View style={styles.footer}>
+              {isEditing ? (
+                <Button label="Save Details" loading={saving} onPress={handleSave} />
+              ) : (
+                <Button label="Edit Details" onPress={handleEdit} />
+              )}
+            </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       )}
     </ProfileStackScreen>
@@ -223,28 +227,29 @@ export function BankDetailsProfileScreen() {
 const styles = StyleSheet.create({
   screen: {
     backgroundColor: palette.gray[50],
+    paddingTop: 0,
   },
   flex: {
     flex: 1,
   },
   centered: {
-    marginTop: 24,
+    marginTop: 16,
   },
   scroll: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 24,
-    flexGrow: 1,
+    gap: 20,
   },
   form: {
-    gap: 20,
+    gap: 10,
+  },
+  field: {
+    gap: 4,
   },
   card: {
     backgroundColor: palette.white,
     borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: palette.gray[200],
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     shadowColor: '#101828',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -252,18 +257,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   row: {
-    paddingVertical: 16,
-    gap: 6,
+    paddingVertical: 12,
+    gap: 4,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: palette.gray[200],
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: palette.gray[200],
-    backgroundColor: palette.gray[50],
+    paddingTop: 4,
   },
 });

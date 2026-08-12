@@ -8,6 +8,34 @@ import {
 } from '@/constants/move-in-background';
 import { MOVE_IN_INTERESTS_MIN } from '@/constants/vibes';
 import type { MoveInBackground } from '@/types/move-in-background';
+import type { TenantProfile } from '@/types/tenant';
+
+export function getTenantCollege(profile?: TenantProfile | null) {
+  const value = profile?.userInfo?.college ?? profile?.college;
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+export function getTenantCompany(profile?: TenantProfile | null) {
+  const value = profile?.userInfo?.company ?? profile?.company;
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+/** Prefill move-in background from `hello/tenant/details` when local draft is empty. */
+export function mergeBackgroundWithTenantProfile(
+  background: MoveInBackground,
+  profile?: TenantProfile | null,
+): MoveInBackground {
+  const college = background.college.trim() || getTenantCollege(profile);
+  const workplace = background.workplace.trim() || getTenantCompany(profile);
+
+  return {
+    ...background,
+    college,
+    workplace,
+    isSelfEmployed:
+      background.isSelfEmployed || workplace === MOVE_IN_SELF_EMPLOYED_LABEL,
+  };
+}
 
 export function restoreCollegeSelection(savedCollege: string) {
   if (!savedCollege) {

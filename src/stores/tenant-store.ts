@@ -6,6 +6,7 @@ import { getTenantProfile } from '@/api/user';
 import { EMPTY_MOVE_IN_BACKGROUND } from '@/types/move-in-background';
 import type { MoveInBackground } from '@/types/move-in-background';
 import type { TenantProfile } from '@/types/tenant';
+import { mergeBackgroundWithTenantProfile } from '@/utils/move-in-background';
 
 type TenantState = {
   profile: TenantProfile | null;
@@ -44,7 +45,24 @@ export const useTenantStore = create<TenantState>()(
             set({ profile: null, profileLoaded: true });
             return;
           }
-          set({ profile: data, profileLoaded: true });
+
+          set((state) => {
+            const mergedBackground = mergeBackgroundWithTenantProfile(
+              state.moveInBackground,
+              data,
+            );
+            const shouldUpdateBackground =
+              mergedBackground.college !== state.moveInBackground.college ||
+              mergedBackground.workplace !== state.moveInBackground.workplace;
+
+            return {
+              profile: data,
+              profileLoaded: true,
+              ...(shouldUpdateBackground
+                ? { moveInBackground: mergedBackground }
+                : null),
+            };
+          });
         } catch {
           set({ profile: null, profileLoaded: true });
         }

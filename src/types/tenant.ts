@@ -9,6 +9,9 @@ export type TenantProfile = {
     image?: string | null;
     isVerified?: boolean;
     bookingStatus?: string;
+    /** From `hello/tenant/details` / `user/details`. */
+    college?: string | null;
+    company?: string | null;
   };
   userAddress?: Record<string, unknown>;
   userEmergencyContact?: Record<string, unknown>;
@@ -41,4 +44,7 @@ export type TenantProfile = {
     balanceCredits?: number;
     friendsJoined?: number;
   };
+  /** Some responses expose these at the root instead of `userInfo`. */
+  college?: string | null;
+  company?: string | null;
 };
