@@ -43,6 +43,15 @@ export function mapLocalityToNeighborhoodCard(
     locality.locality_name?.trim() ||
     'Locality';
   const nameKey = name.toLowerCase();
+  const photo =
+    locality.photo?.trim() ||
+    locality.cover_image?.trim() ||
+    locality.images?.[0]?.trim() ||
+    '';
+  const imageUri =
+    !photo || photo === 'null' || photo === 'undefined' || photo.includes('coming-soon')
+      ? null
+      : photo;
 
   const matching = properties.filter((property) => {
     const localityName = property.locality?.toLowerCase() ?? '';
@@ -54,11 +63,35 @@ export function mapLocalityToNeighborhoodCard(
     .map((property) => property.startingRent)
     .filter((rent) => typeof rent === 'number' && rent > 0);
 
+  const startingRent =
+    typeof locality.starting_rent === 'number' && locality.starting_rent > 0
+      ? locality.starting_rent
+      : rents.length > 0
+        ? Math.min(...rents)
+        : undefined;
+
+  const propertyCount =
+    typeof locality.no_of_properties === 'number' && locality.no_of_properties > 0
+      ? locality.no_of_properties
+      : matching.length > 0
+        ? matching.length
+        : undefined;
+
   return {
     id: String(locality.id ?? locality.slug ?? nameKey),
     name,
-    imageUri: locality.cover_image || locality.images?.[0] || null,
-    startingRent: rents.length > 0 ? Math.min(...rents) : undefined,
-    propertyCount: matching.length > 0 ? matching.length : undefined,
+    imageUri,
+    startingRent,
+    propertyCount,
   };
+}
+
+export function formatNeighborhoodMeta(item: NeighborhoodCard) {
+  const propertyCount = item.propertyCount ?? 0;
+  if (propertyCount <= 0) return 'View properties';
+
+  const countLabel = `${propertyCount} ${propertyCount === 1 ? 'Property' : 'Properties'}`;
+  if (item.startingRent == null || item.startingRent <= 0) return countLabel;
+
+  return `Starting ₹${item.startingRent.toLocaleString('en-IN')} | ${countLabel}`;
 }

@@ -1,10 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -23,6 +21,7 @@ import { Typography } from '@/components/ui/typography';
 import { fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
+import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import type { MoveInChecklistItems } from '@/types/move-in-checklist';
 import {
   extractFeedbackComments,
@@ -35,9 +34,11 @@ type ScreenStatus = 'loading' | 'form' | 'submitting' | 'submitted' | 'approved'
 
 export function MoveInChecklistScreen() {
   const insets = useSafeAreaInsets();
+  const footerInset = useKeyboardBottomInset(Math.max(insets.bottom, 16));
   const queryClient = useQueryClient();
   const profile = useTenantProfile();
   const bookingId = profile?.bookingId ?? '';
+  const scrollRef = useRef<ScrollView>(null);
 
   const [screenStatus, setScreenStatus] = useState<ScreenStatus>('loading');
   const [checklist, setChecklist] = useState<MoveInChecklistItems | null>(null);
@@ -74,6 +75,14 @@ export function MoveInChecklistScreen() {
   useEffect(() => {
     void fetchChecklist();
   }, [fetchChecklist]);
+
+  useEffect(() => {
+    if (footerInset <= Math.max(insets.bottom, 16)) return;
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [footerInset, insets.bottom]);
 
   function updateChecklistItem(sectionKey: string, itemKey: string, value: boolean) {
     setChecklist((current) => {
@@ -146,11 +155,9 @@ export function MoveInChecklistScreen() {
 
   return (
     <ProfileStackScreen title="Move-in Checklist" centerTitle style={styles.screen}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
+      <View style={styles.flex}>
         <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled">
@@ -183,6 +190,11 @@ export function MoveInChecklistScreen() {
                 numberOfLines={4}
                 textAlignVertical="top"
                 style={styles.feedbackInput}
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollRef.current?.scrollToEnd({ animated: true });
+                  }, 80);
+                }}
               />
             </View>
           </View>
@@ -194,7 +206,7 @@ export function MoveInChecklistScreen() {
             style={styles.footerFade}
             pointerEvents="none"
           />
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <View style={[styles.footer, { paddingBottom: footerInset }]}>
             <Typography variant="text" size="xs" color={palette.gray[500]} style={styles.footerNote}>
               You can update your checklist until your Property Manager approves it.
             </Typography>
@@ -205,7 +217,7 @@ export function MoveInChecklistScreen() {
             />
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </ProfileStackScreen>
   );
 }
@@ -230,7 +242,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     paddingTop: 4,
-    paddingBottom: 160,
+    paddingBottom: 24,
     gap: 24,
   },
   banner: {
@@ -268,10 +280,7 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   footerWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+    backgroundColor: palette.white,
   },
   footerFade: {
     height: 28,

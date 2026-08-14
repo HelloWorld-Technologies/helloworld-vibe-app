@@ -35,7 +35,7 @@ export function DashboardPmCard({ name, phone, photoUrl, onCallPress }: Dashboar
       </View>
       {phone ? (
         <Pressable style={styles.callButton} onPress={onCallPress} accessibilityRole="button">
-          <DashboardIcon name="call" size={18} color={palette.white} />
+          <DashboardIcon name="call" size={22} color={palette.white} />
         </Pressable>
       ) : null}
     </View>

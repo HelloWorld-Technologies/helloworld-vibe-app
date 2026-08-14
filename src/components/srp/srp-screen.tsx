@@ -23,8 +23,8 @@ import { CityDetailsTab, SrpContactBar } from '@/components/srp/locality-details
 import { LocalityRatingsGrid } from '@/components/srp/locality-ratings-grid';
 import { SrpFiltersSheet } from '@/components/srp/srp-filters-sheet';
 import {
-  nextSortOption,
   SrpFilterSortBar,
+  SrpSortSheet,
   type SortOption,
 } from '@/components/srp/srp-filter-sort-bar';
 import { SrpTabToggle, type SrpTab } from '@/components/srp/srp-tab-toggle';
@@ -86,8 +86,10 @@ export function SrpScreen() {
       .filter((id) => Number.isFinite(id) && id > 0);
   }, [debouncedVibeKey]);
   const vibesPending = vibeKey !== debouncedVibeKey;
-  const [sort, setSort] = useState<SortOption>('distance');
+  const [sort, setSort] = useState<SortOption>('popularity');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [failedHeroUri, setFailedHeroUri] = useState<string | null>(null);
   const scrollY = useSharedValue(0);
   const filters = useSrpFiltersStore((state) => state.filters);
   const setFilters = useSrpFiltersStore((state) => state.setFilters);
@@ -113,23 +115,33 @@ export function SrpScreen() {
   }, [activeTab, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const firstPage = data?.pages[0];
+  const localityInfo = firstPage?.localityInfo ?? null;
   const properties = useMemo(
     () => data?.pages.flatMap((page) => page.listings) ?? [],
     [data],
   );
   const nearByProperties = isCityOnly ? [] : (firstPage?.nearByListings ?? []);
   const totalCount = firstPage?.pageInfo?.total ?? properties.length;
+  const localityRent = localityInfo?.starting_rent;
   const minRent = properties.reduce(
     (min, property) => (property.startingRent > 0 ? Math.min(min, property.startingRent) : min),
     Number.POSITIVE_INFINITY,
   );
+  const startingPriceValue =
+    typeof localityRent === 'number' && localityRent > 0
+      ? localityRent
+      : Number.isFinite(minRent) && minRent > 0
+        ? minRent
+        : null;
   const startingPrice =
-    Number.isFinite(minRent) && minRent > 0
-      ? `₹${minRent.toLocaleString('en-IN')}`
+    startingPriceValue != null
+      ? `₹${startingPriceValue.toLocaleString('en-IN')}`
       : '₹9,000';
 
-  const title = isCityOnly ? city : `${locality}, ${city}`;
-  const headerTitle = locality ?? city;
+  const localityLabel = localityInfo?.display_name?.trim() || locality;
+  const title = isCityOnly ? city : `${localityLabel}, ${city}`;
+  const headerTitle = localityLabel ?? city;
+  const coverImage = localityInfo?.cover_image?.trim() || null;
   const listHeading = isCityOnly
     ? `${totalCount} Coliving PGs in ${city}`
     : `${totalCount} Coliving PGs Near ${title}`;
@@ -163,7 +175,18 @@ export function SrpScreen() {
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: scrollBottomPadding }}>
         <View style={[styles.hero, { height: HERO_HEIGHT }]}>
-          <Image source={ImageAssets.loginBento1} style={styles.heroImage} contentFit="cover" />
+          <Image
+            source={
+              coverImage && failedHeroUri !== coverImage
+                ? { uri: coverImage }
+                : ImageAssets.loginBento1
+            }
+            style={styles.heroImage}
+            contentFit="cover"
+            onError={() => {
+              if (coverImage) setFailedHeroUri(coverImage);
+            }}
+          />
           <LinearGradient
             colors={['rgba(0,0,0,0.59)', 'rgba(255,255,255,0)']}
             locations={[0.08, 0.41]}
@@ -179,7 +202,7 @@ export function SrpScreen() {
             <Typography variant="text" size="sm" weight="medium" color={palette.gray[900]}>
               Starting {startingPrice} | {totalCount} Properties
             </Typography>
-            <LocalityRatingsGrid />
+            <LocalityRatingsGrid ratings={localityInfo?.ratings} />
           </View>
 
           <SrpTabToggle
@@ -287,6 +310,7 @@ export function SrpScreen() {
             <CityDetailsTab
               locality={locality}
               city={city}
+              localityInfo={localityInfo}
               onSelectLocality={() => setActiveTab('properties')}
             />
           )}
@@ -316,15 +340,22 @@ export function SrpScreen() {
           sort={sort}
           activeFilterCount={activeFilterCount}
           onPressFilters={handlePressFilters}
-          onPressSort={() => setSort((current) => nextSortOption(current))}
+          onPressSort={() => setSortOpen(true)}
         />
       ) : (
         <SrpContactBar
-          propertyName={locality ?? city}
+          propertyName={localityLabel ?? city}
           location={title}
           city={city}
         />
       )}
+
+      <SrpSortSheet
+        visible={sortOpen}
+        sort={sort}
+        onClose={() => setSortOpen(false)}
+        onSelect={setSort}
+      />
 
       <SrpFiltersSheet
         visible={filtersOpen}

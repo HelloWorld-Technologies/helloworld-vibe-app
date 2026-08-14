@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   RefreshControl,
   ScrollView,
@@ -87,6 +87,16 @@ export function TicketDetailsScreen() {
       return () => clearTimeout(timer);
     }
   }, [loading, visibleConversations.length]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const subscription = Keyboard.addListener(showEvent, () => {
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 50);
+    });
+    return () => subscription.remove();
+  }, []);
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -173,10 +183,7 @@ export function TicketDetailsScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
+      <View style={styles.flex}>
         {loading ? (
           <ChatThreadSkeleton style={styles.loader} />
         ) : (
@@ -184,7 +191,6 @@ export function TicketDetailsScreen() {
             ref={scrollRef}
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
-            automaticallyAdjustKeyboardInsets
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             showsVerticalScrollIndicator={false}>
             {visibleConversations.length > 0 ? (
@@ -216,7 +222,7 @@ export function TicketDetailsScreen() {
             sending={sending}
           />
         )}
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }

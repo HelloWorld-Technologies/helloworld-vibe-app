@@ -1,41 +1,23 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { HwCarousel } from '@/components/ui/carousel';
 import { Typography } from '@/components/ui/typography';
-import {
-  HDP_DUMMY_CATEGORY_RATINGS,
-  HDP_DUMMY_REVIEWS,
-  type HdpReview,
-} from '@/constants/hdp';
+import { type HdpReview } from '@/constants/hdp';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
+import type { HdpReviewCategory, HdpReviewSummary } from '@/utils/hdp-reviews';
 
 const REVIEW_CARD_GAP = 12;
 const REVIEW_CAROUSEL_HEIGHT = 148;
 
-type CategoryRating = {
-  label: string;
-  score: number;
-};
-
 type HdpReviewsSectionProps = {
-  rating: number;
-  reviewCount: number;
-  recommendPercent?: number;
-  categoryRatings?: CategoryRating[];
+  summary?: HdpReviewSummary | null;
   reviews?: HdpReview[];
   carouselWidth: number;
 };
-
-function getRatingLabel(rating: number) {
-  if (rating >= 4.5) return 'Exceptional';
-  if (rating >= 4.0) return 'Great';
-  if (rating >= 3.5) return 'Good';
-  return 'Fair';
-}
 
 function RecommendRing({ percent, size = 72 }: { percent: number; size?: number }) {
   const strokeWidth = 5;
@@ -78,7 +60,7 @@ function RecommendRing({ percent, size = 72 }: { percent: number; size?: number 
   );
 }
 
-function CategoryRatingRow({ label, score }: CategoryRating) {
+function CategoryRatingRow({ label, score }: HdpReviewCategory) {
   const fillRatio = Math.min(Math.max(score / 5, 0), 1);
 
   return (
@@ -138,15 +120,18 @@ function ReviewCard({ review, width }: { review: HdpReview; width: number }) {
 }
 
 export function HdpReviewsSection({
-  rating,
-  reviewCount,
-  recommendPercent = 95,
-  categoryRatings = [...HDP_DUMMY_CATEGORY_RATINGS],
-  reviews = HDP_DUMMY_REVIEWS,
+  summary,
+  reviews = [],
   carouselWidth,
 }: HdpReviewsSectionProps) {
+  const hasSummary = summary != null;
+  const hasReviews = reviews.length > 0;
+  if (!hasSummary && !hasReviews) return null;
+
   const reviewCardWidth = carouselWidth - REVIEW_CARD_GAP;
   const slideWidth = carouselWidth;
+  const rating = summary?.rating;
+  const googleLink = summary?.googleLink;
 
   return (
     <View style={styles.section}>
@@ -154,65 +139,84 @@ export function HdpReviewsSection({
         <Typography variant="text" size="xl" weight="bold">
           What Residents Say
         </Typography>
-        <View style={styles.ratingBadge}>
-          <Typography variant="text" size="xs" weight="medium" color={palette.blue[700]}>
-            {rating.toFixed(1)}★ Rating
-          </Typography>
-        </View>
+        {typeof rating === 'number' && Number.isFinite(rating) ? (
+          <View style={styles.ratingBadge}>
+            <Typography variant="text" size="xs" weight="medium" color={palette.blue[700]}>
+              {rating.toFixed(1)}★ Rating
+            </Typography>
+          </View>
+        ) : null}
       </View>
 
-      <LinearGradient
-        colors={[palette.blue[50], palette.white]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.summaryCard}>
-        <View style={styles.summaryTop}>
-          <View style={styles.summaryLeft}>
-            <View style={styles.ratingValueRow}>
-              <Typography variant="display" size="sm" weight="bold" color={palette.gray[900]}>
-                {rating.toFixed(1)}
+      {summary ? (
+        <LinearGradient
+          colors={[palette.blue[50], palette.white]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.summaryCard}>
+          <View style={styles.summaryTop}>
+            <View style={styles.summaryLeft}>
+              <View style={styles.ratingValueRow}>
+                <Typography variant="display" size="sm" weight="bold" color={palette.gray[900]}>
+                  {Number.isFinite(summary.rating) ? summary.rating.toFixed(1) : '—'}
+                </Typography>
+                <Typography variant="text" size="xl" color={palette.yellow[500]}>
+                  ★
+                </Typography>
+              </View>
+              <Typography variant="text" size="sm" weight="bold" color={palette.gray[900]}>
+                {summary.label}
               </Typography>
-              <Typography variant="text" size="xl" color={palette.yellow[500]}>
-                ★
+              <Typography variant="text" size="xs" color={palette.gray[500]}>
+                Based on {summary.reviewCount} reviews
               </Typography>
             </View>
-            <Typography variant="text" size="sm" weight="bold" color={palette.gray[900]}>
-              {getRatingLabel(rating)}
-            </Typography>
-            <Typography variant="text" size="xs" color={palette.gray[500]}>
-              Based on {reviewCount} reviews
-            </Typography>
+
+            <View style={styles.summaryDivider} />
+
+            <View style={styles.summaryRight}>
+              <RecommendRing percent={summary.recommendPercent} />
+              <Typography variant="text" size="xs" color={palette.gray[600]} style={styles.recommendCopy}>
+                Residents would recommend to a friend
+              </Typography>
+            </View>
           </View>
 
-          <View style={styles.summaryDivider} />
+          {summary.categories.length > 0 ? (
+            <View style={styles.categoryList}>
+              {summary.categories.map((item) => (
+                <CategoryRatingRow key={item.label} {...item} />
+              ))}
+            </View>
+          ) : null}
+        </LinearGradient>
+      ) : null}
 
-          <View style={styles.summaryRight}>
-            <RecommendRing percent={recommendPercent} />
-            <Typography variant="text" size="xs" color={palette.gray[600]} style={styles.recommendCopy}>
-              Residents would recommend to a friend
-            </Typography>
-          </View>
-        </View>
+      {hasReviews ? (
+        <HwCarousel
+          data={reviews}
+          width={slideWidth}
+          height={REVIEW_CAROUSEL_HEIGHT}
+          showPagination
+          style={styles.carousel}
+          renderItem={({ item }) => (
+            <View style={[styles.reviewSlide, { width: slideWidth }]}>
+              <ReviewCard review={item} width={reviewCardWidth} />
+            </View>
+          )}
+        />
+      ) : null}
 
-        <View style={styles.categoryList}>
-          {categoryRatings.map((item) => (
-            <CategoryRatingRow key={item.label} {...item} />
-          ))}
-        </View>
-      </LinearGradient>
-
-      <HwCarousel
-        data={reviews}
-        width={slideWidth}
-        height={REVIEW_CAROUSEL_HEIGHT}
-        showPagination
-        style={styles.carousel}
-        renderItem={({ item }) => (
-          <View style={[styles.reviewSlide, { width: slideWidth }]}>
-            <ReviewCard review={item} width={reviewCardWidth} />
-          </View>
-        )}
-      />
+      {googleLink ? (
+        <Pressable
+          onPress={() => void Linking.openURL(googleLink)}
+          accessibilityRole="link"
+          accessibilityLabel="Show all Google reviews">
+          <Typography variant="text" size="sm" weight="medium" color={palette.lime[600]}>
+            Show all Google reviews
+          </Typography>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

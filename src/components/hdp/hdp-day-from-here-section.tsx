@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
+import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import type { HdpDayCard } from '@/types/hdp-nearby';
@@ -16,6 +17,14 @@ type HdpDayFromHereSectionProps = {
   cards: HdpDayCard[];
 };
 
+function resolveCardImageSource(imageUri?: string | number) {
+  if (typeof imageUri === 'number') return imageUri;
+  if (typeof imageUri === 'string' && imageUri.trim().length > 0) {
+    return { uri: imageUri.trim() };
+  }
+  return ImageAssets.comingSoon;
+}
+
 function DayCard({
   card,
   selectedIndex,
@@ -26,7 +35,12 @@ function DayCard({
   onPressLink: () => void;
 }) {
   const active = card.options[selectedIndex] ?? card.options[0];
-  const imageSource = active?.imageUri ?? card.imageUri;
+  const imageUri = active?.imageUri ?? card.imageUri;
+  const [failedUri, setFailedUri] = useState<string | null>(null);
+  const imageSource =
+    typeof imageUri === 'string' && failedUri === imageUri
+      ? ImageAssets.comingSoon
+      : resolveCardImageSource(imageUri);
 
   return (
     <View style={styles.card}>
@@ -36,11 +50,15 @@ function DayCard({
         </Typography>
       </View>
 
-      {imageSource ? (
-        <Image source={imageSource} style={styles.cardImage} contentFit="cover" />
-      ) : (
-        <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
-      )}
+      <Image
+        key={String(imageUri ?? 'coming-soon')}
+        source={imageSource}
+        style={styles.cardImage}
+        contentFit="cover"
+        onError={() => {
+          if (typeof imageUri === 'string') setFailedUri(imageUri);
+        }}
+      />
 
       <Typography variant="text" size="md" weight="bold" style={styles.placeName}>
         {active?.placeName ?? card.placeName}
@@ -218,11 +236,8 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     width: '100%',
-    height: 88,
+    height: 120,
     borderRadius: Radius.sm,
-  },
-  cardImagePlaceholder: {
-    backgroundColor: palette.blue[50],
   },
   placeName: {
     color: palette.gray[900],

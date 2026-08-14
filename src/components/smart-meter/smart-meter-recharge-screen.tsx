@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { rechargeSmartMeter } from '@/api/smart-meter';
+import { rechargeSmartMeter, resolveSmartMeterBookingId } from '@/api/smart-meter';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { SmartMeterRoomSkeleton } from '@/components/skeleton';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
@@ -30,7 +30,7 @@ export function SmartMeterRechargeScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const profile = useTenantProfile();
-  const bookingId = profile?.bookingId;
+  const bookingId = resolveSmartMeterBookingId(profile?.bookingId);
   const propertyId = profile?.propertyInfo?.propertyId;
 
   const { data: rooms = [], isLoading, isError, refetch, isRefetching } =
@@ -170,7 +170,7 @@ export function SmartMeterRechargeScreen() {
                 </Typography>
               </View>
 
-              {!room.blocked ? (
+              {!room.blocked || room.blockingReason === 'negativeBalance' ? (
                 <Button label="Recharge meter" onPress={() => openRecharge(room)} />
               ) : null}
             </View>

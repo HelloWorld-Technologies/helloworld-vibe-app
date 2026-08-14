@@ -197,18 +197,24 @@ export function HdpBookRoomSelection({
       />
 
       <Animated.View key={selectedOccupancy} entering={FadeIn.duration(200)} style={styles.roomList}>
-        {rooms.map((room, index) => (
-          <RoomTypeRow
-            key={room.id}
-            room={room}
-            index={index}
-            selected={room.id === selectedRoomId}
-            onSelect={() => onRoomSelect(room.id)}
-          />
-        ))}
+        {rooms.length > 0 ? (
+          rooms.map((room, index) => (
+            <RoomTypeRow
+              key={room.id}
+              room={room}
+              index={index}
+              selected={room.id === selectedRoomId}
+              onSelect={() => onRoomSelect(room.id)}
+            />
+          ))
+        ) : (
+          <Typography variant="text" size="sm" color={palette.gray[500]} style={styles.emptyRooms}>
+            No room types available for this occupancy.
+          </Typography>
+        )}
       </Animated.View>
 
-      <Button label="Book Now" onPress={onBookNow} style={styles.cta} />
+      <Button label="Book Now" onPress={onBookNow} disabled={rooms.length === 0} style={styles.cta} />
 
       <Typography variant="text" size="xs" color={palette.gray[500]} style={styles.disclaimer}>
         Full Refund of Security Deposit requires a minimum {minStayMonths}-month stay.
@@ -238,6 +244,9 @@ const styles = StyleSheet.create({
     gap: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: palette.gray[200],
+  },
+  emptyRooms: {
+    paddingVertical: 16,
   },
   roomRow: {
     gap: 8,

@@ -112,7 +112,7 @@ export function MoveOutFormView({
             </Typography>
             <Button
               label="Help me stay"
-              onPress={() => router.push('/(tabs)/support')}
+              onPress={() => router.navigate('/(tabs)/support')}
               style={styles.stayButton}
             />
           </View>

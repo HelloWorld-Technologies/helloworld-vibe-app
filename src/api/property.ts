@@ -212,7 +212,15 @@ export function mapApiPropertyToListing(property: ApiProperty) {
     property.sharing_types?.map(titleCase) ??
     ['Private', 'Double', 'Triple'];
 
-  const locality = property.locality || property.address?.locality || undefined;
+  const localityFromLine2 = property.address?.line2
+    ?.split(',')
+    .pop()
+    ?.trim();
+  const locality =
+    property.locality ||
+    property.address?.locality ||
+    localityFromLine2 ||
+    undefined;
   const city = property.city || property.address?.city || undefined;
   const location =
     property.address?.line2 ||
@@ -223,10 +231,11 @@ export function mapApiPropertyToListing(property: ApiProperty) {
   return {
     id: String(property.id),
     name: property.display_name ?? property.name ?? 'HelloWorld Property',
+    slugName: property.name,
     location,
     city,
     locality,
-    rating: property.rating ?? property.google_rating ?? 4.5,
+    rating: Number(property.rating ?? property.google_rating) || 4.5,
     vibeMatchPercent: parseVibeMatchScore(
       property.vibe_match_score ?? property.vibe_match ?? property.vibeMatch,
     ),

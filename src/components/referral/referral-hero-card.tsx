@@ -125,8 +125,10 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 8,
-    paddingRight: 96,
+    paddingRight: 88,
     zIndex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
   headline: {
     flexDirection: 'row',
@@ -153,6 +155,7 @@ const styles = StyleSheet.create({
   },
   codeBox: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -173,10 +176,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   illustration: {
-    width: 120,
-    height: 140,
+    width: 96,
+    height: 118,
     position: 'absolute',
-    right: 0,
+    right: -4,
     bottom: 0,
   },
 });

@@ -9,7 +9,7 @@ import { useIsTablet } from '@/hooks/use-is-tablet';
 import type { PropertyListing } from '@/types/property';
 
 const ITEM_GAP = 10;
-const PROPERTY_CAROUSEL_HEIGHT = 540;
+const PROPERTY_CAROUSEL_HEIGHT = 488;
 const PARALLAX_MODE_CONFIG = {
   parallaxScrollingScale: 0.92,
   parallaxScrollingOffset: 28,

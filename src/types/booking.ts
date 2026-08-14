@@ -19,6 +19,7 @@ export type OccupantDetails = {
 export type PropertyCategory = {
   id: number | string;
   name: string;
+  display_name?: string;
   inventory_type?: string;
   rent?: number;
   private_rent?: number;
@@ -26,7 +27,13 @@ export type PropertyCategory = {
   private_offer_rent?: number;
   amenities?: string[];
   features?: string[];
+  key_feature?: string[];
   facing?: string;
   balcony?: boolean;
   attached_bathroom?: boolean;
+  beds_per_room?: number;
+  maximum_occupancy?: number;
+  show_to_ui?: boolean;
+  is_removed?: boolean;
+  sold_out?: boolean;
 };

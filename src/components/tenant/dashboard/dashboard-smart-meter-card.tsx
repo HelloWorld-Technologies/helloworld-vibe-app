@@ -3,7 +3,7 @@ import { HwSymbol } from '@/components/ui/hw-symbol';
 import type { PlatformSymbolName } from '@/constants/symbols';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { getSmartMeterBalance } from '@/api/smart-meter';
+import { getSmartMeterBalance, resolveSmartMeterBookingId } from '@/api/smart-meter';
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -51,7 +51,7 @@ export function DashboardSmartMeterCard() {
   const router = useRouter();
   const isTablet = useIsTablet();
   const profile = useTenantProfile();
-  const bookingId = profile?.bookingId;
+  const bookingId = resolveSmartMeterBookingId(profile?.bookingId);
   const { data: rooms = [], isLoading } = useSmartMeterRooms(bookingId);
   const balance = rooms.length > 0 ? getSmartMeterBalance(rooms) : null;
 

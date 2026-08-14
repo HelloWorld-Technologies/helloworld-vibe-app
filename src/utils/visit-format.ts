@@ -1,4 +1,5 @@
 import type { PropertyVisit, VisitStatus } from '@/types/visit';
+import { resolveMapsUrl } from '@/utils/maps';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as const;
 
@@ -43,7 +44,11 @@ export function getVisitEndTime(visit: PropertyVisit) {
 }
 
 export function getVisitDirectionsUrl(visit: PropertyVisit) {
-  return visit.Sav_Location ?? visit.sav_location;
+  const raw = visit.Sav_Location ?? visit.sav_location;
+  const fallback = [getVisitPropertyName(visit), getVisitLocality(visit)]
+    .filter((part) => typeof part === 'string' && part.trim().length > 0)
+    .join(', ');
+  return resolveMapsUrl(raw, fallback);
 }
 
 export function getVisitMeetingUrl(visit: PropertyVisit) {

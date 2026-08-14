@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { resolveSmartMeterBookingId } from '@/api/smart-meter';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { PaymentListSkeleton } from '@/components/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -24,7 +25,7 @@ function parseAmount(value: string | null | undefined) {
 export function SmartMeterHistoryScreen() {
   const insets = useSafeAreaInsets();
   const profile = useTenantProfile();
-  const bookingId = profile?.bookingId;
+  const bookingId = resolveSmartMeterBookingId(profile?.bookingId);
   const { data: history = [], isLoading, isError, refetch, isRefetching } =
     useSmartMeterPaymentHistory(bookingId);
 
@@ -64,7 +65,7 @@ export function SmartMeterHistoryScreen() {
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />
           }>
-          <Typography variant="text" size="sm" color={palette.gray[600]}>
+          <Typography variant="text" size="sm" color={palette.textSecondary}>
             Successful smart meter recharges for your booking
           </Typography>
 
@@ -72,12 +73,15 @@ export function SmartMeterHistoryScreen() {
             const isSuccess = tx.status?.toUpperCase() === 'SUCCESS';
             return (
               <View key={tx.id} style={styles.card}>
-                <View style={styles.row}>
-                  <Typography variant="text" size="md" weight="bold">
+                <View style={styles.headerRow}>
+                  <Typography variant="text" size="md" weight="bold" color={palette.textPrimary}>
                     {priceFormatter(parseAmount(tx.amount))}
                   </Typography>
                   <View
-                    style={[styles.statusBadge, isSuccess ? styles.statusSuccess : styles.statusMuted]}>
+                    style={[
+                      styles.statusBadge,
+                      isSuccess ? styles.statusSuccess : styles.statusMuted,
+                    ]}>
                     <Typography
                       variant="label"
                       size="xs"
@@ -88,31 +92,27 @@ export function SmartMeterHistoryScreen() {
                   </View>
                 </View>
 
-                <View style={styles.metaRow}>
-                  <Typography variant="text" size="sm" color={palette.gray[500]}>
-                    Balance before
-                  </Typography>
-                  <Typography variant="text" size="sm" weight="medium">
-                    {priceFormatter(parseAmount(tx.balance_before))}
-                  </Typography>
-                </View>
-
-                {tx.balance_after != null ? (
-                  <View style={styles.metaRow}>
-                    <Typography variant="text" size="sm" color={palette.gray[500]}>
-                      Balance after
+                <View style={styles.balanceBlock}>
+                  <View style={styles.balanceItem}>
+                    <Typography variant="label" size="xs" color={palette.textPlaceholder}>
+                      Before
                     </Typography>
-                    <Typography variant="text" size="sm" weight="medium">
-                      {priceFormatter(parseAmount(tx.balance_after))}
+                    <Typography variant="text" size="sm" weight="medium" color={palette.textPrimary}>
+                      {priceFormatter(parseAmount(tx.balance_before))}
                     </Typography>
                   </View>
-                ) : null}
-
-                {tx.recharge_source ? (
-                  <Typography variant="label" size="xs" color={palette.gray[500]}>
-                    Source: {tx.recharge_source}
-                  </Typography>
-                ) : null}
+                  <View style={styles.balanceDivider} />
+                  <View style={styles.balanceItem}>
+                    <Typography variant="label" size="xs" color={palette.textPlaceholder}>
+                      After
+                    </Typography>
+                    <Typography variant="text" size="sm" weight="medium" color={palette.textPrimary}>
+                      {tx.balance_after != null
+                        ? priceFormatter(parseAmount(tx.balance_after))
+                        : '—'}
+                    </Typography>
+                  </View>
+                </View>
               </View>
             );
           })}
@@ -144,17 +144,18 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    gap: 12,
+    gap: 10,
   },
   card: {
     backgroundColor: palette.white,
     borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: palette.gray[200],
-    padding: 16,
-    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 10,
   },
-  row: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -171,10 +172,22 @@ const styles = StyleSheet.create({
   statusMuted: {
     backgroundColor: palette.gray[100],
   },
-  metaRow: {
+  balanceBlock: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    backgroundColor: palette.gray[50],
+    borderRadius: Radius.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  balanceItem: {
+    flex: 1,
+    gap: 2,
+  },
+  balanceDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: palette.gray[200],
+    marginHorizontal: 12,
   },
 });

@@ -2,40 +2,75 @@ import { Share } from 'react-native';
 
 import config from '@/config';
 
-function toSlug(value: string) {
+/** Matches helloworld-next `createSlug`: lowercase, spaces → hyphens. */
+function createSlug(value: string) {
   return value
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
+    .split(/\s+/)
+    .join('-')
+    .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
 
+/** Matches helloworld-next `getLocalitySlug` / `srpSlug`. */
+function localityToSlug(value: string) {
+  return value
+    .trim()
+    .replace(/ /g, '-')
+    .replace(/_/g, '-')
+    .toLowerCase()
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function localityFromLine2(line2?: string | null) {
+  if (!line2?.trim()) return '';
+  const last = line2.split(',').pop()?.trim() ?? '';
+  return last ? localityToSlug(last) : '';
+}
+
+function srpSlug(city: string) {
+  const cityKey = city.trim().toLowerCase();
+  if (cityKey === 'kota') return 'hostels-in-kota';
+  return `coliving-in-${cityKey}`;
+}
+
+/**
+ * Website HDP URL, same shape as helloworld-next `getPropertyHref`:
+ * `/coliving-in-{city}/{locality}/{property-name}`
+ * e.g. https://staging.thehelloworld.com/coliving-in-bangalore/hsr-layout/helloworld-arden
+ */
 export function getPropertyShareUrl(params: {
   id?: string | number;
   name?: string;
+  displayName?: string;
   city?: string;
   locality?: string;
+  addressLine2?: string;
 }) {
-  const citySlug = params.city ? toSlug(params.city) : '';
-  const localitySlug = params.locality ? toSlug(params.locality) : '';
-  const propertySlug = params.name ? toSlug(params.name) : '';
+  const city = params.city?.trim() ?? '';
+  const hdp = createSlug(params.name || params.displayName || '');
+  const locality =
+    (params.locality ? localityToSlug(params.locality) : '') ||
+    localityFromLine2(params.addressLine2);
 
-  if (citySlug && localitySlug && propertySlug) {
-    return `${config.PUBLIC_URL}/coliving-in-${citySlug}/${localitySlug}/${propertySlug}`;
+  if (!city || !hdp) {
+    return config.PUBLIC_URL;
   }
 
-  if (params.id != null && params.id !== '') {
-    return `${config.PUBLIC_URL}/coliving-pg/${params.id}`;
-  }
-
-  return config.PUBLIC_URL;
+  const srp = srpSlug(city);
+  const path = locality ? `/${srp}/${locality}/${hdp}` : `/${srp}/${hdp}`;
+  return `${config.PUBLIC_URL}${path}`;
 }
 
 export async function shareProperty(params: {
   name: string;
   id?: string;
+  displayName?: string;
   city?: string;
   locality?: string;
+  addressLine2?: string;
   url?: string;
 }) {
   const url =
@@ -43,10 +78,12 @@ export async function shareProperty(params: {
     getPropertyShareUrl({
       id: params.id,
       name: params.name,
+      displayName: params.displayName,
       city: params.city,
       locality: params.locality,
+      addressLine2: params.addressLine2,
     });
-  const message = `Check out ${params.name} on HelloWorld\n${url}`;
+  const message = `Check out ${params.displayName || params.name} on HelloWorld\n${url}`;
   await Share.share({ message }).catch(() => undefined);
 }
 

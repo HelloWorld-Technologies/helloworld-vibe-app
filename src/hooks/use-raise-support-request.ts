@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { router as expoRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import { getKbCategories, postCreateTicket } from '@/api/tickets';
@@ -9,7 +9,6 @@ import { useTenantProfile } from '@/stores/tenant-store';
 import type { RaiseSupportRequestPayload } from '@/types/ticket';
 
 export function useRaiseSupportRequest() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const profile = useTenantProfile();
   const selectedCity = useAuthStore((state) => state.selectedCity);
@@ -31,7 +30,12 @@ export function useRaiseSupportRequest() {
     async (payload: RaiseSupportRequestPayload) => {
       if (payload.category === 'move-out') {
         setSheetVisible(false);
-        router.push('/profile/move-out');
+        setTimeout(() => {
+          expoRouter.push({
+            pathname: '/profile/move-out',
+            params: { from: 'support' },
+          });
+        }, 360);
         return;
       }
 
@@ -59,7 +63,7 @@ export function useRaiseSupportRequest() {
       await queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
       return result.ticketNumber;
     },
-    [profile, queryClient, router, selectedCity],
+    [profile, queryClient, selectedCity],
   );
 
   return {

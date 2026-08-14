@@ -8,6 +8,7 @@ export type SmartMeterRoom = {
   meb: number;
   balance: number;
   blocked: boolean;
+  blockingReason?: string;
   devices: unknown[];
   minRecharge: number;
   devicesStatus: unknown[];

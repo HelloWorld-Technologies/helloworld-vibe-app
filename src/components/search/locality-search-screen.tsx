@@ -195,7 +195,7 @@ export function LocalitySearchScreen() {
             </Animated.View>
             {localities.map((item, index) => (
               <SearchResultRow
-                key={item}
+                key={`${item}-${index}`}
                 index={index}
                 label={item}
                 icon="mappin.and.ellipse"

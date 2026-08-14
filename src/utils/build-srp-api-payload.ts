@@ -56,15 +56,10 @@ export function buildSrpApiFilter(
 export function buildSrpApiSorting(
   sort: SortOption,
 ): PropertyListPayload['sorting'] | undefined {
-  switch (sort) {
-    case 'price':
-      return { keyType: 'price', sortType: 'asc' };
-    case 'rating':
-      return { keyType: 'rating', sortType: 'desc' };
-    case 'distance':
-    default:
-      return undefined;
-  }
+  if (!sort || sort === 'popularity') return undefined;
+  const [keyType, sortType] = sort.split('-');
+  if (!keyType || !sortType) return undefined;
+  return { keyType, sortType };
 }
 
 export function serializeSrpFilters(filters: SrpFilters, sort: SortOption) {

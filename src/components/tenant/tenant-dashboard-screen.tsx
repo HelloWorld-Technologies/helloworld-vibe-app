@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Linking,
@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getPropertyManagerByBookingId } from '@/api/user';
+import { resolveSmartMeterBookingId } from '@/api/smart-meter';
 import { DashboardIcon } from '@/components/dashboard/dashboard-icon';
 import { DashboardEventsSection } from '@/components/tenant/dashboard/dashboard-events-section';
 import { DashboardMoveInPendingPaymentCard } from '@/components/tenant/dashboard/dashboard-move-in-pending-payment-card';
@@ -57,6 +58,7 @@ import {
   getMoveInPendingAmount,
   shouldShowMoveInPendingPaymentCard,
 } from '@/utils/move-in-payment';
+import { getDashboardRentDueDate } from '@/utils/tenant-format';
 
 export function TenantDashboardScreen() {
   const router = useRouter();
@@ -92,7 +94,11 @@ export function TenantDashboardScreen() {
 
   const nextPending = invoices?.pending?.[0];
   const propertyLabel = [profile?.propertyInfo?.address?.flatNo, profile?.propertyInfo?.name]
-    .filter(Boolean)
+    .filter((part, index, all) => {
+      if (!part) return false;
+      const normalized = part.trim().toLowerCase();
+      return all.findIndex((item) => item?.trim().toLowerCase() === normalized) === index;
+    })
     .join(' · ');
   const creditInfo = profile?.creditInfo;
   const rentAmount = nextPending?.balance ?? profile?.paymentInfo?.rent ?? 0;
@@ -106,6 +112,12 @@ export function TenantDashboardScreen() {
   const moveInPendingAmount = getMoveInPendingAmount(profile, remainingMoveInAmount);
   const propertyLocality = profile?.propertyInfo?.locality;
   const showSmartMeter = Boolean(profile?.propertyInfo?.isSmartMeterEnabled);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetchTickets();
+    }, [refetchTickets]),
+  );
 
   useEffect(() => {
     if (!profile?.bookingId) return;
@@ -128,11 +140,14 @@ export function TenantDashboardScreen() {
       refetchBookingStatus(),
       refetchMoveInPayments(),
       useTenantStore.getState().fetchProfile(),
-      profile?.bookingId
-        ? queryClient.invalidateQueries({
-            queryKey: queryKeys.smartMeterRooms(profile.bookingId),
-          })
-        : Promise.resolve(),
+      (() => {
+        const bookingId = resolveSmartMeterBookingId(profile?.bookingId);
+        return bookingId
+          ? queryClient.invalidateQueries({
+              queryKey: queryKeys.smartMeterRooms(bookingId),
+            })
+          : Promise.resolve();
+      })(),
     ]);
     setRefreshing(false);
   }
@@ -172,7 +187,7 @@ export function TenantDashboardScreen() {
       router.push('/sos');
       return;
     }
-    router.push('/(tabs)/support');
+    router.navigate('/(tabs)/support');
   }
 
   return (
@@ -192,10 +207,10 @@ export function TenantDashboardScreen() {
             </Typography>
           </View>
           <View style={styles.headerActions}>
-            <Pressable style={styles.iconButton} accessibilityRole="button">
+            {/* <Pressable style={styles.iconButton} accessibilityRole="button">
               <DashboardIcon name="notification" size={20} color={palette.gray[800]} />
               <View style={styles.notificationDot} />
-            </Pressable>
+            </Pressable> */}
             <Pressable
               style={styles.iconButton}
               onPress={() => router.push('/menu')}
@@ -227,7 +242,7 @@ export function TenantDashboardScreen() {
           <DashboardMoveInStepsCard />
         ) : (
           <DashboardRentCard
-            dueDate={nextPending?.due_date}
+            dueDate={getDashboardRentDueDate(nextPending, profile)}
             amount={rentAmount}
             onPayPress={handlePayNow}
           />

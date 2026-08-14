@@ -14,13 +14,13 @@ import palette from '@/constants/palette';
 import { BACK_CHEVRON_SYMBOL } from '@/constants/symbols';
 import { useBookingStatus } from '@/queries/use-booking-status';
 import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
-import { queryClient } from '@/queries/query-client';
 import { useAuthStore } from '@/stores/auth-store';
 import {
   useIsTenant,
   useTenantProfile,
   useTenantStore,
 } from '@/stores/tenant-store';
+import { useLogoutToLogin } from '@/utils/logout';
 import {
   getMenuExternalUrl,
   getMenuRoute,
@@ -32,8 +32,8 @@ const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function MenuScreen() {
   const router = useRouter();
+  const logoutToLogin = useLogoutToLogin();
   const mobile = useAuthStore((state) => state.mobile) ?? '';
-  const clearSession = useAuthStore((state) => state.clearSession);
   const isTenant = useIsTenant();
   const tenantProfile = useTenantProfile();
   const moveInInterests = useTenantStore((state) => state.moveInInterests);
@@ -42,7 +42,11 @@ export default function MenuScreen() {
   const { data: moveInPayments } = useMoveInPaymentDetails();
 
   const propertyLabel = [tenantProfile?.propertyInfo?.address?.flatNo, tenantProfile?.propertyInfo?.name]
-    .filter(Boolean)
+    .filter((part, index, all) => {
+      if (!part) return false;
+      const normalized = part.trim().toLowerCase();
+      return all.findIndex((item) => item?.trim().toLowerCase() === normalized) === index;
+    })
     .join(' · ');
 
   const sections = useMemo(() => {
@@ -84,11 +88,8 @@ export default function MenuScreen() {
   );
 
   const handleLogout = useCallback(() => {
-    clearSession();
-    useTenantStore.getState().clearProfile();
-    queryClient.clear();
-    router.replace('/login');
-  }, [clearSession, router]);
+    logoutToLogin();
+  }, [logoutToLogin]);
 
   const openExternalUrl = useCallback(async (url: string) => {
     await WebBrowser.openBrowserAsync(url, {
@@ -118,7 +119,7 @@ export default function MenuScreen() {
       }
 
       if (isTabMenuRoute(String(route))) {
-        router.replace(route);
+        router.navigate(route);
         return;
       }
 

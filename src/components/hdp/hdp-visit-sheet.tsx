@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { router as expoRouter, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HwSymbol } from '@/components/ui/hw-symbol';
@@ -28,13 +28,14 @@ import { queryKeys } from '@/queries/keys';
 import { usePropertyVisitSlots } from '@/queries/use-property-visit-slots';
 import { useAuthStore } from '@/stores/auth-store';
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
-import { useTenantProfile } from '@/stores/tenant-store';
+import { useIsTenant, useTenantProfile } from '@/stores/tenant-store';
 import type { BookingDraft } from '@/types/booking-payment';
 import type { OccupancyType, OccupantDetails, PropertyCategory } from '@/types/booking';
 import type { VisitContactDetails, VisitDateOption, VisitTimeSlot } from '@/types/visit';
 import {
     buildBookRoomOptions,
     buildOccupancyOptions,
+    getAvailableOccupancies,
     getOccupancyLabel,
 } from '@/utils/booking-rooms';
 import {
@@ -42,6 +43,7 @@ import {
   parseBookingDate,
   toBookingDateString,
 } from '@/utils/booking-payment';
+import { getMyVisitsRoute } from '@/utils/tenant-routing';
 import {
     DEFAULT_VISIT_TIME_SLOTS,
     buildVisitDateOptions,
@@ -246,6 +248,7 @@ export function HdpVisitSheet({
   const queryClient = useQueryClient();
   const setBookingDraft = useBookingDraftStore((state) => state.setDraft);
   const storedMobile = useAuthStore((state) => state.mobile);
+  const isTenant = useIsTenant();
   const profile = useTenantProfile();
   const insets = useSafeAreaInsets();
   const formPrefillSource = useMemo(
@@ -253,7 +256,11 @@ export function HdpVisitSheet({
     [profile, storedMobile],
   );
   const fallbackDates = useMemo(() => buildVisitDateOptions(), []);
-  const occupancyOptions = useMemo(() => buildOccupancyOptions(roomTypes), [roomTypes]);
+  const occupancyOptions = useMemo(() => {
+    const fromCategories = getAvailableOccupancies(categories ?? []);
+    if (fromCategories.length > 0) return fromCategories;
+    return buildOccupancyOptions(roomTypes);
+  }, [categories, roomTypes]);
 
   const [activeTab, setActiveTab] = useState<VisitSheetTab>(initialTab);
   const { data: slotDays = [], isLoading: slotsLoading } = usePropertyVisitSlots(
@@ -374,11 +381,13 @@ export function HdpVisitSheet({
   }
 
   function handleViewTours() {
+    const href = getMyVisitsRoute(isTenant);
     handleClose();
-    // Navigate after the bottom-sheet Modal finishes dismissing, otherwise the push is dropped.
+    // Wait for the Modal to dismiss, then use the singleton router so this
+    // still runs if the sheet unmounts with the parent close handler.
     setTimeout(() => {
-      router.push('/my-visits');
-    }, 320);
+      expoRouter.navigate(href);
+    }, 360);
   }
 
   function handleContinueToDetails() {

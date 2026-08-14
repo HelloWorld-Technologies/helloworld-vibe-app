@@ -11,6 +11,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { getPaymentDetails, verifyReferralCode } from '@/api/booking';
 import { BookingChargesSheet } from '@/components/booking/booking-charges-sheet';
+import { BookingOccupantSummary } from '@/components/booking/booking-occupant-summary';
 import { BookingPaymentOption } from '@/components/booking/booking-payment-option';
 import { BookingPropertySummary } from '@/components/booking/booking-property-summary';
 import { DiscountCodeInput } from '@/components/booking/discount-code-input';
@@ -35,7 +36,7 @@ import {
 import {
   buildChargesFromPricing,
   computePayableSubtotal,
-  mapPaymentDetailsRow,
+  mapPaymentDetailsData,
 } from '@/utils/booking-pricing';
 import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
@@ -141,16 +142,20 @@ export function BookingScreen() {
         moveInDate: formatBookingApiDate(draftSnapshot.moveInDate),
         sdMonths: draftSnapshot.securityDepositMonths ?? 1,
         propertyId: draftSnapshot.propertyId,
-        propertyName: draftSnapshot.propertyName,
-        couponCode,
-        sdKey: couponCode ? pricingDetails?.sdKey : undefined,
+        ...(couponCode
+          ? {
+              couponCode,
+              propertyName: draftSnapshot.propertyName,
+              sdKey: pricingDetails?.sdKey,
+            }
+          : {}),
       });
 
-      if (!response.success || !Array.isArray(response.data) || response.data.length === 0) {
+      if (!response.success) {
         return null;
       }
 
-      return mapPaymentDetailsRow(response.data[0] as Record<string, unknown>);
+      return mapPaymentDetailsData(response.data);
     }
 
     async function fetchPricing() {
@@ -184,7 +189,8 @@ export function BookingScreen() {
     }
     return sumSelectedCharges(charges, selected);
   }, [activePricing, charges, selected]);
-  const savings = discounts.reduce((total, discount) => total + discount.amount, 0);
+  // Coupon is already baked into discounted pricing (same as helloworld-vibe).
+  const savings = appliedReferral?.amount ?? 0;
   const total = Math.max(subtotal - savings, 0);
   const selectedIds = useMemo(
     () => new Set(charges.filter((charge) => selected[charge.id]).map((charge) => charge.id)),
@@ -235,6 +241,9 @@ export function BookingScreen() {
   }
 
   async function handleApplyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+
     setCouponError('');
     setCouponLoading(true);
 
@@ -245,28 +254,40 @@ export function BookingScreen() {
         moveInDate: formatBookingApiDate(bookingDraft.moveInDate),
         sdMonths: bookingDraft.securityDepositMonths ?? 1,
         propertyId: bookingDraft.propertyId,
+        couponCode: code,
         propertyName: bookingDraft.propertyName,
-        couponCode: couponInput.trim(),
         sdKey: pricingDetails?.sdKey,
       });
 
-      if (response.success && response.discountMessage && Array.isArray(response.data)) {
-        const discountedPricing = mapPaymentDetailsRow(response.data[0] as Record<string, unknown>);
-        if (discountedPricing) {
-          setDiscountPricingDetails(discountedPricing);
-          setCharges(buildChargesFromPricing(discountedPricing));
-        }
-
-        setAppliedCoupon({
-          type: 'coupon',
-          code: couponInput.trim().toUpperCase(),
-          amount: 1500,
-          message: response.discountMessage,
-        });
-        setCouponInput('');
-      } else {
-        setCouponError(response.message || 'Invalid coupon code');
+      if (!response.success) {
+        setCouponError(
+          response.message || 'This coupon is invalid or has expired. Please try again.',
+        );
+        return;
       }
+
+      const discountedPricing = mapPaymentDetailsData(response.data);
+      if (!discountedPricing) {
+        setCouponError(
+          response.message || 'This coupon is invalid or has expired. Please try again.',
+        );
+        return;
+      }
+
+      const originalSubtotal = pricingDetails
+        ? computePayableSubtotal(pricingDetails, selected)
+        : 0;
+      const discountedSubtotal = computePayableSubtotal(discountedPricing, selected);
+
+      setDiscountPricingDetails(discountedPricing);
+      setCharges(buildChargesFromPricing(discountedPricing));
+      setAppliedCoupon({
+        type: 'coupon',
+        code: code.toUpperCase(),
+        amount: Math.max(0, originalSubtotal - discountedSubtotal),
+        message: response.discountMessage || response.message,
+      });
+      setCouponInput('');
     } catch {
       setCouponError('Unable to apply coupon code');
     } finally {
@@ -342,6 +363,11 @@ export function BookingScreen() {
           rent={bookingDraft.roomPrice}
           moveInDate={bookingDraft.moveInDate}
           imageUri={bookingDraft.imageUri}
+          onEdit={() => setEditSheetOpen(true)}
+        />
+
+        <BookingOccupantSummary
+          occupant={bookingDraft.occupant}
           onEdit={() => setEditSheetOpen(true)}
         />
 

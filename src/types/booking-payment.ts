@@ -59,7 +59,7 @@ export type PaymentDetailsPayload = {
 
 export type PaymentDetailsResponse = {
   success: boolean;
-  data?: Record<string, unknown>[];
+  data?: Record<string, unknown>[] | Record<string, unknown>;
   discountMessage?: string;
   message?: string;
 };

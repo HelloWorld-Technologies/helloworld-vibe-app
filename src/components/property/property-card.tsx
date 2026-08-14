@@ -104,6 +104,8 @@ export function PropertyCard({
   const city = useSelectedCity();
   const propertyId = Number(property.id);
   const favorited = isFavorite ?? (Number.isFinite(propertyId) ? wishlist?.isWishlisted(propertyId) : false);
+  const ratingValue = Number(property.rating);
+  const displayRating = Number.isFinite(ratingValue) ? ratingValue : 4.5;
 
   const cardImages = toCarouselSlides(property.id, property.images);
   const imageCount = cardImages.length;
@@ -150,7 +152,8 @@ export function PropertyCard({
       return;
     }
     void shareProperty({
-      name: property.name,
+      name: property.slugName || property.name,
+      displayName: property.name,
       id: property.id,
       city: property.city || city,
       locality: property.locality,
@@ -298,7 +301,7 @@ export function PropertyCard({
           </Text>
           <View style={styles.ratingPill}>
             <Text style={styles.ratingText}>
-              {property.rating.toFixed(1)} ★
+              {displayRating.toFixed(1)} ★
             </Text>
           </View>
         </View>

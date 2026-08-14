@@ -1,14 +1,13 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
+import { TicketConversationAttachments } from '@/components/tenant/ticket-conversation-attachments';
 import { Typography } from '@/components/ui/typography';
+import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import type { TicketConversation } from '@/types/ticket';
 import { formatTicketMessageTime, getTicketMessageText } from '@/utils/ticket-format';
-
-const SUPPORT_AVATAR =
-  'https://hello-assets-items.s3.ap-south-1.amazonaws.com/icons/logo-icon.png';
 
 type TicketConversationMessageProps = {
   conversation: TicketConversation;
@@ -18,15 +17,31 @@ export function TicketConversationMessage({ conversation }: TicketConversationMe
   const isUser = conversation.author.type === 'END_USER';
   const message = getTicketMessageText(conversation.summary);
   const time = formatTicketMessageTime(conversation.createdTime, !isUser);
+  const attachments = Array.isArray(conversation.attachments)
+    ? conversation.attachments.filter((url) => typeof url === 'string' && url.length > 0)
+    : [];
+  const hasMessage = Boolean(message);
+  const hasAttachments = attachments.length > 0;
 
   if (isUser) {
     return (
       <View style={styles.userWrap}>
-        <View style={styles.userBubble}>
-          <Typography variant="text" size="sm" color={palette.gray[800]}>
-            {message}
-          </Typography>
-        </View>
+        {(hasMessage || hasAttachments) && (
+          <View style={[styles.userBubble, !hasMessage && styles.mediaOnlyBubble]}>
+            {hasMessage ? (
+              <Typography variant="text" size="sm" color={palette.gray[800]}>
+                {message}
+              </Typography>
+            ) : null}
+            {hasAttachments ? (
+              <TicketConversationAttachments
+                urls={attachments}
+                tone="user"
+                spaced={hasMessage}
+              />
+            ) : null}
+          </View>
+        )}
         <Typography variant="label" size="xs" color={palette.gray[500]} style={styles.userTime}>
           {time}
         </Typography>
@@ -36,13 +51,24 @@ export function TicketConversationMessage({ conversation }: TicketConversationMe
 
   return (
     <View style={styles.supportWrap}>
-      <Image source={{ uri: SUPPORT_AVATAR }} style={styles.avatar} contentFit="cover" />
+      <Image source={ImageAssets.appIcon} style={styles.avatar} contentFit="cover" />
       <View style={styles.supportContent}>
-        <View style={styles.supportBubble}>
-          <Typography variant="text" size="sm" color={palette.white}>
-            {message}
-          </Typography>
-        </View>
+        {(hasMessage || hasAttachments) && (
+          <View style={[styles.supportBubble, !hasMessage && styles.mediaOnlyBubble]}>
+            {hasMessage ? (
+              <Typography variant="text" size="sm" color={palette.white}>
+                {message}
+              </Typography>
+            ) : null}
+            {hasAttachments ? (
+              <TicketConversationAttachments
+                urls={attachments}
+                tone="support"
+                spaced={hasMessage}
+              />
+            ) : null}
+          </View>
+        )}
         <Typography variant="label" size="xs" color={palette.gray[500]}>
           HelloWorld Support · {time}
         </Typography>
@@ -64,6 +90,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 4,
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  mediaOnlyBubble: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   userTime: {
     textAlign: 'right',
@@ -89,7 +119,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   supportBubble: {
-    backgroundColor: '#3FBEB6',
+    backgroundColor: palette.lightBlue,
     borderRadius: Radius.md,
     borderTopLeftRadius: 4,
     paddingHorizontal: 16,

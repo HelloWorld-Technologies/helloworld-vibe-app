@@ -15,6 +15,21 @@ function toTaxableCharge(value: unknown): TaxableCharge {
   return { amount, totalAmount: amount, cgst: 0, sgst: 0 };
 }
 
+export function mapPaymentDetailsData(data: unknown): BookingPricingDetails | null {
+  if (Array.isArray(data)) {
+    const row = data[0];
+    return row && typeof row === 'object'
+      ? mapPaymentDetailsRow(row as Record<string, unknown>)
+      : null;
+  }
+
+  if (data && typeof data === 'object') {
+    return mapPaymentDetailsRow(data as Record<string, unknown>);
+  }
+
+  return null;
+}
+
 export function mapPaymentDetailsRow(row: Record<string, unknown>): BookingPricingDetails | null {
   const token = normalizeBookingChargeAmount(row.token);
   if (token == null) return null;

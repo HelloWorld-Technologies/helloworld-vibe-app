@@ -117,10 +117,6 @@ export async function pickAndUploadTicketAttachments(
     const uploaded = await uploadPickedAttachment(item);
     next = next.map((attachment) => (attachment.id === item.id ? uploaded : attachment));
     onChange(next);
-
-    if (uploaded.status === 'error') {
-      Alert.alert('Upload failed', uploaded.error ?? 'Could not upload this image.');
-    }
   }
 }
 
@@ -143,7 +139,7 @@ export function TicketAttachmentsField({
   }
 
   async function handleRetry(item: PendingTicketAttachment) {
-    if (busy) return;
+    if (disabled || item.status === 'uploading') return;
 
     let next = attachments.map((attachment) =>
       attachment.id === item.id
@@ -155,10 +151,6 @@ export function TicketAttachmentsField({
     const uploaded = await uploadPickedAttachment(item);
     next = next.map((attachment) => (attachment.id === item.id ? uploaded : attachment));
     onChange(next);
-
-    if (uploaded.status === 'error') {
-      Alert.alert('Upload failed', uploaded.error ?? 'Could not upload this image.');
-    }
   }
 
   return (
@@ -199,7 +191,9 @@ export function TicketAttachmentsField({
         </Pressable>
 
         {attachments.map((item) => (
-          <View key={item.id} style={styles.thumbWrap}>
+          <View
+            key={item.id}
+            style={[styles.thumbWrap, item.status === 'error' && styles.thumbWrapError]}>
             <Image source={{ uri: item.uri }} style={styles.thumb} contentFit="cover" />
 
             {item.status === 'uploading' ? (
@@ -211,10 +205,14 @@ export function TicketAttachmentsField({
             {item.status === 'error' ? (
               <Pressable
                 onPress={() => void handleRetry(item)}
-                style={styles.overlay}
+                style={[styles.overlay, styles.errorOverlay]}
                 accessibilityRole="button"
-                accessibilityLabel="Retry upload">
-                <HwSymbol name="arrow.clockwise" size={14} tintColor={palette.white} />
+                accessibilityLabel="Retry upload"
+                disabled={disabled}>
+                <HwSymbol name="arrow.clockwise" size={16} tintColor={palette.white} />
+                <Typography variant="label" size="xs" weight="bold" color={palette.white}>
+                  Retry
+                </Typography>
               </Pressable>
             ) : null}
 
@@ -276,6 +274,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: palette.gray[100],
   },
+  thumbWrapError: {
+    borderWidth: 1.5,
+    borderColor: palette.red[500],
+  },
   thumb: {
     width: '100%',
     height: '100%',
@@ -285,6 +287,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 24, 40, 0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 2,
+  },
+  errorOverlay: {
+    backgroundColor: 'rgba(180, 35, 24, 0.72)',
   },
   successBadge: {
     position: 'absolute',
@@ -307,5 +313,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 24, 40, 0.72)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
   },
 });

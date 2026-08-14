@@ -72,7 +72,7 @@ export function DashboardSupportPreview({ tickets, onRaiseRequest }: DashboardSu
       <DashboardSectionHeader
         title="Support"
         actionLabel="View All"
-        onActionPress={() => router.push('/(tabs)/support')}
+        onActionPress={() => router.navigate('/(tabs)/support')}
       />
 
       <View style={styles.card}>

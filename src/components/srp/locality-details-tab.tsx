@@ -1,20 +1,23 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RequestCallbackSheet } from '@/components/callback/request-callback-sheet';
-import { LocalityCardImage } from '@/components/locality/locality-card-image';
+import { NeighborhoodLocalityCard } from '@/components/locality/neighborhood-locality-card';
 import { Button } from '@/components/ui/button';
 import { HwCarousel } from '@/components/ui/carousel';
 import { Typography } from '@/components/ui/typography';
 import { ImageAssets, SrpAmenityIcons } from '@/constants/assets';
-import { NEIGHBORHOODS } from '@/constants/home';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { useIsTablet } from '@/hooks/use-is-tablet';
+import { usePopularLocalities } from '@/queries/use-popular-localities';
 import { useAuthStore } from '@/stores/auth-store';
+import type { LocalityInfo } from '@/types/locality';
+import { mapLocalityToNeighborhoodCard } from '@/api/localities';
+import { mapLocalityNearbyToDayCards } from '@/utils/hdp-nearby';
+import { googleMapsSearchUrl } from '@/utils/maps';
 
 /** Matches `srp-screen` sheet horizontal padding. */
 const SHEET_PAD = 24;
@@ -44,6 +47,14 @@ const DAY_CARDS = [
   },
 ] as const;
 
+function dayCardImage(imageUri?: string | number) {
+  if (typeof imageUri === 'number') return imageUri;
+  if (typeof imageUri === 'string' && imageUri.trim().length > 0) {
+    return { uri: imageUri.trim() };
+  }
+  return ImageAssets.comingSoon;
+}
+
 const AMENITIES = [
   { id: 'cctv', label: 'CCTV Camera', Icon: SrpAmenityIcons.cctv },
   { id: 'biometric', label: 'Biometric Access', Icon: SrpAmenityIcons.biometric },
@@ -55,15 +66,48 @@ const AMENITIES = [
 type CityDetailsTabProps = {
   locality: string | null;
   city: string;
+  localityInfo?: LocalityInfo | null;
   onSelectLocality?: (locality: string) => void;
 };
 
-export function CityDetailsTab({ locality, city, onSelectLocality }: CityDetailsTabProps) {
+export function CityDetailsTab({
+  locality,
+  city,
+  localityInfo,
+  onSelectLocality,
+}: CityDetailsTabProps) {
   const { width: screenWidth } = useWindowDimensions();
   const isTablet = useIsTablet();
   const setSelectedLocality = useAuthStore((state) => state.setSelectedLocality);
-  const placeLabel = locality ?? city;
-  const aboutTitle = locality ? `About ${locality}` : `About ${city}`;
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const placeLabel = localityInfo?.display_name?.trim() || locality || city;
+  const mapsUrl = googleMapsSearchUrl(`${placeLabel}, ${city}`);
+  const aboutTitle = `About ${placeLabel}`;
+  const description = localityInfo?.description?.trim() || null;
+  const nearbyCards = useMemo(
+    () => mapLocalityNearbyToDayCards(localityInfo?.nearby),
+    [localityInfo?.nearby],
+  );
+  const { data: localitiesResponse } = usePopularLocalities(city);
+  const popularLocalities = useMemo(() => {
+    const current = (localityInfo?.display_name ?? locality ?? '').trim().toLowerCase();
+    return (localitiesResponse?.data ?? [])
+      .map((item) => mapLocalityToNeighborhoodCard(item))
+      .filter((item) => item.name.trim().toLowerCase() !== current);
+  }, [localitiesResponse?.data, locality, localityInfo?.display_name]);
+  const dayCards =
+    nearbyCards.length > 0
+      ? nearbyCards.map((card) => ({
+          id: card.id,
+          title: `${card.emoji} ${card.category}`,
+          place: card.placeName,
+          distance: card.walkTime,
+          link: card.linkLabel,
+          image: dayCardImage(card.imageUri),
+        }))
+      : localityInfo
+        ? []
+        : DAY_CARDS;
 
   const contentWidth = screenWidth - SHEET_PAD * 2;
   const localityCardWidth = Math.min(260, Math.max(200, contentWidth * 0.72));
@@ -79,37 +123,56 @@ export function CityDetailsTab({ locality, city, onSelectLocality }: CityDetails
 
   return (
     <View style={styles.container}>
-      <View style={styles.sectionHeader}>
-        <Typography variant="text" size="xl" weight="bold">
-          A Day from here
-        </Typography>
-        <Typography variant="text" size="sm" weight="medium" color={palette.helloLime}>
-          📍 Show on Maps
-        </Typography>
-      </View>
-      <Typography variant="text" size="sm" color={palette.textSecondary}>
-        What living at {placeLabel} actually looks like.
-      </Typography>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow}>
-        {DAY_CARDS.map((card) => (
-          <View key={card.id} style={styles.dayCard}>
-            <Typography variant="text" size="sm" weight="bold">
-              {card.title}
+      {dayCards.length > 0 ? (
+        <>
+          <View style={styles.sectionHeader}>
+            <Typography variant="text" size="xl" weight="bold">
+              A Day from here
             </Typography>
-            <Image source={card.image} style={styles.dayImage} contentFit="cover" />
-            <Typography variant="text" size="md" weight="medium">
-              {card.place}
-            </Typography>
-            <Typography variant="text" size="xs" color={palette.textSecondary}>
-              {card.distance}
-            </Typography>
-            <Typography variant="text" size="xs" weight="bold" color={palette.helloLime}>
-              {card.link} ›
-            </Typography>
+            {mapsUrl ? (
+              <Pressable onPress={() => void Linking.openURL(mapsUrl)} accessibilityRole="link">
+                <Typography variant="text" size="sm" weight="medium" color={palette.helloLime}>
+                  📍 Show on Maps
+                </Typography>
+              </Pressable>
+            ) : null}
           </View>
-        ))}
-      </ScrollView>
+          <Typography variant="text" size="sm" color={palette.textSecondary}>
+            What living at {placeLabel} actually looks like.
+          </Typography>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow}>
+            {dayCards.map((card) => {
+              const nearbyUrl = googleMapsSearchUrl(`${card.place}, ${placeLabel}, ${city}`);
+              return (
+              <View key={card.id} style={styles.dayCard}>
+                <Typography variant="text" size="sm" weight="bold">
+                  {card.title}
+                </Typography>
+                <Image source={card.image} style={styles.dayImage} contentFit="cover" />
+                <Typography variant="text" size="md" weight="medium">
+                  {card.place}
+                </Typography>
+                <Typography variant="text" size="xs" color={palette.textSecondary}>
+                  {card.distance}
+                </Typography>
+                {nearbyUrl ? (
+                  <Pressable onPress={() => void Linking.openURL(nearbyUrl)} accessibilityRole="link">
+                    <Typography variant="text" size="xs" weight="bold" color={palette.helloLime}>
+                      {card.link} ›
+                    </Typography>
+                  </Pressable>
+                ) : (
+                  <Typography variant="text" size="xs" weight="bold" color={palette.helloLime}>
+                    {card.link} ›
+                  </Typography>
+                )}
+              </View>
+              );
+            })}
+          </ScrollView>
+        </>
+      ) : null}
 
       <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
         Included Across Our Homes
@@ -134,44 +197,48 @@ export function CityDetailsTab({ locality, city, onSelectLocality }: CityDetails
       <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
         {aboutTitle}
       </Typography>
-      <Typography variant="text" size="sm" color={palette.textSecondary}>
-        {placeLabel} sits close to daily essentials, transit links, and social spots across {city}. It
-        is a practical base if you want a balanced coliving experience with easy commutes and a lively
-        neighborhood feel.
+      <Typography
+        variant="text"
+        size="sm"
+        color={palette.textSecondary}
+        numberOfLines={descriptionExpanded ? undefined : 4}>
+        {description ||
+          `${placeLabel} sits close to daily essentials, transit links, and social spots across ${city}. It is a practical base if you want a balanced coliving experience with easy commutes and a lively neighborhood feel.`}
       </Typography>
-      <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
-        Read More
-      </Typography>
+      {description ? (
+        <Pressable onPress={() => setDescriptionExpanded((open) => !open)} accessibilityRole="button">
+          <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
+            {descriptionExpanded ? 'Read Less' : 'Read More'}
+          </Typography>
+        </Pressable>
+      ) : (
+        <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
+          Read More
+        </Typography>
+      )}
 
-      <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
-        Popular {city} Localities
-      </Typography>
-      <HwCarousel
-        data={[...NEIGHBORHOODS]}
-        width={localitySlideWidth}
-        windowWidth={contentWidth}
-        height={LOCALITY_CARD_HEIGHT}
-        style={styles.localityCarousel}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => openLocality(item.name)}
-            style={[styles.localityCard, { width: localityCardWidth }]}
-            accessibilityRole="button"
-            accessibilityLabel={`${item.name}, starting ${item.price}`}>
-            <LocalityCardImage imageKey={item.image} style={styles.localityImage} />
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.75)']}
-              style={styles.localityOverlay}>
-              <Typography variant="text" size="md" weight="bold" color={palette.white}>
-                {item.name}
-              </Typography>
-              <Typography variant="text" size="xs" color={palette.gray[200]}>
-                Starting {item.price} | {item.properties} Properties
-              </Typography>
-            </LinearGradient>
-          </Pressable>
-        )}
-      />
+      {popularLocalities.length > 0 ? (
+        <>
+          <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
+            Popular {city} Localities
+          </Typography>
+          <HwCarousel
+            data={popularLocalities}
+            width={localitySlideWidth}
+            windowWidth={contentWidth}
+            height={LOCALITY_CARD_HEIGHT}
+            style={styles.localityCarousel}
+            renderItem={({ item }) => (
+              <NeighborhoodLocalityCard
+                item={item}
+                width={localityCardWidth}
+                height={LOCALITY_CARD_HEIGHT}
+                onPress={() => openLocality(item.name)}
+              />
+            )}
+          />
+        </>
+      ) : null}
     </View>
   );
 }
@@ -265,24 +332,6 @@ const styles = StyleSheet.create({
   },
   localityCarousel: {
     marginHorizontal: -4,
-  },
-  localityCard: {
-    height: LOCALITY_CARD_HEIGHT,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    backgroundColor: palette.gray[200],
-  },
-  localityImage: {
-    width: '100%',
-    height: '100%',
-  },
-  localityOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: 12,
-    gap: 4,
   },
   contactBar: {
     position: 'absolute',

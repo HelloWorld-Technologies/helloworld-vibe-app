@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { router as expoRouter } from 'expo-router';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useMemo, useRef, useState } from 'react';
 import {
@@ -100,7 +100,6 @@ function SubcategoryRow({
 }
 
 export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSheetProps) {
-  const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const { data: categories = [], isLoading, isError, refetch } = useKbCategories();
   const [step, setStep] = useState<Step>('category');
@@ -150,7 +149,14 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
 
     if (selectedCategory.type === 'move-out') {
       handleClose();
-      router.push('/profile/move-out');
+      // Wait for the raise-ticket Modal to dismiss so Move-Out keeps a
+      // back stack (pushing during dismiss drops history).
+      setTimeout(() => {
+        expoRouter.push({
+          pathname: '/profile/move-out',
+          params: { from: 'support' },
+        });
+      }, 360);
       return;
     }
 

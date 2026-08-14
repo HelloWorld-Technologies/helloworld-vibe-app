@@ -18,10 +18,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SelectCitySheet } from '@/components/city/select-city-sheet';
 import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer';
 import { HwIcon } from '@/components/hw-icon';
-import { LocalityCardImage } from '@/components/locality/locality-card-image';
+import { NeighborhoodLocalityCard } from '@/components/locality/neighborhood-locality-card';
 import { PropertyCard } from '@/components/property/property-card';
 import { HomeFeedSkeleton, HomePropertiesSkeleton } from '@/components/skeleton';
-import { HwCarousel, HwParallaxCarousel, ParallaxLayer } from '@/components/ui/carousel';
+import { HwCarousel, HwParallaxCarousel } from '@/components/ui/carousel';
 import { EmptyState } from '@/components/ui/empty-state';
 import { GradientText } from '@/components/ui/gradient-text';
 import { SearchInput } from '@/components/ui/search-input';
@@ -50,7 +50,6 @@ import {
   useSelectedVibesStore,
 } from '@/stores/selected-vibes-store';
 import { mapLocalityToNeighborhoodCard } from '@/api/localities';
-import type { NeighborhoodCard } from '@/types/locality';
 import type { PropertyListing } from '@/types/property';
 
 function SectionTitle({
@@ -72,19 +71,6 @@ function SectionTitle({
   );
 }
 
-function formatNeighborhoodMeta(item: NeighborhoodCard) {
-  const parts: string[] = [];
-  if (item.startingRent != null && item.startingRent > 0) {
-    parts.push(`Starting ₹${item.startingRent.toLocaleString('en-IN')}`);
-  }
-  if (item.propertyCount != null && item.propertyCount > 0) {
-    parts.push(
-      `${item.propertyCount} Propert${item.propertyCount === 1 ? 'y' : 'ies'}`,
-    );
-  }
-  return parts.join(' | ');
-}
-
 /** Home screen spacing scale — use these instead of one-off margins. */
 const SPACE = {
   xs: 8,
@@ -95,7 +81,7 @@ const SPACE = {
 } as const;
 
 const ITEM_GAP = 12;
-const PROPERTY_CAROUSEL_HEIGHT = 540;
+const PROPERTY_CAROUSEL_HEIGHT = 488;
 const NEIGHBORHOOD_CAROUSEL_HEIGHT = 200;
 const FEED_CARD_WIDTH = 172;
 const FEED_CARD_HEIGHT = 268;
@@ -236,7 +222,6 @@ export function HomeScreen() {
 
           <SearchInput
             editable={false}
-            value={locality ?? ''}
             onPress={() => router.push('/search')}
             containerStyle={styles.searchInputMargin}
           />
@@ -288,60 +273,15 @@ export function HomeScreen() {
                   windowWidth={carouselWindowWidth}
                   height={NEIGHBORHOOD_CAROUSEL_HEIGHT}
                   style={styles.carouselWrap}
-                  renderItem={({ item, animationValue }) => {
-                    const meta = formatNeighborhoodMeta(item);
-                    return (
-                      <Pressable
-                        onPress={() => openNeighborhood(item.name)}
-                        style={[styles.neighborhoodCard, { width: cardWidth }]}
-                        accessibilityRole="button"
-                        accessibilityLabel={
-                          meta ? `${item.name}, ${meta}` : item.name
-                        }>
-                        <ParallaxLayer
-                          animationValue={animationValue}
-                          style={styles.neighborhoodImageWrap}>
-                          <LocalityCardImage
-                            imageUri={item.imageUri}
-                            style={styles.neighborhoodImage}
-                          />
-                        </ParallaxLayer>
-                        <LinearGradient
-                          colors={['transparent', 'rgba(0,0,0,0.75)']}
-                          style={styles.neighborhoodOverlay}>
-                          <Typography
-                            variant="text"
-                            size="lg"
-                            weight="bold"
-                            color={palette.white}>
-                            {item.name}
-                          </Typography>
-                          <View style={styles.neighborhoodMeta}>
-                            {meta ? (
-                              <Typography
-                                variant="text"
-                                size="xs"
-                                color={palette.gray[200]}>
-                                {meta}
-                              </Typography>
-                            ) : (
-                              <Typography
-                                variant="text"
-                                size="xs"
-                                color={palette.gray[200]}>
-                                Explore homes
-                              </Typography>
-                            )}
-                            <HwSymbol
-                              name="arrow.right"
-                              size={12}
-                              tintColor={palette.white}
-                            />
-                          </View>
-                        </LinearGradient>
-                      </Pressable>
-                    );
-                  }}
+                  renderItem={({ item, animationValue }) => (
+                    <NeighborhoodLocalityCard
+                      item={item}
+                      width={cardWidth}
+                      height={NEIGHBORHOOD_CAROUSEL_HEIGHT}
+                      animationValue={animationValue}
+                      onPress={() => openNeighborhood(item.name)}
+                    />
+                  )}
                 />
               ) : (
                 <EmptyState
@@ -626,33 +566,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: ITEM_GAP,
     marginHorizontal: 0,
-  },
-  neighborhoodCard: {
-    height: 200,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-  },
-  neighborhoodImageWrap: {
-    ...StyleSheet.absoluteFill,
-  },
-  neighborhoodImage: {
-    // Extra horizontal bleed so ParallaxLayer translateX doesn't clip the photo.
-    width: '130%',
-    height: '100%',
-    marginLeft: '-15%',
-  },
-  neighborhoodOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: SPACE.md,
-    gap: 4,
-  },
-  neighborhoodMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   feedCard: {
     height: FEED_CARD_HEIGHT,

@@ -1,4 +1,5 @@
 import type { VisitDateOption, VisitSlotDay, VisitTimeSlot } from '@/types/visit';
+import { googleMapsPlaceUrl, googleMapsSearchUrl, toNumberCoord } from '@/utils/maps';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
@@ -93,8 +94,24 @@ export function formatVisitApiDate(date: Date) {
 
 export function buildPropertyMapUrl(property?: Record<string, unknown> | null) {
   const address = property?.address as Record<string, unknown> | undefined;
-  const latitude = address?.latitude ?? 0;
-  const longitude = address?.longitude ?? 0;
+  const latitude = toNumberCoord(address?.latitude ?? property?.latitude ?? property?.lat);
+  const longitude = toNumberCoord(address?.longitude ?? property?.longitude ?? property?.lng ?? property?.long);
+  const placeUrl = latitude != null && longitude != null
+    ? googleMapsPlaceUrl(latitude, longitude)
+    : undefined;
+  if (placeUrl) return placeUrl;
 
-  return `http://www.google.com/maps/place/${latitude},${longitude}`;
+  const query = [
+    typeof property?.display_name === 'string' ? property.display_name : null,
+    typeof property?.name === 'string' ? property.name : null,
+    typeof address?.locality === 'string' ? address.locality : null,
+    typeof property?.locality === 'string' ? property.locality : null,
+    typeof address?.city === 'string' ? address.city : null,
+    typeof property?.city === 'string' ? property.city : null,
+  ]
+    .filter((part): part is string => Boolean(part && part.trim()))
+    .filter((part, index, all) => all.findIndex((item) => item.toLowerCase() === part.toLowerCase()) === index)
+    .join(', ');
+
+  return googleMapsSearchUrl(query);
 }

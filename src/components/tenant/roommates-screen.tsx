@@ -28,10 +28,6 @@ export function RoommatesScreen() {
   const { data: roommates, isLoading, isRefetching, refetch } = useRoomMates('ROOMMATE');
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  const propertyFallback = [profile?.propertyInfo?.address?.flatNo, profile?.propertyInfo?.name]
-    .filter(Boolean)
-    .join(' · ');
-
   function handleAdded() {
     void queryClient.invalidateQueries({ queryKey: ['room-mates', 'ROOMMATE'] });
   }
@@ -49,11 +45,7 @@ export function RoommatesScreen() {
             contentContainerStyle={styles.scroll}
             refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}>
             {roommates?.map((mate) => (
-              <RoommateCard
-                key={mate.id ?? mate.mobile}
-                mate={mate}
-                propertyFallback={propertyFallback}
-              />
+              <RoommateCard key={mate.id ?? mate.mobile} mate={mate} />
             ))}
           </ScrollView>
         ) : (

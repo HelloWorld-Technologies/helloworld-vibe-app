@@ -8,16 +8,21 @@ import { Radius } from '@/constants/theme';
 type HdpSectionNavProps = {
   activeId: HdpSectionId;
   onChange: (id: HdpSectionId) => void;
+  items?: readonly { id: HdpSectionId; label: string }[];
 };
 
-export function HdpSectionNav({ activeId, onChange }: HdpSectionNavProps) {
+export function HdpSectionNav({
+  activeId,
+  onChange,
+  items = HDP_SECTION_NAV,
+}: HdpSectionNavProps) {
   return (
     <View style={styles.wrap}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.content}>
-        {HDP_SECTION_NAV.map((item) => {
+        {items.map((item) => {
           const isActive = item.id === activeId;
 
           return (

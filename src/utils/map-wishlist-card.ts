@@ -34,10 +34,15 @@ export function mapWishlistCardToListing(card: WishlistPropertyCard): PropertyLi
   return {
     id: String(card.id),
     name: card.display_name ?? card.name ?? 'HelloWorld Property',
+    slugName: card.name,
     location,
     city: card.city || card.address?.city || undefined,
-    locality: card.locality || card.address?.locality || undefined,
-    rating: card.rating ?? card.google_rating ?? 4.5,
+    locality:
+      card.locality ||
+      card.address?.locality ||
+      card.address?.line2?.split(',').pop()?.trim() ||
+      undefined,
+    rating: Number(card.rating ?? card.google_rating) || 4.5,
     vibeMatchPercent: undefined,
     startingRent: card.min_rent ?? 0,
     roomTypes,

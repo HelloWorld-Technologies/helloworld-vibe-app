@@ -21,6 +21,7 @@ import {
 } from '@/components/support/ticket-attachments-field';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
+import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import type { PendingTicketAttachment } from '@/types/ticket';
 
 type TicketReplyBarProps = {
@@ -41,6 +42,7 @@ export function TicketReplyBar({
   sending = false,
 }: TicketReplyBarProps) {
   const insets = useSafeAreaInsets();
+  const bottomInset = useKeyboardBottomInset(Math.max(insets.bottom, 12));
   const inputRef = useRef<TextInput>(null);
   const [focused, setFocused] = useState(false);
   const uploading = hasUploadingAttachments(attachments);
@@ -57,7 +59,7 @@ export function TicketReplyBar({
   }
 
   return (
-    <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+    <View style={[styles.footer, { paddingBottom: bottomInset }]}>
       {attachments.length > 0 ? (
         <ScrollView
           horizontal

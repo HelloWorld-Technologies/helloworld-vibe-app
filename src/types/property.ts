@@ -1,5 +1,7 @@
 import type { ImageSource } from 'expo-image';
 
+import type { LocalityInfo } from '@/types/locality';
+
 export type PropertyBadgeVariant = 'filling-fast' | 'women-only';
 
 export type PropertyBadge = {
@@ -10,6 +12,8 @@ export type PropertyBadge = {
 export type PropertyListing = {
   id: string;
   name: string;
+  /** API `name` used for website HDP slugs (`name` preferred over `display_name`). */
+  slugName?: string;
   location: string;
   city?: string;
   locality?: string;
@@ -84,13 +88,28 @@ export type PropertyListResponse = {
   data?: ApiProperty[];
   pageInfo?: PropertyListPageInfo;
   nearBy?: ApiProperty[];
+  localityInfo?: LocalityInfo | null;
   message?: string;
+};
+
+export type HdpGoogleReview = {
+  name?: string;
+  review?: string;
+  star?: number | string;
+};
+
+export type HdpGoogleData = {
+  google_rating?: number | string;
+  google_link?: string;
+  google_reviews?: unknown[];
+  google_reviews_new?: HdpGoogleReview[];
+  data?: Record<string, unknown>;
 };
 
 export type PropertyDetailResponse = {
   success: boolean;
   data?: Record<string, unknown>;
-  googleData?: { google_rating?: number };
+  googleData?: HdpGoogleData | null;
   events?: unknown[];
   /** Curated property moments (image/video) from `v2/hello/house`. */
   moments?: unknown[];

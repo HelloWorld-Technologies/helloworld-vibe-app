@@ -1,9 +1,9 @@
 import { Image, type ImageSource, type ImageStyle } from 'expo-image';
-import { useMemo, useState } from 'react';
-import { type StyleProp } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, View, type StyleProp } from 'react-native';
 
 import { ImageAssets } from '@/constants/assets';
-import { COMING_SOON_IMAGE_URI } from '@/utils/images';
+import { formatPropertyImageUrl } from '@/utils/images';
 
 type ImageAssetKey = keyof typeof ImageAssets;
 
@@ -13,35 +13,71 @@ type LocalityCardImageProps = {
   style?: StyleProp<ImageStyle>;
 };
 
-function resolveLocalityImageSource(
+const COMING_SOON_SOURCE: ImageSource = ImageAssets.comingSoon;
+
+function isUsableImageUri(imageUri?: string | null) {
+  const value = imageUri?.trim();
+  if (!value) return false;
+  if (value === 'null' || value === 'undefined' || value === 'none') return false;
+  if (value.includes('coming-soon')) return false;
+  return true;
+}
+
+function resolveRemoteImageSource(
   imageKey?: ImageAssetKey,
   imageUri?: string | null,
-): ImageSource {
-  if (typeof imageUri === 'string' && imageUri.trim().length > 0) {
-    return { uri: imageUri };
+): ImageSource | null {
+  if (isUsableImageUri(imageUri)) {
+    const raw = imageUri!.trim();
+    const uri =
+      raw.startsWith('http') || raw.startsWith('file:')
+        ? raw
+        : formatPropertyImageUrl(raw, 'srp');
+    if (!uri || uri.includes('coming-soon')) return null;
+    return { uri };
   }
 
-  if (imageKey && imageKey in ImageAssets) {
+  if (imageKey && imageKey in ImageAssets && imageKey !== 'comingSoon') {
     return ImageAssets[imageKey];
   }
 
-  return { uri: COMING_SOON_IMAGE_URI };
+  return null;
 }
 
 export function LocalityCardImage({ imageKey, imageUri, style }: LocalityCardImageProps) {
-  const initialSource = useMemo(
-    () => resolveLocalityImageSource(imageKey, imageUri),
+  const remoteSource = useMemo(
+    () => resolveRemoteImageSource(imageKey, imageUri),
     [imageKey, imageUri],
   );
   const [useFallback, setUseFallback] = useState(false);
-  const source = useFallback ? { uri: COMING_SOON_IMAGE_URI } : initialSource;
+
+  useEffect(() => {
+    setUseFallback(false);
+  }, [imageKey, imageUri]);
+
+  const showRemote = Boolean(remoteSource) && !useFallback;
 
   return (
-    <Image
-      source={source}
-      style={style}
-      contentFit="cover"
-      onError={() => setUseFallback(true)}
-    />
+    <View style={[styles.wrap, style]}>
+      <Image source={COMING_SOON_SOURCE} style={styles.fill} contentFit="cover" />
+      {showRemote ? (
+        <Image
+          source={remoteSource}
+          style={styles.fill}
+          contentFit="cover"
+          onError={() => setUseFallback(true)}
+        />
+      ) : null}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  wrap: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  fill: {
+    ...StyleSheet.absoluteFillObject,
+  },
+});

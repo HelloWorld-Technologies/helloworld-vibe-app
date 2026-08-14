@@ -28,7 +28,7 @@ export const TENANT_MENU_ROUTES: Partial<Record<string, Href>> = {
 
 /** External pages opened in the system browser. */
 export const MENU_EXTERNAL_URLS = {
-  about: 'https://thehelloworld.com/about',
+  about: 'https://thehelloworld.com/about-us',
   'privacy-policy': 'https://thehelloworld.com/policy?header=false&footer=false',
   'tenancy-policy': 'https://thehelloworld.com/tenant-policy?header=false&footer=false',
   'for-homeowners': 'https://thehelloworld.com/owner',

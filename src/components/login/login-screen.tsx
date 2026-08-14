@@ -1,6 +1,7 @@
-import { useRouter } from 'expo-router'
-import { useEffect, useRef, useState } from 'react'
+import { useFocusEffect, useRouter } from 'expo-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  BackHandler,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -31,6 +32,15 @@ export function LoginScreen () {
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const sendOtp = useSendOtpMutation()
 
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        return router.canGoBack()
+      })
+      return () => subscription.remove()
+    }, [router])
+  )
+
   useEffect(() => {
     const showEvent =
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
@@ -59,7 +69,7 @@ export function LoginScreen () {
     try {
       await sendOtp.mutateAsync(digits)
       Keyboard.dismiss()
-      router.push({ pathname: '/otp', params: { mobile: digits } })
+      router.replace({ pathname: '/otp', params: { mobile: digits } })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send OTP')
     }

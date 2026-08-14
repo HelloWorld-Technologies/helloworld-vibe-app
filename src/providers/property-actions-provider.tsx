@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -34,6 +35,11 @@ export function PropertyActionsProvider({
 }) {
   const [callbackTarget, setCallbackTarget] = useState<PropertyActionTarget | null>(null);
   const [visitTarget, setVisitTarget] = useState<PropertyActionTarget | null>(null);
+  const lastVisitTargetRef = useRef<PropertyActionTarget | null>(null);
+  if (visitTarget) {
+    lastVisitTargetRef.current = visitTarget;
+  }
+  const sheetTarget = visitTarget ?? lastVisitTargetRef.current;
 
   const openRequestCallback = useCallback((target: PropertyActionTarget) => {
     setCallbackTarget(target);
@@ -48,7 +54,7 @@ export function PropertyActionsProvider({
     [openRequestCallback, openScheduleVisit],
   );
 
-  const visitRent = visitTarget?.startingRent;
+  const visitRent = sheetTarget?.startingRent;
   const rentLabel = formatRentLabel(visitRent);
 
   return (
@@ -62,14 +68,14 @@ export function PropertyActionsProvider({
         city={callbackTarget?.city ?? defaultCity}
         srp={Boolean(callbackTarget?.propertyId)}
       />
-      {visitTarget ? (
+      {sheetTarget ? (
         <HdpVisitSheet
           visible={visitTarget != null}
           onClose={() => setVisitTarget(null)}
-          propertyId={String(visitTarget.propertyId)}
-          propertyName={visitTarget.propertyName}
-          propertyLocation={visitTarget.location}
-          imageUri={visitTarget.imageUri}
+          propertyId={String(sheetTarget.propertyId)}
+          propertyName={sheetTarget.propertyName}
+          propertyLocation={sheetTarget.location}
+          imageUri={sheetTarget.imageUri}
           rentLabel={rentLabel}
           depositLabel="—"
           startingRent={visitRent}

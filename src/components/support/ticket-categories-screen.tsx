@@ -83,7 +83,12 @@ export function TicketCategoriesScreen() {
 
             <Pressable
               style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-              onPress={() => router.push('/profile/move-out')}
+              onPress={() =>
+                router.push({
+                  pathname: '/profile/move-out',
+                  params: { from: 'support' },
+                })
+              }
               accessibilityRole="button">
               <View style={styles.cardCircle} />
               <View style={styles.cardContent}>

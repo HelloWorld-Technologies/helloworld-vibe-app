@@ -1,13 +1,6 @@
-import type { PropertyDetailResponse } from '@/types/property';
-import { ImageAssets } from '@/constants/assets';
 import type { HdpDayCard, HdpDayCardOption, NearByArea, NearbyPlace } from '@/types/hdp-nearby';
-
-const NEARBY_PLACEHOLDER_IMAGES = [
-  ImageAssets.loginBento1,
-  ImageAssets.loginBento2,
-  ImageAssets.loginBento3,
-  ImageAssets.loginBento4,
-] as const;
+import type { LocalityInfo } from '@/types/locality';
+import type { PropertyDetailResponse } from '@/types/property';
 
 const NEARBY_EMOJI: Record<string, string> = {
   transport: '🚇',
@@ -18,6 +11,7 @@ const NEARBY_EMOJI: Record<string, string> = {
   hospital: '🏥',
   health: '🏥',
   store: '🛒',
+  grocery: '🛒',
   shopping: '🛍️',
   food: '☕',
   dining: '☕',
@@ -60,7 +54,12 @@ function nearbyEmoji(key: string) {
   return '📍';
 }
 
-export function formatNearbyWalkTime(distance?: string) {
+export function formatNearbyWalkTime(distance?: string, distanceMeters?: number | null) {
+  if (distanceMeters != null && Number.isFinite(distanceMeters) && distanceMeters >= 0) {
+    const minutes = Math.max(1, Math.round(distanceMeters / 80));
+    return minutes <= 25 ? `${minutes} min walk` : `${(distanceMeters / 1000).toFixed(1)} km away`;
+  }
+
   const value = String(distance ?? '').trim();
   if (!value) return 'Nearby';
   if (/walk|min/i.test(value)) return value;
@@ -112,43 +111,53 @@ export function extractNearByFromDetail(
   );
 }
 
-function mapPlaceOptions(
-  categoryKey: string,
-  places: NearbyPlace[],
-  imageOffset: number,
-): { options: HdpDayCardOption[]; nextImageIndex: number } {
+function resolveNearbyPlaceImage(place: NearbyPlace): string | undefined {
+  const record = place as NearbyPlace & Record<string, unknown>;
+  const candidates = [
+    record.image,
+    record.image_url,
+    record.imageUrl,
+    record.photo,
+    record.photo_url,
+    record.photoUrl,
+    record.thumbnail,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+  }
+
+  return undefined;
+}
+
+function mapPlaceOptions(categoryKey: string, places: NearbyPlace[]): HdpDayCardOption[] {
   const options: HdpDayCardOption[] = [];
-  let imageIndex = imageOffset;
 
   for (const [placeIndex, place] of places.entries()) {
     if (!place?.name?.trim()) continue;
 
-    const image = NEARBY_PLACEHOLDER_IMAGES[imageIndex % NEARBY_PLACEHOLDER_IMAGES.length];
-    imageIndex += 1;
-
     options.push({
       id: `${categoryKey}-${placeIndex}`,
       placeName: place.name.trim(),
-      walkTime: formatNearbyWalkTime(place.distance),
-      imageUri: image,
+      walkTime: formatNearbyWalkTime(place.distance, place.distance_meters),
+      imageUri: resolveNearbyPlaceImage(place),
     });
   }
 
-  return { options, nextImageIndex: imageIndex };
+  return options;
 }
 
 export function mapNearByToDayCards(nearBy: NearByArea | null | undefined): HdpDayCard[] {
   if (!nearBy) return [];
 
   const cards: HdpDayCard[] = [];
-  let imageIndex = 0;
 
   for (const [categoryKey, places] of Object.entries(nearBy)) {
     if (!Array.isArray(places) || places.length === 0) continue;
 
-    const { options, nextImageIndex } = mapPlaceOptions(categoryKey, places, imageIndex);
-    imageIndex = nextImageIndex;
-
+    const options = mapPlaceOptions(categoryKey, places);
     if (options.length === 0) continue;
 
     const category = formatNearbyCategoryLabel(categoryKey);
@@ -167,4 +176,25 @@ export function mapNearByToDayCards(nearBy: NearByArea | null | undefined): HdpD
   }
 
   return cards;
+}
+
+export function mapLocalityNearbyToDayCards(
+  nearby?: LocalityInfo['nearby'] | null,
+): HdpDayCard[] {
+  if (!nearby || typeof nearby !== 'object') return [];
+
+  const area: NearByArea = {};
+  for (const [key, places] of Object.entries(nearby)) {
+    if (!Array.isArray(places) || places.length === 0) continue;
+    area[key] = places.map((place) => ({
+      name: place.name,
+      distance: place.distance,
+      distance_meters: place.distance_meters,
+      ...(place.image || place.image_url
+        ? { image: place.image ?? place.image_url }
+        : {}),
+    }));
+  }
+
+  return mapNearByToDayCards(area);
 }

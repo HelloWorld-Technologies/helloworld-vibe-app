@@ -10,22 +10,57 @@ import type {
   InvoiceLineItemTax,
   TenantInvoice,
 } from '@/types/invoice';
+import { toInvoiceDateString } from '@/utils/tenant-format';
 
 export async function getTenantInvoices(): Promise<TenantInvoice[]> {
   const { data } = await http.get('api/hello/invoices/get');
   const invoiceList =
     data?.invoiceList ?? data?.data?.invoiceList ?? data?.data ?? data ?? [];
 
-  if (Array.isArray(invoiceList)) {
-    return invoiceList;
-  }
+  const rawList = Array.isArray(invoiceList)
+    ? invoiceList
+    : invoiceList && typeof invoiceList === 'object'
+      ? (invoiceList.list ?? invoiceList.invoices ?? [])
+      : [];
 
-  if (invoiceList && typeof invoiceList === 'object') {
-    const list = invoiceList.list ?? invoiceList.invoices ?? [];
-    return Array.isArray(list) ? list : [];
-  }
+  if (!Array.isArray(rawList)) return [];
+  return rawList.map(normalizeTenantInvoice).filter((invoice) => invoice.invoice_id);
+}
 
-  return [];
+function normalizeTenantInvoice(item: unknown): TenantInvoice {
+  const record = item && typeof item === 'object' ? (item as Record<string, unknown>) : {};
+  const nested =
+    record.invoice && typeof record.invoice === 'object' && !Array.isArray(record.invoice)
+      ? (record.invoice as Record<string, unknown>)
+      : record;
+
+  return {
+    ...(nested as TenantInvoice),
+    invoice_id: String(nested.invoice_id ?? nested.invoiceId ?? record.invoice_id ?? record.invoiceId ?? ''),
+    invoice_number:
+      (nested.invoice_number as string | undefined) ??
+      (nested.invoiceNumber as string | undefined),
+    title: (nested.title as string | undefined) ?? (nested.description as string | undefined),
+    total: typeof nested.total === 'number' ? nested.total : Number(nested.total) || undefined,
+    balance:
+      typeof nested.balance === 'number'
+        ? nested.balance
+        : Number(nested.balance ?? nested.due_amount ?? nested.dueAmount) || undefined,
+    status: (nested.status as string | undefined)?.toLowerCase(),
+    due_date: toInvoiceDateString(
+      nested.due_date ??
+        nested.dueDate ??
+        nested.due_on ??
+        nested.dueOn ??
+        nested.payment_due_date ??
+        nested.paymentDueDate ??
+        nested.date,
+    ),
+    date: toInvoiceDateString(nested.date ?? nested.invoice_date ?? nested.invoiceDate),
+    paid_date: toInvoiceDateString(nested.paid_date ?? nested.paidDate ?? nested.payment_date),
+    invoice_url:
+      (nested.invoice_url as string | undefined) ?? (nested.invoiceUrl as string | undefined),
+  };
 }
 
 function normalizeTaxes(raw: unknown): InvoiceLineItemTax[] {
@@ -77,9 +112,9 @@ function normalizeInvoiceDetails(payload: unknown, invoiceId: string): InvoiceDe
     status: (nested.status as string | null | undefined) ?? null,
     date: (nested.date as string | null | undefined) ?? null,
     due_date:
-      (nested.due_date as string | null | undefined) ??
-      (nested.dueDate as string | null | undefined) ??
-      null,
+      toInvoiceDateString(
+        nested.due_date ?? nested.dueDate ?? nested.due_on ?? nested.dueOn ?? nested.date,
+      ) ?? null,
     created_time: (nested.created_time as string | null | undefined) ?? null,
     last_modified_time: (nested.last_modified_time as string | null | undefined) ?? null,
     customer_id: (nested.customer_id as string | null | undefined) ?? null,

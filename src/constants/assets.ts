@@ -93,6 +93,9 @@ export const CommunityAssets = {
 
 export const LogoAssets = {
   helloWorld: require('../../assets/bundled/logos/hello-world-logo.svg').default,
+  /** Latest brand monogram mark (avatar / compact icon). */
+  helloWorldMonogram: require('../../assets/bundled/logos/hello-world-monogram.svg').default,
+  helloWorldFavicon: require('../../assets/bundled/logos/hello-world-favicon.svg').default,
 } as const;
 
 export const DashboardIcons = {

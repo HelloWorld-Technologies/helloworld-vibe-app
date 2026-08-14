@@ -7,6 +7,8 @@ const OCCUPANCY_LABELS: Record<OccupancyType, string> = {
   quadruple: 'Quadruple',
 };
 
+const OCCUPANCY_ORDER: OccupancyType[] = ['private', 'double', 'triple', 'quadruple'];
+
 const DEFAULT_FEATURES = ['Balcony', 'Attached Bathroom', 'North Facing'];
 
 export function getOccupancyLabel(type: OccupancyType) {
@@ -22,17 +24,94 @@ export function buildOccupancyOptions(roomTypes?: string[]): OccupancyType[] {
   if (normalized.some((type) => type.includes('triple'))) options.push('triple');
   if (normalized.some((type) => type.includes('quad'))) options.push('quadruple');
 
-  return options.length > 0 ? options : ['private', 'double', 'triple', 'quadruple'];
+  return options.length > 0 ? options : [...OCCUPANCY_ORDER];
+}
+
+function visibleCategory(category: PropertyCategory) {
+  if (category.is_removed) return false;
+  if (category.show_to_ui === false) return false;
+  return true;
+}
+
+/** True only for multi-bed sharing (2SHARING+), not PRIVATE / Classic+ / 1SHARING. */
+export function isSharingInventoryType(inventoryType?: string) {
+  const normalized = String(inventoryType || '')
+    .toUpperCase()
+    .replace(/\s+/g, '');
+  if (!normalized.includes('SHARING')) return false;
+  const match = normalized.match(/^(\d+)SHARING$/);
+  if (match) return Number.parseInt(match[1], 10) >= 2;
+  return normalized === 'SHARING';
+}
+
+function sharingCountFromInventoryType(inventoryType: string) {
+  const normalized = inventoryType.toUpperCase().replace(/\s+/g, '');
+  const match = normalized.match(/^(\d+)SHARING$/);
+  if (match) return Number.parseInt(match[1], 10);
+  return null;
+}
+
+export function categorySupportsPrivate(category: PropertyCategory) {
+  if (!isSharingInventoryType(category.inventory_type)) return true;
+  return (category.private_rent ?? 0) > 0;
+}
+
+export function categorySharingOccupancy(category: PropertyCategory): OccupancyType | null {
+  if (!isSharingInventoryType(category.inventory_type)) return null;
+
+  const sharingCount = sharingCountFromInventoryType(category.inventory_type ?? '');
+  if (sharingCount === 2) return 'double';
+  if (sharingCount === 3) return 'triple';
+  if (sharingCount === 4) return 'quadruple';
+
+  const beds = category.beds_per_room || category.maximum_occupancy;
+  if (beds === 2) return 'double';
+  if (beds === 3) return 'triple';
+  if (beds != null && beds >= 4) return 'quadruple';
+
+  return null;
+}
+
+export function categoryMatchesOccupancy(
+  category: PropertyCategory,
+  occupancy: OccupancyType,
+) {
+  if (!visibleCategory(category)) return false;
+
+  if (occupancy === 'private') {
+    return categorySupportsPrivate(category);
+  }
+
+  return categorySharingOccupancy(category) === occupancy;
+}
+
+export function getAvailableOccupancies(categories: readonly PropertyCategory[] = []) {
+  const visible = categories.filter(visibleCategory);
+  return OCCUPANCY_ORDER.filter((occupancy) =>
+    visible.some((category) => categoryMatchesOccupancy(category, occupancy)),
+  );
+}
+
+export function filterCategoriesByOccupancy(
+  categories: readonly PropertyCategory[],
+  occupancy: OccupancyType,
+) {
+  return categories.filter((category) => categoryMatchesOccupancy(category, occupancy));
+}
+
+export function getRentForOccupancy(category: PropertyCategory, occupancy: OccupancyType) {
+  if (occupancy === 'private') {
+    if (isSharingInventoryType(category.inventory_type)) {
+      return category.private_rent ?? category.private_offer_rent ?? 0;
+    }
+    return category.rent ?? category.offer_rent ?? 0;
+  }
+  return category.rent ?? category.offer_rent ?? 0;
 }
 
 function buildFeatures(category: PropertyCategory): string[] {
-  const features: string[] = [];
-
-  if (category.balcony) features.push('Balcony');
-  if (category.attached_bathroom) features.push('Attached Bathroom');
-  if (category.facing) features.push(`${category.facing} Facing`);
-
   const fromApi = [
+    ...(Array.isArray(category.key_feature) ? category.key_feature : []),
     ...(Array.isArray(category.amenities) ? category.amenities : []),
     ...(Array.isArray(category.features) ? category.features : []),
   ].filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
@@ -41,15 +120,12 @@ function buildFeatures(category: PropertyCategory): string[] {
     return fromApi.slice(0, 3);
   }
 
+  const features: string[] = [];
+  if (category.balcony) features.push('Balcony');
+  if (category.attached_bathroom) features.push('Attached Bathroom');
+  if (category.facing) features.push(`${category.facing} Facing`);
+
   return features.length > 0 ? features : DEFAULT_FEATURES;
-}
-
-function priceForOccupancy(category: PropertyCategory, occupancy: OccupancyType): number {
-  if (occupancy === 'private') {
-    return category.private_offer_rent ?? category.private_rent ?? category.rent ?? 0;
-  }
-
-  return category.offer_rent ?? category.rent ?? category.private_rent ?? 0;
 }
 
 export function buildBookRoomOptions(
@@ -58,10 +134,10 @@ export function buildBookRoomOptions(
   fallbackRent?: number,
 ): BookRoomOption[] {
   if (categories && categories.length > 0) {
-    return categories.map((category, index) => ({
+    return filterCategoriesByOccupancy(categories, occupancy).map((category, index) => ({
       id: String(category.id ?? index),
-      name: category.name || `Room Type ${index + 1}`,
-      price: priceForOccupancy(category, occupancy) || fallbackRent || 0,
+      name: category.display_name || category.name || `Room Type ${index + 1}`,
+      price: getRentForOccupancy(category, occupancy) || fallbackRent || 0,
       features: buildFeatures(category),
     }));
   }

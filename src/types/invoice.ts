@@ -7,6 +7,7 @@ export type TenantInvoice = {
   balance?: number;
   status?: string;
   due_date?: string;
+  date?: string;
   paid_date?: string;
   customer_id?: string;
   invoice_url?: string;

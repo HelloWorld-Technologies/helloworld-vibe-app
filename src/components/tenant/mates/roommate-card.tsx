@@ -1,21 +1,18 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DashboardIcon } from '@/components/dashboard/dashboard-icon';
-import { HwIcon } from '@/components/hw-icon';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import type { RoomMate } from '@/types/roommate';
-import { openPhoneCall, openWhatsApp } from '@/utils/contact-links';
-import { getMatePropertyLabel } from '@/utils/roommate-format';
+import { openPhoneCall } from '@/utils/contact-links';
 
 type RoommateCardProps = {
   mate: RoomMate;
-  propertyFallback?: string;
 };
 
-export function RoommateCard({ mate, propertyFallback }: RoommateCardProps) {
-  const propertyLabel = getMatePropertyLabel(mate, propertyFallback);
+export function RoommateCard({ mate }: RoommateCardProps) {
+  const email = mate.email?.trim();
 
   return (
     <View style={styles.card}>
@@ -23,29 +20,20 @@ export function RoommateCard({ mate, propertyFallback }: RoommateCardProps) {
         <Typography variant="text" size="md" weight="bold">
           {mate.name}
         </Typography>
-        {propertyLabel ? (
+        {email ? (
           <Typography variant="text" size="sm" color={palette.gray[600]}>
-            {propertyLabel}
+            {email}
           </Typography>
         ) : null}
       </View>
 
-      <View style={styles.actions}>
-        <Pressable
-          style={styles.actionButton}
-          onPress={() => openWhatsApp(mate.mobile)}
-          accessibilityRole="button"
-          accessibilityLabel={`WhatsApp ${mate.name}`}>
-          <HwIcon name="whatsapp" size={20} color={palette.white} />
-        </Pressable>
-        <Pressable
-          style={styles.actionButton}
-          onPress={() => openPhoneCall(mate.mobile)}
-          accessibilityRole="button"
-          accessibilityLabel={`Call ${mate.name}`}>
-          <DashboardIcon name="call" size={18} color={palette.gray[800]} />
-        </Pressable>
-      </View>
+      <Pressable
+        style={styles.actionButton}
+        onPress={() => openPhoneCall(mate.mobile)}
+        accessibilityRole="button"
+        accessibilityLabel={`Call ${mate.name}`}>
+        <DashboardIcon name="call" size={18} color={palette.gray[800]} />
+      </Pressable>
     </View>
   );
 }
@@ -68,10 +56,6 @@ const styles = StyleSheet.create({
   copy: {
     flex: 1,
     gap: 4,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
   },
   actionButton: {
     width: 40,

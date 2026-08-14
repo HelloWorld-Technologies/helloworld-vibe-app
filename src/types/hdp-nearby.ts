@@ -1,9 +1,12 @@
 export type NearbyPlace = {
   name?: string;
   distance?: string;
+  distance_meters?: number | null;
   rating?: number;
   vicinity?: string;
   types?: string[];
+  image?: string;
+  image_url?: string;
 };
 
 export type NearByArea = Record<string, NearbyPlace[]>;

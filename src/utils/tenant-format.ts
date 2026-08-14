@@ -1,13 +1,40 @@
 import type { TenantInvoice } from '@/types/invoice';
+import type { TenantProfile } from '@/types/tenant';
 
 export function priceFormatter(amount: number) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
+export function toInvoiceDateString(value: unknown): string | undefined {
+  if (value == null || value === '') return undefined;
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const ms = value < 1e12 ? value * 1000 : value;
+    const date = new Date(ms);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+
+  if (typeof value !== 'string') return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return undefined;
+
+  if (/^\d{10,13}$/.test(trimmed)) {
+    const num = Number(trimmed);
+    const ms = trimmed.length <= 10 ? num * 1000 : num;
+    const date = new Date(ms);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? undefined : trimmed;
+}
+
 export function formatDisplayDate(value?: string) {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const normalized = toInvoiceDateString(value);
+  if (!normalized) return '—';
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return value ?? '—';
   return date.toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
@@ -16,18 +43,53 @@ export function formatDisplayDate(value?: string) {
 }
 
 export function formatShortMonthYear(value?: string) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const normalized = toInvoiceDateString(value);
+  if (!normalized) return '';
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return value ?? '';
   return date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }).replace("'", "'");
 }
 
+const PENDING_INVOICE_STATUSES = new Set([
+  'sent',
+  'overdue',
+  'unpaid',
+  'partially_paid',
+  'partially paid',
+  'viewed',
+  'pending',
+  'open',
+  'due',
+]);
+
 export function filterInvoices(invoices: TenantInvoice[]) {
-  const pending = invoices.filter((invoice) =>
-    ['sent', 'overdue', 'unpaid', 'partially_paid'].includes(invoice.status ?? ''),
-  );
+  const pending = invoices.filter((invoice) => {
+    const status = (invoice.status ?? '').replace(/[\s-]+/g, '_');
+    if (PENDING_INVOICE_STATUSES.has(status) || PENDING_INVOICE_STATUSES.has(invoice.status ?? '')) {
+      return true;
+    }
+    return (invoice.balance ?? 0) > 0 && status !== 'paid' && status !== 'void';
+  });
   const paid = invoices.filter((invoice) => invoice.status === 'paid');
   return { pending, paid };
+}
+
+export function getDashboardRentDueDate(
+  invoice?: TenantInvoice | null,
+  profile?: TenantProfile | null,
+) {
+  const info = profile?.propertyInfo as
+    | (TenantProfile['propertyInfo'] & Record<string, unknown>)
+    | undefined;
+
+  return (
+    toInvoiceDateString(invoice?.due_date) ??
+    toInvoiceDateString(invoice?.date) ??
+    toInvoiceDateString(profile?.propertyInfo?.rentStartDate) ??
+    toInvoiceDateString(info?.rent_start_date) ??
+    toInvoiceDateString(profile?.propertyInfo?.moveInDate) ??
+    toInvoiceDateString(info?.move_in_date)
+  );
 }
 
 export function getInvoiceTitle(invoice: TenantInvoice) {
@@ -40,7 +102,8 @@ export function getInvoiceTitle(invoice: TenantInvoice) {
 }
 
 export function getInvoiceDueLabel(invoice: TenantInvoice) {
-  const dueDate = invoice.due_date ? new Date(invoice.due_date) : null;
+  const normalized = toInvoiceDateString(invoice.due_date ?? invoice.date);
+  const dueDate = normalized ? new Date(normalized) : null;
   if (!dueDate || Number.isNaN(dueDate.getTime())) return null;
 
   const today = new Date();

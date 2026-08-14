@@ -43,15 +43,6 @@ export function buildMoveInSteps(
       enabled: true,
     },
     {
-      id: 'emergency-contact',
-      title: 'Emergency Contact',
-      description: 'Add a contact we can reach in an emergency.',
-      actionLabel: 'Add Contact',
-      route: '/profile/emergency-contact',
-      completed: status['emergency details'],
-      enabled: true,
-    },
-    {
       id: 'document-verification',
       title: 'Document Verification',
       description: "You'll be redirected to our partner portal for KYC Verification",
@@ -86,6 +77,15 @@ export function buildMoveInSteps(
       description:
         'Your rental agreement will be shared over your registered Email once onboarding is completed.',
       completed: status.signed_document,
+      enabled: true,
+    },
+    {
+      id: 'emergency-contact',
+      title: 'Emergency Contact',
+      description: 'Add a contact we can reach in an emergency.',
+      actionLabel: 'Add Contact',
+      route: '/profile/emergency-contact',
+      completed: status['emergency details'],
       enabled: true,
     },
   ];

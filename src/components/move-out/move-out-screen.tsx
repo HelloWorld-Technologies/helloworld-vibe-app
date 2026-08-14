@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
@@ -38,6 +38,7 @@ function resolveScreenStatus(info: MoveOutInfo | null | undefined): MoveOutStatu
 
 export function MoveOutScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const profile = useTenantProfile();
   const bookingId = profile?.bookingId ?? '';
 
@@ -125,7 +126,7 @@ export function MoveOutScreen() {
   }
 
   function goToDashboard() {
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/dashboard');
   }
 
   const screenTitle =
@@ -164,7 +165,11 @@ export function MoveOutScreen() {
 
   return (
     <>
-      <ProfileStackScreen title={screenTitle} centerTitle style={styles.screen}>
+      <ProfileStackScreen
+        title={screenTitle}
+        centerTitle
+        fallbackHref={from === 'support' ? '/(tabs)/support' : undefined}
+        style={styles.screen}>
         {content}
       </ProfileStackScreen>
 
@@ -175,7 +180,7 @@ export function MoveOutScreen() {
         onProceed={() => setPlanningSheetVisible(false)}
         onHelpMeStay={() => {
           setPlanningSheetVisible(false);
-          router.push('/(tabs)/support');
+          router.navigate('/(tabs)/support');
         }}
       />
     </>

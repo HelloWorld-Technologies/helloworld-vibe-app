@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     gap: DOT_GAP,
-    marginTop: 12,
-    marginBottom: 4,
+    marginTop: 4,
+    marginBottom: 0,
   },
 });

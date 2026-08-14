@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -57,6 +58,12 @@ function SupportTicketList({
   );
 
   const refreshing = isRefetching && !isFetchingNextPage;
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch]),
+  );
 
   function renderTicket({ item }: { item: SupportTicket }) {
     return <SupportTicketCard ticket={item} />;

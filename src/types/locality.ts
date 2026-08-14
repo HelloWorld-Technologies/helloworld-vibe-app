@@ -6,6 +6,15 @@ export type LocalityRatings = {
   transport?: number;
 };
 
+export type LocalityNearbyPlace = {
+  id?: string | number;
+  name?: string;
+  distance?: string;
+  distance_meters?: number | null;
+  image?: string;
+  image_url?: string;
+};
+
 export type ApiLocality = {
   id: string | number;
   city?: string;
@@ -15,14 +24,21 @@ export type ApiLocality = {
   lat?: number;
   long?: number;
   description?: string;
+  photo?: string | null;
   cover_image?: string | null;
   landmark_image?: string | null;
   city_image?: string | null;
   images?: string[];
   locality_type?: string;
   ratings?: LocalityRatings;
+  starting_rent?: number | null;
+  no_of_properties?: number | null;
+  nearby?: Record<string, LocalityNearbyPlace[]>;
   is_popular?: boolean;
 };
+
+/** Locality payload returned on `v3/property/list` as `localityInfo`. */
+export type LocalityInfo = ApiLocality;
 
 export type LocalitiesResponse = {
   success: boolean;

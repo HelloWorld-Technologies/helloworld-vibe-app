@@ -33,6 +33,7 @@ export function useSrpProperties(
         .map(mapApiPropertyToListing),
       total: response.pageInfo?.total ?? response.data?.length ?? 0,
       nearByListings: (response.nearBy ?? []).map(mapApiPropertyToListing),
+      localityInfo: response.localityInfo ?? null,
       pageInfo: response.pageInfo,
     }),
   });

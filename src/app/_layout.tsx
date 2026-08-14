@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ServerErrorScreen } from '@/components/error/server-error-screen';
 import { FontAssets } from '@/constants/fonts';
 import { AppProviders } from '@/providers/app-providers';
+import { useAuthHydrated, useIsAuthenticated } from '@/stores/auth-store';
 
 SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ duration: 200, fade: true });
@@ -40,10 +41,21 @@ export default function RootLayout() {
 
   return (
     <AppProviders>
-      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-        <Stack.Screen name="index" options={{ animation: 'none' }} />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="otp" />
+      <RootNavigator />
+    </AppProviders>
+  );
+}
+
+function RootNavigator() {
+  const hydrated = useAuthHydrated();
+  const isAuthenticated = useIsAuthenticated();
+
+  return (
+    <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+      <Stack.Screen name="index" options={{ animation: 'none' }} />
+      <Stack.Screen name="login" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="otp" />
+      <Stack.Protected guard={!hydrated || isAuthenticated}>
         <Stack.Screen name="select-city" />
         <Stack.Screen name="search" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="srp" options={{ animation: 'slide_from_right' }} />
@@ -73,6 +85,10 @@ export default function RootLayout() {
         <Stack.Screen name="sos" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="smart-meter-recharge" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="smart-meter-usage" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen
+          name="smart-meter-usage-details"
+          options={{ animation: 'slide_from_right' }}
+        />
         <Stack.Screen name="smart-meter-history" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="complete-payment" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="invoice" options={{ animation: 'slide_from_right' }} />
@@ -87,8 +103,8 @@ export default function RootLayout() {
           options={{ animation: 'slide_from_right' }}
         />
         <Stack.Screen name="component-showcase" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="server-error" options={{ animation: 'fade', gestureEnabled: false }} />
-      </Stack>
-    </AppProviders>
+      </Stack.Protected>
+      <Stack.Screen name="server-error" options={{ animation: 'fade', gestureEnabled: false }} />
+    </Stack>
   );
 }

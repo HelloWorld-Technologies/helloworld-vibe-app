@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
-  FadeIn,
-  FadeOut,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
@@ -168,10 +166,10 @@ function VibeMatchTile ({ item }: { item: VibeMatchItem }) {
 function PropertyVibeChip ({ label, emoji }: { label: string; emoji: string }) {
   return (
     <View style={styles.propertyVibeChip}>
-      <Typography variant='text' size='sm' style={styles.propertyVibeEmoji}>
+      <Typography variant='text' size='xs' style={styles.propertyVibeEmoji}>
         {emoji}
       </Typography>
-      <Typography variant='text' size='sm' weight='medium' color={palette.gray[800]}>
+      <Typography variant='text' size='xs' weight='medium' color={palette.gray[800]}>
         {label}
       </Typography>
     </View>
@@ -197,7 +195,7 @@ function AnimatedPropertyVibes ({
 
   const containerStyle = useAnimatedStyle(() => ({
     height: contentHeight.value > 0 ? contentHeight.value * expandProgress.value : 0,
-    opacity: interpolate(expandProgress.value, [0, 0.35, 1], [0, 0.7, 1]),
+    opacity: interpolate(expandProgress.value, [0, 0.45, 1], [0, 1, 1]),
     overflow: 'hidden',
   }))
 
@@ -207,17 +205,14 @@ function AnimatedPropertyVibes ({
         style={styles.propertyVibeList}
         onLayout={(event) => {
           const nextHeight = event.nativeEvent.layout.height
-          if (nextHeight > 0) {
+          if (nextHeight > 0 && Math.abs(contentHeight.value - nextHeight) > 1) {
             contentHeight.value = nextHeight
           }
         }}>
-        {vibes.map((vibe, index) => (
-          <Animated.View
-            key={vibe.id}
-            entering={expanded ? FadeIn.duration(220).delay(index * 40) : undefined}
-            exiting={FadeOut.duration(160)}>
+        {vibes.map((vibe) => (
+          <View key={vibe.id} style={styles.propertyVibeChipWrap}>
             <PropertyVibeChip label={vibe.label} emoji={vibe.emoji} />
-          </Animated.View>
+          </View>
         ))}
       </View>
     </Animated.View>
@@ -465,22 +460,28 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8
+    alignItems: 'flex-start',
+    alignContent: 'flex-start',
+    justifyContent: 'flex-start',
+    gap: 6,
+  },
+  propertyVibeChipWrap: {
+    alignSelf: 'flex-start',
   },
   propertyVibeChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: palette.white,
     borderRadius: Radius.full,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.gray[200]
+    borderColor: palette.gray[200],
   },
   propertyVibeEmoji: {
-    fontSize: 15,
-    lineHeight: 18
+    fontSize: 12,
+    lineHeight: 14,
   },
   residentCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.72)',

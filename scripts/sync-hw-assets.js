@@ -263,8 +263,19 @@ function main() {
 
   const logosTarget = path.join(__dirname, '..', 'assets', 'bundled', 'logos');
   const logoSrc = path.join(profileSource, 'Logos', 'Gardient+ black.svg');
+  const monogramSrc = path.join(profileSource, 'Logos', 'Black Monogram.svg');
+  const faviconSrc = path.join(profileSource, 'Logos', 'Favicon.svg');
+  fs.mkdirSync(logosTarget, { recursive: true });
   if (fs.existsSync(logoSrc)) {
     copyFile(logoSrc, path.join(logosTarget, 'hello-world-logo.svg'));
+  }
+  if (fs.existsSync(monogramSrc)) {
+    copyFile(monogramSrc, path.join(logosTarget, 'hello-world-monogram.svg'));
+  }
+  if (fs.existsSync(faviconSrc)) {
+    copyFile(faviconSrc, path.join(logosTarget, 'hello-world-favicon.svg'));
+  }
+  if (fs.existsSync(logoSrc) || fs.existsSync(monogramSrc) || fs.existsSync(faviconSrc)) {
     console.log(`[sync-hw-assets] Synced logo assets to ${logosTarget}`);
   }
 

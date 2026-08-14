@@ -33,7 +33,7 @@ export function MoveInStepsHeader({ onBack }: MoveInStepsHeaderProps) {
         </View>
 
         <Pressable
-          onPress={() => router.push('/(tabs)/support')}
+          onPress={() => router.navigate('/(tabs)/support')}
           style={styles.supportButton}
           accessibilityRole="button"
           accessibilityLabel="Support">

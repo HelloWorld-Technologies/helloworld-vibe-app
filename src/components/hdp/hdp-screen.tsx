@@ -33,7 +33,7 @@ import { Typography } from '@/components/ui/typography';
 import {
   HDP_SAMPLE_AMENITIES,
   HDP_SAMPLE_FAQ,
-  HDP_DUMMY_REVIEWS,
+  HDP_SECTION_NAV,
   type HdpSectionId,
 } from '@/constants/hdp';
 import palette from '@/constants/palette';
@@ -53,6 +53,12 @@ import {
 } from '@/utils/hdp-media';
 import { extractNearByFromDetail, mapNearByToDayCards } from '@/utils/hdp-nearby';
 import { extractMomentsFromHdp } from '@/utils/hdp-moments';
+import {
+  mapGoogleDataToReviewSummary,
+  mapGoogleReviewsToResidentReviews,
+} from '@/utils/hdp-reviews';
+import { isMapsUrl } from '@/utils/maps';
+import { buildPropertyMapUrl } from '@/utils/visit-slots';
 import {
   mapPropertyVibesToInterests,
   mapVibeBadgesToSelectedMatches,
@@ -236,7 +242,20 @@ export function HdpScreen() {
   });
 
   const property = data?.success ? (data.data as Record<string, any>) : null;
-  const googleRating = data?.googleData?.google_rating ?? property?.google_rating ?? 4.5;
+  const googleData = data?.googleData ?? property?.googleData ?? null;
+  const reviewSummary = useMemo(
+    () => mapGoogleDataToReviewSummary(googleData),
+    [googleData],
+  );
+  const residentReviews = useMemo(
+    () => mapGoogleReviewsToResidentReviews(googleData),
+    [googleData],
+  );
+  const hasReviews = reviewSummary != null || residentReviews.length > 0;
+  const parsedGoogleRating = Number(googleData?.google_rating ?? property?.google_rating);
+  const googleRating =
+    reviewSummary?.rating ??
+    (Number.isFinite(parsedGoogleRating) ? parsedGoogleRating : 0);
 
   useEffect(() => {
     if (autoOpenedBookRef.current) return;
@@ -319,24 +338,59 @@ export function HdpScreen() {
     [data?.propertyVibes],
   );
   const visitsToday = property?.visits_today ?? property?.visit_count ?? 7;
-  const reviewCount = property?.review_count ?? property?.reviews_count ?? 127;
-  const mapUrl = typeof property?.map_url === 'string' ? property.map_url : undefined;
+  const reviewCount =
+    reviewSummary?.reviewCount ??
+    property?.review_count ??
+    property?.reviews_count ??
+    0;
   const dayFromHereCards = useMemo(
     () => mapNearByToDayCards(extractNearByFromDetail(data, property)),
     [data, property],
   );
+  const hasNearby = dayFromHereCards.length > 0;
+  const sectionNavItems = useMemo(
+    () =>
+      HDP_SECTION_NAV.filter((item) => {
+        if (item.id === 'nearby') return hasNearby;
+        if (item.id === 'reviews') return hasReviews;
+        return true;
+      }),
+    [hasNearby, hasReviews],
+  );
+
+  useEffect(() => {
+    if (!sectionNavItems.some((item) => item.id === activeSection)) {
+      setActiveSection(sectionNavItems[0]?.id ?? 'about');
+    }
+  }, [activeSection, sectionNavItems]);
+  const mapUrl =
+    (typeof property?.map_url === 'string' && isMapsUrl(property.map_url)
+      ? property.map_url
+      : undefined) ||
+    buildPropertyMapUrl(property);
 
   const propertyCity =
+    (typeof property?.address === 'object' &&
+    property.address &&
+    typeof (property.address as { city?: string }).city === 'string'
+      ? (property.address as { city?: string }).city
+      : null) ||
     (typeof property?.city === 'string' && property.city) ||
     selectedCity ||
     'Bangalore';
   const propertyLocality =
+    (typeof property?.locality === 'string' && property.locality) ||
     (typeof property?.address === 'object' &&
     property.address &&
     typeof (property.address as { locality?: string }).locality === 'string'
       ? (property.address as { locality?: string }).locality
-      : null) ||
-    (typeof property?.locality === 'string' ? property.locality : null);
+      : null);
+  const addressLine2 =
+    typeof property?.address === 'object' &&
+    property.address &&
+    typeof (property.address as { line2?: string }).line2 === 'string'
+      ? (property.address as { line2?: string }).line2
+      : undefined;
 
   const { listings: similarListings } = useSimilarProperties({
     propertyId,
@@ -350,10 +404,13 @@ export function HdpScreen() {
 
   function handleShare() {
     void shareProperty({
-      name: (typeof property?.name === 'string' && property.name) || displayName,
+      name:
+        (typeof property?.name === 'string' && property.name) || displayName,
+      displayName,
       id: propertyId,
       city: propertyCity,
-      locality: propertyLocality ?? undefined,
+      locality: propertyLocality || undefined,
+      addressLine2,
     });
   }
 
@@ -461,7 +518,11 @@ export function HdpScreen() {
                 <View
                   style={showStickyTabs ? styles.tabBarPlaceholder : undefined}
                   pointerEvents={showStickyTabs ? 'none' : 'auto'}>
-                  <HdpSectionNav activeId={activeSection} onChange={handleSectionChange} />
+                  <HdpSectionNav
+                    activeId={activeSection}
+                    onChange={handleSectionChange}
+                    items={sectionNavItems}
+                  />
                 </View>
               </View>
 
@@ -505,13 +566,15 @@ export function HdpScreen() {
                 <HdpAmenityPills items={amenities} />
               </View>
 
-              <View ref={assignSectionRef(sectionRefs, 'nearby')} collapsable={false}>
-                <HdpDayFromHereSection
-                  propertyName={displayName}
-                  mapUrl={mapUrl}
-                  cards={dayFromHereCards}
-                />
-              </View>
+              {hasNearby ? (
+                <View ref={assignSectionRef(sectionRefs, 'nearby')} collapsable={false}>
+                  <HdpDayFromHereSection
+                    propertyName={displayName}
+                    mapUrl={mapUrl}
+                    cards={dayFromHereCards}
+                  />
+                </View>
+              ) : null}
 
               <HdpMomentsSection
                 propertyName={displayName}
@@ -519,14 +582,15 @@ export function HdpScreen() {
                 carouselWidth={width - 48}
               />
 
-              <View ref={assignSectionRef(sectionRefs, 'reviews')} collapsable={false}>
-                <HdpReviewsSection
-                  rating={Number(googleRating) || 4.8}
-                  reviewCount={reviewCount}
-                  carouselWidth={width - 48}
-                  reviews={HDP_DUMMY_REVIEWS}
-                />
-              </View>
+              {hasReviews ? (
+                <View ref={assignSectionRef(sectionRefs, 'reviews')} collapsable={false}>
+                  <HdpReviewsSection
+                    summary={reviewSummary}
+                    reviews={residentReviews}
+                    carouselWidth={width - 48}
+                  />
+                </View>
+              ) : null}
 
               <HdpSimilarPropertiesSection listings={similarListings} />
 
@@ -543,7 +607,11 @@ export function HdpScreen() {
 
           {showStickyTabs ? (
             <View style={[styles.stickyTabBar, { top: stickyTop }]}>
-              <HdpSectionNav activeId={activeSection} onChange={handleSectionChange} />
+              <HdpSectionNav
+                activeId={activeSection}
+                onChange={handleSectionChange}
+                items={sectionNavItems}
+              />
             </View>
           ) : null}
 

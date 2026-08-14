@@ -27,6 +27,7 @@ export function getPropertyLocality(
   profile?: TenantProfile | null,
   propertyDetail?: Record<string, unknown> | null,
 ) {
+  const propertyName = profile?.propertyInfo?.name?.trim().toLowerCase() ?? '';
   const address = propertyDetail?.address;
   if (address && typeof address === 'object') {
     const record = address as Record<string, unknown>;
@@ -34,11 +35,13 @@ export function getPropertyLocality(
       (typeof record.line2 === 'string' && record.line2) ||
       (typeof record.locality === 'string' && record.locality) ||
       (typeof record.line1 === 'string' && record.line1);
-    if (locality) return locality;
+    if (locality && locality.trim().toLowerCase() !== propertyName) return locality;
   }
 
   if (typeof propertyDetail?.locality === 'string' && propertyDetail.locality) {
-    return propertyDetail.locality;
+    if (propertyDetail.locality.trim().toLowerCase() !== propertyName) {
+      return propertyDetail.locality;
+    }
   }
 
   const userAddress = profile?.userAddress;
@@ -63,36 +66,30 @@ export function getRoomLabel(profile?: TenantProfile | null) {
   return parts.length > 0 ? parts.join(' • ') : '—';
 }
 
+function normalizeBookingState(value?: string) {
+  return (value ?? '').trim().toLowerCase().replace(/[_\s-]+/g, '');
+}
+
 export function getResidenceStatus(
   profile?: TenantProfile | null,
-  bookingStatus?: BookingStatus,
+  _bookingStatus?: BookingStatus,
 ): ResidenceStatus {
-  if (bookingStatus?.moved_in) {
+  const bookingState = normalizeBookingState(profile?.userInfo?.bookingStatus);
+
+  if (bookingState === 'resident' || bookingState === 'currentlyresiding') {
     return { label: 'Currently Residing' };
   }
 
-  const moveInDate = profile?.propertyInfo?.moveInDate;
-  if (moveInDate) {
-    const parsed = new Date(moveInDate);
-    if (!Number.isNaN(parsed.getTime()) && parsed.getTime() > Date.now()) {
-      return { label: 'Upcoming Move-in' };
-    }
+  if (
+    bookingState === 'movedout' ||
+    bookingState === 'moveout' ||
+    bookingState === 'paststay' ||
+    bookingState.includes('movedout')
+  ) {
+    return { label: 'Past Stay' };
   }
 
-  const moveOutDate = profile?.propertyInfo?.moveOutDate;
-  if (moveOutDate) {
-    const parsed = new Date(moveOutDate);
-    if (!Number.isNaN(parsed.getTime()) && parsed.getTime() < Date.now()) {
-      return { label: 'Past Stay' };
-    }
-  }
-
-  const bookingState = profile?.userInfo?.bookingStatus?.toLowerCase() ?? '';
-  if (bookingState.includes('resid') || bookingState.includes('active') || bookingState.includes('moved')) {
-    return { label: 'Currently Residing' };
-  }
-
-  return { label: 'Currently Residing' };
+  return { label: 'To Move-in' };
 }
 
 function readString(value: unknown) {
