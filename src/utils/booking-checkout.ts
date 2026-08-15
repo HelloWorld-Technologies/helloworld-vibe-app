@@ -27,6 +27,7 @@ export function buildBookingPaymentSummary(
       type: discount.type,
       code: discount.code,
       amount: discount.amount,
+      message: discount.message,
     })),
     total: input.total,
   };

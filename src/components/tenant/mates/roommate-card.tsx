@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DashboardIcon } from '@/components/dashboard/dashboard-icon';
-import { Typography } from '@/components/ui/typography';
+import { MateCardDetails } from '@/components/tenant/mates/mate-card-details';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import type { RoomMate } from '@/types/roommate';
@@ -12,21 +12,9 @@ type RoommateCardProps = {
 };
 
 export function RoommateCard({ mate }: RoommateCardProps) {
-  const email = mate.email?.trim();
-
   return (
     <View style={styles.card}>
-      <View style={styles.copy}>
-        <Typography variant="text" size="md" weight="bold">
-          {mate.name}
-        </Typography>
-        {email ? (
-          <Typography variant="text" size="sm" color={palette.gray[600]}>
-            {email}
-          </Typography>
-        ) : null}
-      </View>
-
+      <MateCardDetails mate={mate} />
       <Pressable
         style={styles.actionButton}
         onPress={() => openPhoneCall(mate.mobile)}
@@ -44,7 +32,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 16,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
     shadowColor: '#101828',
@@ -52,10 +40,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
-  },
-  copy: {
-    flex: 1,
-    gap: 4,
   },
   actionButton: {
     width: 40,

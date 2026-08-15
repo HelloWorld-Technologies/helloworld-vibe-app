@@ -29,7 +29,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.thehelloworld",
-      "versionCode": 275,
+      "versionCode": 276,
       "googleServicesFile": "./google-services.json",
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize"

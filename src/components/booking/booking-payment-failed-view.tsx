@@ -8,7 +8,7 @@ import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import type { BookingPaymentSummary } from '@/types/booking-payment';
-import { formatBookingAmount, formatBookingMoveInDate } from '@/utils/booking-payment';
+import { formatBookingAmount, formatBookingMoveInDate, getAppliedDiscountMessage } from '@/utils/booking-payment';
 
 type BookingPaymentFailedViewProps = {
   summary: BookingPaymentSummary;
@@ -21,21 +21,33 @@ function DiscountRow({
 }: {
   discount: BookingPaymentSummary['discounts'][number];
 }) {
+  const message = getAppliedDiscountMessage(discount);
+  const showAmount = discount.amount > 0;
+
   return (
-    <View style={styles.discountRow}>
-      <View style={styles.discountLeft}>
-        <View style={styles.discountBadge}>
-          <Typography variant="text" size="xs" style={styles.discountBadgeText}>
-            {discount.type === 'coupon' ? 'COUPON' : 'REFERRAL'}
+    <View style={styles.discountBlock}>
+      <View style={styles.discountRow}>
+        <View style={styles.discountLeft}>
+          <View style={styles.discountBadge}>
+            <Typography variant="text" size="xs" style={styles.discountBadgeText}>
+              {discount.type === 'coupon' ? 'COUPON' : 'REFERRAL'}
+            </Typography>
+          </View>
+          <Typography variant="text" size="xs" style={styles.discountCode}>
+            {discount.code}
           </Typography>
         </View>
-        <Typography variant="text" size="xs" style={styles.discountCode}>
-          {discount.code}
-        </Typography>
+        {showAmount ? (
+          <Typography variant="text" size="sm" weight="medium" style={styles.discountAmount}>
+            −{formatBookingAmount(discount.amount)}
+          </Typography>
+        ) : null}
       </View>
-      <Typography variant="text" size="sm" weight="medium" style={styles.discountAmount}>
-        −{formatBookingAmount(discount.amount)}
-      </Typography>
+      {message ? (
+        <Typography variant="text" size="xs" style={styles.discountHint}>
+          {message}
+        </Typography>
+      ) : null}
     </View>
   );
 }
@@ -244,6 +256,9 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: palette.gray[200],
   },
+  discountBlock: {
+    gap: 4,
+  },
   discountRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -276,6 +291,10 @@ const styles = StyleSheet.create({
   discountAmount: {
     color: palette.lime[700],
     lineHeight: 20,
+  },
+  discountHint: {
+    color: palette.lime[700],
+    lineHeight: 17,
   },
   footer: {
     position: 'absolute',

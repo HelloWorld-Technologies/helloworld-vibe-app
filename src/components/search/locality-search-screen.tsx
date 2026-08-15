@@ -33,6 +33,7 @@ type SearchResultRowProps = {
   icon: 'mappin.and.ellipse' | 'building.2' | 'clock';
   onPress: () => void;
   accessibilityLabel: string;
+  animate?: boolean;
 };
 
 function SearchResultRow({
@@ -41,19 +42,28 @@ function SearchResultRow({
   icon,
   onPress,
   accessibilityLabel,
+  animate = true,
 }: SearchResultRowProps) {
+  const row = (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}>
+      <HwSymbol name={icon} size={20} tintColor={palette.gray[700]} style={styles.resultIcon} />
+      <Typography variant="text" size="md" style={styles.resultLabel} numberOfLines={2}>
+        {label}
+      </Typography>
+    </Pressable>
+  );
+
+  if (!animate) {
+    return row;
+  }
+
   return (
     <Animated.View entering={FadeInDown.duration(RESULT_ENTER_MS).delay(index * RESULT_STAGGER_MS)}>
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}>
-        <HwSymbol name={icon} size={20} tintColor={palette.gray[700]} style={styles.resultIcon} />
-        <Typography variant="text" size="md" style={styles.resultLabel} numberOfLines={2}>
-          {label}
-        </Typography>
-      </Pressable>
+      {row}
     </Animated.View>
   );
 }
@@ -173,16 +183,19 @@ export function LocalitySearchScreen() {
             <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
               Recent searches
             </Typography>
-            {history.map((item, index) => (
-              <SearchResultRow
-                key={item.id}
-                index={index}
-                label={item.label}
-                icon="clock"
-                onPress={() => handleSelectHistory(item)}
-                accessibilityLabel={`Open recent search ${item.label}`}
-              />
-            ))}
+            {history
+              .filter((item) => item.label.trim().length > 0)
+              .map((item, index) => (
+                <SearchResultRow
+                  key={item.id}
+                  index={index}
+                  label={item.label}
+                  icon="clock"
+                  animate={false}
+                  onPress={() => handleSelectHistory(item)}
+                  accessibilityLabel={`Open recent search ${item.label}`}
+                />
+              ))}
           </View>
         ) : null}
 

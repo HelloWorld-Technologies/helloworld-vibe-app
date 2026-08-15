@@ -97,7 +97,7 @@ export type BookingPaymentSummary = {
   invoiceId: string;
   date: string;
   lines: { label: string; amount: number }[];
-  discounts: { type: AppliedDiscount['type']; code: string; amount: number }[];
+  discounts: { type: AppliedDiscount['type']; code: string; amount: number; message?: string }[];
   total: number;
 };
 

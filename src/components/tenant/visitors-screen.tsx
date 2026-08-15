@@ -10,11 +10,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { postVerifyVisitor } from '@/api/roommate';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { MateListSkeleton } from '@/components/skeleton';
 import { AddMateSheet } from '@/components/tenant/mates/add-visitor-sheet';
-import { ToastBanner } from '@/components/tenant/mates/toast-banner';
 import { VisitorCard } from '@/components/tenant/mates/visitor-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Typography } from '@/components/ui/typography';
@@ -22,7 +20,6 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { useRoomMates } from '@/queries/use-roommates';
 import { useTenantProfile } from '@/stores/tenant-store';
-import type { RoomMate } from '@/types/roommate';
 
 export function VisitorsScreen() {
   const insets = useSafeAreaInsets();
@@ -30,34 +27,6 @@ export function VisitorsScreen() {
   const queryClient = useQueryClient();
   const { data: visitors, isLoading, isRefetching, refetch } = useRoomMates('VISITOR');
   const [sheetVisible, setSheetVisible] = useState(false);
-  const [verifyingId, setVerifyingId] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastVisible, setToastVisible] = useState(false);
-
-  const propertyFallback = [profile?.propertyInfo?.address?.flatNo, profile?.propertyInfo?.name]
-    .filter(Boolean)
-    .join(' · ');
-
-  async function handleVerify(mate: RoomMate) {
-    if (!profile?.bookingId) return;
-    const key = mate.id ?? mate.mobile;
-    setVerifyingId(key);
-    const result = await postVerifyVisitor({
-      bookingId: profile.bookingId,
-      mobile: mate.mobile,
-      id: mate.id,
-    });
-    setVerifyingId(null);
-
-    if (result.success) {
-      setToastMessage(`We've sent a verification mail to ${mate.name}`);
-      setToastVisible(true);
-      await queryClient.invalidateQueries({ queryKey: ['room-mates', 'VISITOR'] });
-    } else {
-      setToastMessage(result.message ?? 'Unable to send verification mail');
-      setToastVisible(true);
-    }
-  }
 
   function handleAdded() {
     void queryClient.invalidateQueries({ queryKey: ['room-mates', 'VISITOR'] });
@@ -79,9 +48,6 @@ export function VisitorsScreen() {
               <VisitorCard
                 key={mate.id ?? mate.mobile}
                 mate={mate}
-                propertyFallback={propertyFallback}
-                onVerify={() => handleVerify(mate)}
-                verifying={verifyingId === (mate.id ?? mate.mobile)}
               />
             ))}
           </ScrollView>
@@ -108,12 +74,6 @@ export function VisitorsScreen() {
             </Pressable>
           </View>
         ) : null}
-
-        <ToastBanner
-          message={toastMessage}
-          visible={toastVisible}
-          onDismiss={() => setToastVisible(false)}
-        />
       </View>
 
       <AddMateSheet

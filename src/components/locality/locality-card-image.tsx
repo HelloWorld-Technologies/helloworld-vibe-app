@@ -1,6 +1,6 @@
-import { Image, type ImageSource, type ImageStyle } from 'expo-image';
+import { Image, type ImageSource } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, type StyleProp } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { ImageAssets } from '@/constants/assets';
 import { formatPropertyImageUrl } from '@/utils/images';
@@ -10,7 +10,7 @@ type ImageAssetKey = keyof typeof ImageAssets;
 type LocalityCardImageProps = {
   imageKey?: ImageAssetKey;
   imageUri?: string | null;
-  style?: StyleProp<ImageStyle>;
+  style?: StyleProp<ViewStyle>;
 };
 
 const COMING_SOON_SOURCE: ImageSource = ImageAssets.comingSoon;
@@ -50,21 +50,24 @@ export function LocalityCardImage({ imageKey, imageUri, style }: LocalityCardIma
     [imageKey, imageUri],
   );
   const [useFallback, setUseFallback] = useState(false);
+  const [remoteReady, setRemoteReady] = useState(false);
 
   useEffect(() => {
     setUseFallback(false);
+    setRemoteReady(false);
   }, [imageKey, imageUri]);
 
-  const showRemote = Boolean(remoteSource) && !useFallback;
+  const showRemote = Boolean(remoteSource) && !useFallback && remoteReady;
 
   return (
     <View style={[styles.wrap, style]}>
       <Image source={COMING_SOON_SOURCE} style={styles.fill} contentFit="cover" />
-      {showRemote ? (
+      {remoteSource && !useFallback ? (
         <Image
           source={remoteSource}
-          style={styles.fill}
+          style={[styles.fill, showRemote ? null : styles.hidden]}
           contentFit="cover"
+          onLoad={() => setRemoteReady(true)}
           onError={() => setUseFallback(true)}
         />
       ) : null}
@@ -74,10 +77,16 @@ export function LocalityCardImage({ imageKey, imageUri, style }: LocalityCardIma
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
     overflow: 'hidden',
   },
   fill: {
     ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  hidden: {
+    opacity: 0,
   },
 });

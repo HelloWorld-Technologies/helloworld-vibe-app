@@ -20,5 +20,7 @@ export type ReferralDetails = {
 
 export type ReferralTerms = {
   amount?: number;
+  referrerAmount?: number;
+  refereeAmount?: number;
   terms?: string[];
 };

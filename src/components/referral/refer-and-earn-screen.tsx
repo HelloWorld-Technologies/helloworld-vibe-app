@@ -26,8 +26,9 @@ export function ReferAndEarnScreen() {
   const unlockedAmount =
     referral?.totalCredits ?? referral?.balanceCredits ?? creditInfo?.totalCredits ?? creditInfo?.balanceCredits ?? 0;
   const friendsJoined = referral?.friendsJoined ?? creditInfo?.friendsJoined ?? 0;
-  const friendDiscount = terms?.amount ?? 1000;
-  const steps = getReferralHowItWorksSteps(friendDiscount, 2000);
+  const friendDiscount = terms?.refereeAmount ?? 1000;
+  const referrerReward = terms?.referrerAmount ?? 2000;
+  const steps = getReferralHowItWorksSteps(friendDiscount, referrerReward);
   const termItems = terms?.terms ?? [];
 
   return (

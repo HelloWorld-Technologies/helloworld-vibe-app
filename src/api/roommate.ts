@@ -30,46 +30,24 @@ export async function postRoomMateDetails(payload: {
   email: string;
   inType: RoomMateType;
 }) {
-  const { data } = await http.post('hello/room/user', {
-    bookingId: payload.bookingId,
-    name: payload.name,
-    mobile: payload.mobile,
-    email: payload.email,
-    inType: payload.inType,
-  });
-  const body = (data as { data?: unknown })?.data ?? data;
-  const record = body as { success?: boolean; message?: string };
-  return {
-    success: (data as { success?: boolean })?.success !== false && record?.success !== false,
-    message: (data as { message?: string })?.message ?? record?.message,
-  };
-}
-
-export async function postVerifyVisitor(payload: {
-  bookingId: string;
-  mobile: string;
-  id?: string;
-}) {
   try {
-    const { data } = await http.post('hello/room/user/verify', {
-      booking_id: payload.bookingId,
+    const { data } = await http.post('hello/room/user', {
+      bookingId: payload.bookingId,
+      name: payload.name,
       mobile: payload.mobile,
-      id: payload.id,
+      email: payload.email,
+      inType: payload.inType,
     });
-    return { success: true, message: (data as { message?: string })?.message };
+    const body = (data as { data?: unknown })?.data ?? data;
+    const record = body as { success?: boolean; message?: string };
+    return {
+      success: (data as { success?: boolean })?.success !== false && record?.success !== false,
+      message: (data as { message?: string })?.message ?? record?.message,
+    };
   } catch (error) {
-    try {
-      const { data } = await http.post('hello/room/user', {
-        bookingId: payload.bookingId,
-        mobile: payload.mobile,
-        inType: 'VISITOR',
-        verify: true,
-        id: payload.id,
-      });
-      return { success: true, message: (data as { message?: string })?.message };
-    } catch {
-      const message = error instanceof Error ? error.message : 'Failed to send verification';
-      return { success: false, message };
-    }
+    const message =
+      (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+      (error instanceof Error ? error.message : 'Failed to add');
+    return { success: false, message };
   }
 }

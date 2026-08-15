@@ -7,6 +7,7 @@ export type RoomMate = {
   email?: string;
   kyc_done?: boolean;
   createdAt?: string;
+  created_at?: string;
   bedNo?: string;
   flatNo?: string;
   roomNo?: string;

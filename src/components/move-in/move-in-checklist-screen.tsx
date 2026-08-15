@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -34,11 +34,12 @@ type ScreenStatus = 'loading' | 'form' | 'submitting' | 'submitted' | 'approved'
 
 export function MoveInChecklistScreen() {
   const insets = useSafeAreaInsets();
-  const footerInset = useKeyboardBottomInset(Math.max(insets.bottom, 16));
+  const restingInset = Math.max(insets.bottom, 16);
+  const footerInset = useKeyboardBottomInset(restingInset);
+  const keyboardOpen = footerInset > restingInset;
   const queryClient = useQueryClient();
   const profile = useTenantProfile();
   const bookingId = profile?.bookingId ?? '';
-  const scrollRef = useRef<ScrollView>(null);
 
   const [screenStatus, setScreenStatus] = useState<ScreenStatus>('loading');
   const [checklist, setChecklist] = useState<MoveInChecklistItems | null>(null);
@@ -75,14 +76,6 @@ export function MoveInChecklistScreen() {
   useEffect(() => {
     void fetchChecklist();
   }, [fetchChecklist]);
-
-  useEffect(() => {
-    if (footerInset <= Math.max(insets.bottom, 16)) return;
-    const timer = setTimeout(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [footerInset, insets.bottom]);
 
   function updateChecklistItem(sectionKey: string, itemKey: string, value: boolean) {
     setChecklist((current) => {
@@ -157,10 +150,10 @@ export function MoveInChecklistScreen() {
     <ProfileStackScreen title="Move-in Checklist" centerTitle style={styles.screen}>
       <View style={styles.flex}>
         <ScrollView
-          ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive">
           <View style={styles.banner}>
             <Typography variant="text" size="sm" color={palette.blue[800]} style={styles.bannerText}>
               Review the items provided in your room before submitting.
@@ -176,28 +169,9 @@ export function MoveInChecklistScreen() {
             />
           ))}
 
-          <View style={styles.feedbackSection}>
-            <Typography variant="text" size="md" weight="bold" style={styles.feedbackTitle}>
-              Found anything that needs attention?
-            </Typography>
-            <View style={styles.feedbackInputShell}>
-              <TextInput
-                value={feedbackComments}
-                onChangeText={setFeedbackComments}
-                placeholder="Tell us about anything not on the list above..."
-                placeholderTextColor={palette.textPlaceholder}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                style={styles.feedbackInput}
-                onFocus={() => {
-                  setTimeout(() => {
-                    scrollRef.current?.scrollToEnd({ animated: true });
-                  }, 80);
-                }}
-              />
-            </View>
-          </View>
+          <Typography variant="text" size="md" weight="bold" style={styles.feedbackTitle}>
+            Found anything that needs attention?
+          </Typography>
         </ScrollView>
 
         <View style={styles.footerWrap}>
@@ -207,14 +181,30 @@ export function MoveInChecklistScreen() {
             pointerEvents="none"
           />
           <View style={[styles.footer, { paddingBottom: footerInset }]}>
-            <Typography variant="text" size="xs" color={palette.gray[500]} style={styles.footerNote}>
-              You can update your checklist until your Property Manager approves it.
-            </Typography>
-            <Button
-              label="Submit Checklist"
-              onPress={() => void handleSubmit()}
-              loading={screenStatus === 'submitting'}
-            />
+            <View style={[styles.feedbackInputShell, keyboardOpen && styles.feedbackInputShellCompact]}>
+              <TextInput
+                value={feedbackComments}
+                onChangeText={setFeedbackComments}
+                placeholder="Tell us about anything not on the list above..."
+                placeholderTextColor={palette.textPlaceholder}
+                multiline
+                numberOfLines={keyboardOpen ? 2 : 4}
+                textAlignVertical="top"
+                style={[styles.feedbackInput, keyboardOpen && styles.feedbackInputCompact]}
+              />
+            </View>
+            {keyboardOpen ? null : (
+              <>
+                <Typography variant="text" size="xs" color={palette.gray[500]} style={styles.footerNote}>
+                  You can update your checklist until your Property Manager approves it.
+                </Typography>
+                <Button
+                  label="Submit Checklist"
+                  onPress={() => void handleSubmit()}
+                  loading={screenStatus === 'submitting'}
+                />
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -254,14 +244,11 @@ const styles = StyleSheet.create({
   bannerText: {
     lineHeight: 22,
   },
-  feedbackSection: {
-    gap: 8,
-  },
   feedbackTitle: {
     color: palette.gray[900],
   },
   feedbackInputShell: {
-    minHeight: 112,
+    minHeight: 88,
     borderWidth: 1,
     borderColor: palette.borderDefault,
     borderRadius: Radius.sm,
@@ -269,15 +256,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: palette.white,
   },
+  feedbackInputShellCompact: {
+    minHeight: 56,
+  },
   feedbackInput: {
-    flex: 1,
-    minHeight: 88,
+    minHeight: 64,
     fontSize: 16,
     lineHeight: 24,
     color: palette.textPrimary,
     ...fontStyleForWeight('regular'),
     padding: 0,
     margin: 0,
+  },
+  feedbackInputCompact: {
+    minHeight: 32,
   },
   footerWrap: {
     backgroundColor: palette.white,

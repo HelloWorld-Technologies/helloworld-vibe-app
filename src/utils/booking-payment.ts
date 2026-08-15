@@ -1,7 +1,26 @@
-import type { BookingChargeId, MoveInDateOption } from '@/types/booking-payment';
+import type { AppliedDiscount, BookingChargeId, MoveInDateOption } from '@/types/booking-payment';
 
 export function formatBookingAmount(amount: number) {
   return `₹${amount.toLocaleString('en-IN')}`;
+}
+
+/** Same copy shown after apply and in the payment summary. */
+export function getAppliedDiscountMessage(discount: AppliedDiscount) {
+  const fromApi = discount.message?.trim();
+  if (fromApi) return fromApi;
+
+  if (discount.type === 'coupon') {
+    if (discount.amount > 0) {
+      return `Coupon code applied successfully. ${formatBookingAmount(discount.amount)} discount has been added to your booking.`;
+    }
+    return 'Coupon code applied successfully.';
+  }
+
+  if (discount.amount > 0) {
+    return `Referral code applied. ${formatBookingAmount(discount.amount)} discount added.`;
+  }
+
+  return 'Referral code applied.';
 }
 
 type TaxableChargeAmount = {

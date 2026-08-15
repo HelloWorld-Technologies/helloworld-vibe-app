@@ -5,7 +5,7 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import type { AppliedDiscount, BookingChargeOption } from '@/types/booking-payment';
-import { formatBookingAmount } from '@/utils/booking-payment';
+import { formatBookingAmount, getAppliedDiscountMessage } from '@/utils/booking-payment';
 import { Radius } from '@/constants/theme';
 
 type BookingChargesSheetProps = {
@@ -14,9 +14,7 @@ type BookingChargesSheetProps = {
   charges: BookingChargeOption[];
   selectedIds: Set<string>;
   discounts: AppliedDiscount[];
-  subtotal: number;
   total: number;
-  savings: number;
   onPayNow: () => void;
   paying?: boolean;
 };
@@ -65,21 +63,33 @@ function ChargeSummaryRow({ charge }: ChargeSummaryRowProps) {
 }
 
 function DiscountSummaryRow({ discount }: { discount: AppliedDiscount }) {
+  const message = getAppliedDiscountMessage(discount);
+  const showAmount = discount.amount > 0;
+
   return (
-    <View style={styles.discountRow}>
-      <View style={styles.discountLeft}>
-        <View style={styles.discountBadge}>
-          <Typography variant="text" size="xs" style={styles.discountBadgeText}>
-            {discount.type === 'coupon' ? 'COUPON' : 'REFERRAL'}
+    <View style={styles.discountBlock}>
+      <View style={styles.discountRow}>
+        <View style={styles.discountLeft}>
+          <View style={styles.discountBadge}>
+            <Typography variant="text" size="xs" style={styles.discountBadgeText}>
+              {discount.type === 'coupon' ? 'COUPON' : 'REFERRAL'}
+            </Typography>
+          </View>
+          <Typography variant="text" size="xs" style={styles.discountCode}>
+            {discount.code}
           </Typography>
         </View>
-        <Typography variant="text" size="xs" style={styles.discountCode}>
-          {discount.code}
-        </Typography>
+        {showAmount ? (
+          <Typography variant="text" size="sm" weight="medium" style={styles.discountAmount}>
+            −{formatBookingAmount(discount.amount)}
+          </Typography>
+        ) : null}
       </View>
-      <Typography variant="text" size="sm" weight="medium" style={styles.discountAmount}>
-        −{formatBookingAmount(discount.amount)}
-      </Typography>
+      {message ? (
+        <Typography variant="text" size="xs" style={styles.discountHint}>
+          {message}
+        </Typography>
+      ) : null}
     </View>
   );
 }
@@ -90,9 +100,7 @@ export function BookingChargesSheet({
   charges,
   selectedIds,
   discounts,
-  subtotal,
   total,
-  savings,
   onPayNow,
   paying,
 }: BookingChargesSheetProps) {
@@ -138,11 +146,6 @@ export function BookingChargesSheet({
                 <DiscountSummaryRow discount={discount} />
               </View>
             ))}
-            {savings === 0 ? (
-              <Typography variant="text" size="xs" style={styles.discountHint}>
-                Discounts apply when total exceeds {formatBookingAmount(subtotal + 1)}
-              </Typography>
-            ) : null}
           </View>
         ) : null}
 
@@ -226,6 +229,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     gap: 7,
+  },
+  discountBlock: {
+    gap: 4,
   },
   discountRow: {
     flexDirection: 'row',

@@ -31,7 +31,12 @@ export function NeighborhoodLocalityCard({
   style,
 }: NeighborhoodLocalityCardProps) {
   const meta = formatNeighborhoodMeta(item);
-  const image = <LocalityCardImage imageUri={item.imageUri} />;
+  const image = (
+    <LocalityCardImage
+      imageUri={item.imageUri}
+      style={animationValue ? styles.parallaxImage : styles.image}
+    />
+  );
 
   return (
     <Pressable
@@ -42,7 +47,7 @@ export function NeighborhoodLocalityCard({
       <View style={styles.imageWrap}>
         {animationValue ? (
           <ParallaxLayer animationValue={animationValue} style={styles.imageWrap}>
-            <View style={styles.parallaxShift}>{image}</View>
+            {image}
           </ParallaxLayer>
         ) : (
           image
@@ -92,12 +97,14 @@ const styles = StyleSheet.create({
   imageWrap: {
     ...StyleSheet.absoluteFillObject,
   },
-  parallaxShift: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '-15%',
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  parallaxImage: {
     width: '130%',
+    height: '100%',
+    marginLeft: '-15%',
   },
   overlay: {
     position: 'absolute',

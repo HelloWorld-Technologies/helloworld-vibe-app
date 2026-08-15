@@ -137,7 +137,7 @@ export function BookingSuccessScreen() {
             </Typography>
           </View>
 
-          <View style={styles.divider} />
+          {/* <View style={styles.divider} />
 
           <Pressable style={styles.receiptRow} accessibilityRole="button">
             <View style={styles.receiptIcon}>
@@ -147,7 +147,7 @@ export function BookingSuccessScreen() {
               Download receipt
             </Typography>
             <HwSymbol name="chevron.right" size={12} tintColor={palette.helloLime} />
-          </Pressable>
+          </Pressable> */}
         </View>
       </ScrollView>
 

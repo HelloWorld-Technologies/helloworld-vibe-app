@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -21,7 +21,6 @@ export function ParallaxLayer({
   style,
 }: ParallaxLayerProps) {
   const animatedStyle = useAnimatedStyle(() => ({
-    flex: 1,
     transform: [
       {
         translateX: interpolate(
@@ -35,8 +34,20 @@ export function ParallaxLayer({
   }));
 
   return (
-    <Animated.View style={[style, { overflow: 'hidden' }]}>
-      <Animated.View style={animatedStyle}>{children}</Animated.View>
+    <Animated.View style={[styles.clip, style]}>
+      <Animated.View style={[styles.fill, animatedStyle]}>{children}</Animated.View>
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  clip: {
+    overflow: 'hidden',
+    width: '100%',
+    height: '100%',
+  },
+  fill: {
+    width: '100%',
+    height: '100%',
+  },
+});

@@ -31,6 +31,7 @@ import type { AppliedDiscount, BookingChargeId, BookingPricingDetails } from '@/
 import {
   formatBookingAmount,
   formatBookingApiDate,
+  getAppliedDiscountMessage,
   sumSelectedCharges,
 } from '@/utils/booking-payment';
 import {
@@ -406,10 +407,7 @@ export function BookingScreen() {
             loading={referralLoading}
             error={referralError}
             appliedCode={appliedReferral?.code}
-            successMessage={
-              appliedReferral?.message ||
-              (appliedReferral ? `Referral code applied. ${formatBookingAmount(appliedReferral.amount)} discount added.` : undefined)
-            }
+            successMessage={appliedReferral ? getAppliedDiscountMessage(appliedReferral) : undefined}
             onClear={() => {
               setAppliedReferral(null);
               setReferralError('');
@@ -425,12 +423,7 @@ export function BookingScreen() {
             loading={couponLoading}
             error={couponError}
             appliedCode={appliedCoupon?.code}
-            successMessage={
-              appliedCoupon?.message ||
-              (appliedCoupon
-                ? `Coupon code applied successfully. ${formatBookingAmount(appliedCoupon.amount)} discount has been added to your booking.`
-                : undefined)
-            }
+            successMessage={appliedCoupon ? getAppliedDiscountMessage(appliedCoupon) : undefined}
             onClear={() => {
               setAppliedCoupon(null);
               setCouponError('');
@@ -482,9 +475,7 @@ export function BookingScreen() {
         charges={charges}
         selectedIds={selectedIds}
         discounts={discounts}
-        subtotal={subtotal}
         total={total}
-        savings={savings}
         onPayNow={handleConfirmPayment}
       />
 
