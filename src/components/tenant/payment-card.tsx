@@ -9,6 +9,7 @@ import type { TenantInvoice } from '@/types/invoice';
 import {
   formatDisplayDate,
   getInvoiceDueLabel,
+  getInvoicePaidDate,
   getInvoiceTitle,
   priceFormatter,
 } from '@/utils/tenant-format';
@@ -97,7 +98,7 @@ export function PaymentCard({
         <Typography variant="label" size="xs" weight="medium" color={palette.gray[900]}>
           {variant === 'pending'
             ? `Due: ${formatDisplayDate(invoice.due_date)}`
-            : `Paid on: ${formatDisplayDate(invoice.paid_date ?? invoice.due_date)}`}
+            : `Paid on: ${formatDisplayDate(getInvoicePaidDate(invoice))}`}
         </Typography>
       </View>
 

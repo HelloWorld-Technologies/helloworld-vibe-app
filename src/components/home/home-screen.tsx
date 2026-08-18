@@ -4,17 +4,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
+    type NativeScrollEvent,
+    type NativeSyntheticEvent,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { mapLocalityToNeighborhoodCard } from '@/api/localities';
 import { SelectCitySheet } from '@/components/city/select-city-sheet';
 import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer';
 import { HwIcon } from '@/components/hw-icon';
@@ -33,23 +34,22 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
 import { useDebounce } from '@/hooks/use-debounce';
-import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { useIsTablet } from '@/hooks/use-is-tablet';
+import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
 import { useMomentsFeed } from '@/queries/use-moments-feed';
 import { usePopularLocalities } from '@/queries/use-popular-localities';
 import { useSrpProperties } from '@/queries/use-srp-properties';
 import { useVibesList } from '@/queries/use-vibes';
 import {
-  useAuthStore,
-  useSelectedCity,
-  useSelectedLocality,
+    useAuthStore,
+    useSelectedCity,
+    useSelectedLocality,
 } from '@/stores/auth-store';
 import {
-  toVibeApiIds,
-  useSelectedVibeIds,
-  useSelectedVibesStore,
+    toVibeApiIds,
+    useSelectedVibeIds,
+    useSelectedVibesStore,
 } from '@/stores/selected-vibes-store';
-import { mapLocalityToNeighborhoodCard } from '@/api/localities';
 import type { PropertyListing } from '@/types/property';
 
 function SectionTitle({

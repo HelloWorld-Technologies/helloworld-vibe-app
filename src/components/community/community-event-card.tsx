@@ -14,6 +14,7 @@ type CommunityEventCardProps = {
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
   imageHeight?: number;
+  past?: boolean;
 };
 
 export function CommunityEventCard({
@@ -21,6 +22,7 @@ export function CommunityEventCard({
   onPress,
   style,
   imageHeight = 160,
+  past = false,
 }: CommunityEventCardProps) {
   const attendees =
     event.total_registration ?? event.people_attending ?? event.attendees_count ?? 0;
@@ -50,7 +52,7 @@ export function CommunityEventCard({
           <View style={styles.attendeesRow}>
             <HwSymbol name="person.2.fill" size={14} tintColor={palette.gray[500]} />
             <Typography variant="text" size="sm" color={palette.gray[500]}>
-              {attendees} People attending
+              {attendees} People {past ? 'attended' : 'attending'}
             </Typography>
           </View>
         ) : null}

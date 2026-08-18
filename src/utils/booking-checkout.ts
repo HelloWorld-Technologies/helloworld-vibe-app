@@ -53,6 +53,15 @@ export function parseBookingPaymentSummary(
   }
 }
 
+function toBookingSharingType(value: string): 'private' | 'sharing' {
+  return value.trim().toLowerCase() === 'private' ? 'private' : 'sharing';
+}
+
+function toNumericId(value: string | number | undefined) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : value;
+}
+
 export function buildBookingPaymentPayload({
   draft,
   selected,
@@ -60,28 +69,30 @@ export function buildBookingPaymentPayload({
   couponCode,
   referralCode,
   sdKey,
+  pricing,
 }: Omit<BookingCheckoutInput, 'mobile'>) {
   return {
     bookingInfo: {
-      propertyId: draft.propertyId,
+      propertyId: toNumericId(draft.propertyId),
       moveInDate: formatBookingInitDate(draft.moveInDate),
-      categoryId: draft.categoryId ?? draft.roomId,
-      firstName: draft.occupant.firstName,
-      lastName: draft.occupant.lastName,
-      email: draft.occupant.email,
+      categoryId: toNumericId(draft.categoryId ?? draft.roomId),
+      firstName: draft.occupant.firstName || '',
+      lastName: draft.occupant.lastName || '',
+      email: draft.occupant.email || '',
       gender: draft.occupant.gender,
-      couponCode: couponCode || undefined,
-      referralCode: referralCode || undefined,
-      sdKey,
+      couponCode: couponCode || '',
+      referralCode: referralCode || '',
+      sdKey: sdKey || pricing.sdKey || '',
     },
     payments: {
-      rent: draft.roomPrice,
+      rent: pricing.rent.amount || draft.roomPrice,
       amountToBePaid: total,
-      utilitySelected: selected.utility ?? false,
-      sdSelected: selected.security,
-      advanceRentSelected: selected.advanceRent,
-      isMoveInChargesSelected: selected.moveIn,
-      sharingType: draft.sharingType.toLowerCase(),
+      utilitySelected: Boolean(selected.utility),
+      sdSelected: Boolean(selected.security),
+      advanceRentSelected: Boolean(selected.advanceRent),
+      isMoveInChargesSelected: Boolean(selected.moveIn),
+      sharingType: toBookingSharingType(draft.sharingType),
+      sdMonths: pricing.sdMonths || draft.securityDepositMonths || 0,
     },
   };
 }
@@ -103,17 +114,47 @@ export function buildBookingPaymentParams(input: BookingCheckoutSession) {
 
 export function buildBookingVerifyPayload(
   initData: {
-    paymentObj: { transactionId?: string };
+    paymentObj: {
+      transactionId?: string;
+      orderId?: string;
+      paymentSessionId?: string;
+    };
     id?: string | number;
   },
   razorpayData: { razorpay_payment_id: string; razorpay_signature: string },
   amount: number,
+  context?: {
+    customerId?: string;
+    propertyName?: string;
+  },
 ) {
+  const transactionId = initData.paymentObj.transactionId;
+  const bookingId = initData.id;
+  const isCashfree = Boolean(initData.paymentObj.paymentSessionId);
+
+  if (isCashfree) {
+    return {
+      transactionId,
+      customerId: context?.customerId,
+      amount,
+      paymentForIds: bookingId != null ? [bookingId] : [],
+      paymentMode: 'cashfree',
+      paymentMethod: 'upi',
+      propertyName: context?.propertyName,
+      type: 'booking',
+      orderId: initData.paymentObj.orderId ?? razorpayData.razorpay_payment_id,
+      paymentId: transactionId,
+      bookingId,
+      payment_gateway: 'cashfree',
+    };
+  }
+
   return {
-    paymentId: initData.paymentObj.transactionId,
-    bookingId: initData.id,
+    paymentId: transactionId,
+    bookingId,
     amount,
     paymentMethod: 'UPI',
+    payment_gateway: 'razorpay',
     razorpayPaymentId: razorpayData.razorpay_payment_id,
     razorpaySignature: razorpayData.razorpay_signature,
   };

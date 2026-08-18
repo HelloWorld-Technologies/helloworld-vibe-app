@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useKeyboardState } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -21,7 +22,6 @@ import {
 } from '@/components/support/ticket-attachments-field';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import type { PendingTicketAttachment } from '@/types/ticket';
 
 type TicketReplyBarProps = {
@@ -42,7 +42,8 @@ export function TicketReplyBar({
   sending = false,
 }: TicketReplyBarProps) {
   const insets = useSafeAreaInsets();
-  const bottomInset = useKeyboardBottomInset(Math.max(insets.bottom, 12));
+  const keyboardOpen = useKeyboardState((state) => state.isVisible);
+  const bottomInset = keyboardOpen ? 8 : Math.max(insets.bottom, 12);
   const inputRef = useRef<TextInput>(null);
   const [focused, setFocused] = useState(false);
   const uploading = hasUploadingAttachments(attachments);

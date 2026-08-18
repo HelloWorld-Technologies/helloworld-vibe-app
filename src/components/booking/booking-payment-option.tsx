@@ -98,9 +98,11 @@ export function BookingPaymentOption({
               </View>
             ) : null}
           </View>
-          <Typography variant="text" size="xs" color={palette.gray[600]}>
-            {description}
-          </Typography>
+          {description ? (
+            <Typography variant="text" size="xs" color={palette.gray[600]}>
+              {description}
+            </Typography>
+          ) : null}
         </View>
 
         <Typography variant="text" size="sm" weight="bold">

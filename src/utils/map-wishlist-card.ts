@@ -1,5 +1,6 @@
 import type { WishlistPropertyCard } from '@/types/wishlist';
 import type { PropertyListing } from '@/types/property';
+import { getGenderDisplayLabel } from '@/utils/gender-label';
 import { formatPropertyImageUrl } from '@/utils/images';
 
 function titleCase(value: string) {
@@ -26,9 +27,9 @@ export function mapWishlistCardToListing(card: WishlistPropertyCard): PropertyLi
     badges.push({ label: 'Filling Fast', variant: 'filling-fast' });
   }
 
-  const gender = card.gender?.toLowerCase() ?? '';
-  if (gender.includes('female') || gender.includes('women')) {
-    badges.push({ label: 'Women Only', variant: 'women-only' });
+  const genderLabel = getGenderDisplayLabel(card.gender);
+  if (genderLabel) {
+    badges.push({ label: genderLabel, variant: 'gender' });
   }
 
   return {

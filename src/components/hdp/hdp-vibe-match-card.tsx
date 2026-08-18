@@ -53,8 +53,9 @@ const DEFAULT_VIBE_MATCHES: VibeMatchItem[] = [
   { id: 'creative', label: 'Creative', emoji: '🎨', percent: 84 }
 ]
 
-const DEFAULT_WORKPLACES = ['Google', 'Microsoft', 'Amazon', 'Swiggy']
-const DEFAULT_COLLEGES = ['IIT Bombay', 'BITS Pilani', 'NIT Trichy']
+// Will use in future — Residents work at / From colleges like
+// const DEFAULT_WORKPLACES = ['Google', 'Microsoft', 'Amazon', 'Swiggy']
+// const DEFAULT_COLLEGES = ['IIT Bombay', 'BITS Pilani', 'NIT Trichy']
 
 const RING_GRADIENT = [palette.blue[400], palette.purpleScale[600]] as const
 
@@ -219,6 +220,7 @@ function AnimatedPropertyVibes ({
   )
 }
 
+/* Will use in future — Residents work at / From colleges like
 function ResidentInfoCard ({
   icon,
   title,
@@ -259,6 +261,7 @@ function ResidentInfoCard ({
     </View>
   )
 }
+*/
 
 export function HdpVibeMatchCard ({
   matchPercent,
@@ -266,9 +269,9 @@ export function HdpVibeMatchCard ({
   selectedVibeCount,
   vibeMatches = DEFAULT_VIBE_MATCHES,
   propertyVibes = PROPERTY_VIBE_OPTIONS,
-  workplaces = DEFAULT_WORKPLACES,
-  colleges = DEFAULT_COLLEGES,
-  extraCount = 31
+  // workplaces = DEFAULT_WORKPLACES,
+  // colleges = DEFAULT_COLLEGES,
+  // extraCount = 31
 }: HdpVibeMatchCardProps) {
   const [showPropertyVibes, setShowPropertyVibes] = useState(true)
   const chevronProgress = useSharedValue(1)
@@ -328,6 +331,7 @@ export function HdpVibeMatchCard ({
         </ScrollView>
       ) : null}
 
+      {/* Will use in future
       <View style={styles.residentList}>
         <ResidentInfoCard
           icon='🏢'
@@ -342,6 +346,7 @@ export function HdpVibeMatchCard ({
           extraCount={extraCount}
         />
       </View>
+      */}
 
       <AnimatedPropertyVibes vibes={propertyVibes} expanded={showPropertyVibes} />
 

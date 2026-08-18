@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -14,23 +14,34 @@ import {
   SPLASH_GRADIENT_END,
   SPLASH_GRADIENT_START,
 } from '@/constants/splash';
-import { useAuthHydrated, useIsAuthenticated } from '@/stores/auth-store';
+import { useAuthHydrated, useAuthStore } from '@/stores/auth-store';
 import { useTenantStore } from '@/stores/tenant-store';
+import { consumePendingDeepLink } from '@/utils/pending-deep-link';
+import { hrefFromHdpPath } from '@/utils/property-deep-link';
 import { getDefaultTabRoute } from '@/utils/tenant-routing';
 
 export default function SplashScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const hydrated = useAuthHydrated();
-  const isAuthenticated = useIsAuthenticated();
+  const isAuthenticated = useAuthStore((state) => Boolean(state.token));
 
   useEffect(() => {
     if (!hydrated) return;
+    if (pathname.startsWith('/hdp') && isAuthenticated) return;
 
     let cancelled = false;
 
     async function bootstrap() {
-      if (!isAuthenticated) {
+      if (!useAuthStore.getState().token) {
         router.replace('/login');
+        return;
+      }
+
+      const pending = await consumePendingDeepLink();
+      if (cancelled) return;
+      if (pending) {
+        router.replace(hrefFromHdpPath(pending));
         return;
       }
 
@@ -42,14 +53,14 @@ export default function SplashScreen() {
     }
 
     const timer = setTimeout(() => {
-      bootstrap();
+      void bootstrap();
     }, 2800);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [hydrated, isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, pathname, router]);
 
   return (
     <LinearGradient

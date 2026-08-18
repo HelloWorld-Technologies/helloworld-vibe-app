@@ -36,3 +36,41 @@ export function buildEventPaymentParams(args: {
     payload: JSON.stringify(args.payload),
   };
 }
+
+export function buildEventVerifyPayload(
+  initData: {
+    paymentObj: {
+      transactionId?: string;
+      orderId?: string;
+      paymentSessionId?: string;
+    };
+    id?: string | number;
+    data?: Record<string, unknown>;
+  },
+  razorpayData: { razorpay_payment_id: string; razorpay_signature: string },
+  amount: number,
+) {
+  const transactionId = initData.paymentObj.transactionId;
+  const paymentForId = String(initData.data?.id ?? initData.id ?? '');
+  const isCashfree = Boolean(initData.paymentObj.paymentSessionId);
+
+  if (isCashfree) {
+    return {
+      transactionId,
+      amount,
+      paymentForId,
+      paymentGateway: 'cashfree',
+      razorpayPaymentId: razorpayData.razorpay_payment_id,
+      orderId: initData.paymentObj.orderId ?? razorpayData.razorpay_payment_id,
+    };
+  }
+
+  return {
+    transactionId,
+    amount,
+    paymentForId,
+    paymentGateway: 'razorpay',
+    razorpayPaymentId: razorpayData.razorpay_payment_id,
+    razorpaySignature: razorpayData.razorpay_signature,
+  };
+}

@@ -16,6 +16,12 @@
       "buildNumber": "151",
       "googleServicesFile": "./GoogleService-Info.plist",
       "appleTeamId": "FY57RG66TM",
+      "associatedDomains": [
+        "applinks:thehelloworld.com",
+        "applinks:www.thehelloworld.com",
+        "applinks:staging.thehelloworld.com",
+        "applinks:app.thehelloworld.com"
+      ],
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow HelloWorld to access your photos so you can attach images to support tickets.",
         "NSPhotoLibraryAddUsageDescription": "Allow HelloWorld to save images related to your support tickets."
@@ -29,10 +35,80 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.thehelloworld",
-      "versionCode": 276,
+      "allowBackup": false,
+      "versionCode": 280,
       "googleServicesFile": "./google-services.json",
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "thehelloworld.com",
+              "pathPrefix": "/hdp"
+            },
+            {
+              "scheme": "https",
+              "host": "thehelloworld.com",
+              "pathPrefix": "/coliving-in-"
+            },
+            {
+              "scheme": "https",
+              "host": "thehelloworld.com",
+              "pathPrefix": "/hostels-in-"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thehelloworld.com",
+              "pathPrefix": "/hdp"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thehelloworld.com",
+              "pathPrefix": "/coliving-in-"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thehelloworld.com",
+              "pathPrefix": "/hostels-in-"
+            },
+            {
+              "scheme": "https",
+              "host": "staging.thehelloworld.com",
+              "pathPrefix": "/hdp"
+            },
+            {
+              "scheme": "https",
+              "host": "staging.thehelloworld.com",
+              "pathPrefix": "/coliving-in-"
+            },
+            {
+              "scheme": "https",
+              "host": "staging.thehelloworld.com",
+              "pathPrefix": "/hostels-in-"
+            },
+            {
+              "scheme": "https",
+              "host": "app.thehelloworld.com",
+              "pathPrefix": "/hdp"
+            },
+            {
+              "scheme": "https",
+              "host": "app.thehelloworld.com",
+              "pathPrefix": "/coliving-in-"
+            },
+            {
+              "scheme": "https",
+              "host": "app.thehelloworld.com",
+              "pathPrefix": "/hostels-in-"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",

@@ -117,6 +117,7 @@ function CommunityEventsTabPage({
           event={item}
           style={styles.gridCard}
           imageHeight={140}
+          past={tab === 'past'}
           onPress={() =>
             onEventPress({ id: item.id, registrationId: item.registrationId })
           }

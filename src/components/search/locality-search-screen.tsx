@@ -3,6 +3,7 @@ import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
 import {
   Keyboard,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +20,7 @@ import palette from '@/constants/palette';
 import { useLocalitySearch } from '@/queries/use-locality-search';
 import { useAuthStore, useSelectedCity } from '@/stores/auth-store';
 import {
+  normalizeSearchHistoryItem,
   useSearchHistory,
   useSearchHistoryStore,
 } from '@/stores/search-history-store';
@@ -91,48 +93,66 @@ export function LocalitySearchScreen() {
     showNoLocality && properties.length === 0;
   const resultSetKey = `${city}-${trimmedKeyword.toLowerCase()}`;
 
-  function handleSelectLocality(locality: string) {
+  function afterKeyboard(action: () => void) {
     Keyboard.dismiss();
-    addSearch(city, {
-      type: 'locality',
-      id: `locality:${locality.trim().toLowerCase()}`,
-      label: locality,
-      locality,
+    if (Platform.OS === 'android') {
+      setTimeout(action, 80);
+      return;
+    }
+    action();
+  }
+
+  function handleSelectLocality(locality: string) {
+    const nextLocality = locality.trim();
+    if (!nextLocality) return;
+    afterKeyboard(() => {
+      addSearch(city, {
+        type: 'locality',
+        id: `locality:${nextLocality.toLowerCase()}`,
+        label: nextLocality,
+        locality: nextLocality,
+      });
+      setSelectedLocality(nextLocality);
+      router.replace('/srp');
     });
-    setSelectedLocality(locality);
-    router.replace('/srp');
   }
 
   function handleShowAllProperties() {
-    Keyboard.dismiss();
-    setSelectedLocality(null);
-    router.replace('/srp');
+    afterKeyboard(() => {
+      setSelectedLocality(null);
+      router.replace('/srp');
+    });
   }
 
   function handleSelectProperty(property: SearchPropertyResult) {
-    Keyboard.dismiss();
-    addSearch(city, {
-      type: 'property',
-      id: `property:${property.id}`,
-      label: property.name,
-      propertyId: property.id,
-      propertyName: property.name,
-    });
-    router.replace({
-      pathname: '/hdp',
-      params: { id: String(property.id), name: property.name },
+    const propertyId = Number(property.id);
+    const propertyName = property.name?.trim();
+    if (!Number.isFinite(propertyId) || propertyId <= 0 || !propertyName) return;
+    afterKeyboard(() => {
+      addSearch(city, {
+        type: 'property',
+        id: `property:${propertyId}`,
+        label: propertyName,
+        propertyId,
+        propertyName,
+      });
+      router.replace({
+        pathname: '/hdp',
+        params: { id: String(propertyId), name: propertyName },
+      });
     });
   }
 
   function handleSelectHistory(item: SearchHistoryItem) {
-    if (item.type === 'locality') {
-      handleSelectLocality(item.locality);
+    const normalized = normalizeSearchHistoryItem(item);
+    if (!normalized) return;
+    if (normalized.type === 'locality') {
+      handleSelectLocality(normalized.locality);
       return;
     }
-
     handleSelectProperty({
-      id: item.propertyId,
-      name: item.propertyName,
+      id: normalized.propertyId,
+      name: normalized.propertyName,
     });
   }
 
@@ -184,7 +204,8 @@ export function LocalitySearchScreen() {
               Recent searches
             </Typography>
             {history
-              .filter((item) => item.label.trim().length > 0)
+              .map(normalizeSearchHistoryItem)
+              .filter((item): item is SearchHistoryItem => item != null)
               .map((item, index) => (
                 <SearchResultRow
                   key={item.id}

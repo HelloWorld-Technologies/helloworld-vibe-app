@@ -61,6 +61,7 @@ export function MoveInAboutYouScreen() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [didPrefill, setDidPrefill] = useState(false);
+  const [didSkipSavedVibes, setDidSkipSavedVibes] = useState(false);
 
   const apiVibes = vibesListQuery.data ?? [];
   const vibeOptions = useMemo(() => mapVibesToListItems(apiVibes), [apiVibes]);
@@ -68,6 +69,8 @@ export function MoveInAboutYouScreen() {
     () => resolveVibeIds(selectedIds, apiVibes),
     [apiVibes, selectedIds],
   );
+  const savedVibeCount = (userVibesQuery.data ?? []).length;
+  const hasSavedVibes = savedVibeCount > 0 || savedInterests.length > 0;
 
   useEffect(() => {
     if (didPrefill) return;
@@ -107,6 +110,33 @@ export function MoveInAboutYouScreen() {
     userVibesQuery.isLoading,
     vibesListQuery.isFetching,
     vibesListQuery.isLoading,
+  ]);
+
+  useEffect(() => {
+    if (fromMenu || didSkipSavedVibes) return;
+    if (userVibesQuery.isLoading || userVibesQuery.isFetching) return;
+    if (!hasSavedVibes) return;
+
+    const ids =
+      (userVibesQuery.data ?? []).map((vibe) => toChipId(vibe.id));
+    if (ids.length > 0) {
+      setMoveInInterests(ids);
+    } else if (savedInterests.length > 0) {
+      setMoveInInterests(savedInterests);
+    }
+
+    setDidSkipSavedVibes(true);
+    router.replace('/move-in-background');
+  }, [
+    didSkipSavedVibes,
+    fromMenu,
+    hasSavedVibes,
+    router,
+    savedInterests,
+    setMoveInInterests,
+    userVibesQuery.data,
+    userVibesQuery.isFetching,
+    userVibesQuery.isLoading,
   ]);
 
   // Keep selection aligned to API vibe ids (drops stale local/fallback ids).
@@ -154,6 +184,7 @@ export function MoveInAboutYouScreen() {
 
   const isLoadingOptions =
     vibesListQuery.isLoading || (userVibesQuery.isLoading && !didPrefill);
+  const skippingSavedVibes = !fromMenu && (userVibesQuery.isLoading || hasSavedVibes);
   const canContinue =
     apiVibes.length > 0 && resolvedVibeIds.length >= MOVE_IN_INTERESTS_MIN;
 
@@ -167,14 +198,15 @@ export function MoveInAboutYouScreen() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled">
         <Typography variant="display" size="xs" weight="bold" style={styles.title}>
-          Tell Us What You Enjoy
+          {fromMenu && hasSavedVibes ? 'Update Your Vibes' : 'Tell Us What You Enjoy'}
         </Typography>
         <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.subtitle}>
-          Select at least {MOVE_IN_INTERESTS_MIN} interests to personalize your HelloWorld
-          experience.
+          {fromMenu && hasSavedVibes
+            ? 'Your interests are already saved. Change them anytime — this updates your HelloWorld community match.'
+            : `Select at least ${MOVE_IN_INTERESTS_MIN} interests to personalize your HelloWorld experience.`}
         </Typography>
 
-        {isLoadingOptions ? (
+        {isLoadingOptions || skippingSavedVibes ? (
           <VibeGridSkeleton />
         ) : (
           <VibeSelectionList
@@ -195,23 +227,25 @@ export function MoveInAboutYouScreen() {
         )}
       </ScrollView>
 
-      <View style={styles.footerWrap}>
-        <LinearGradient
-          colors={['rgba(255,255,255,0)', palette.white]}
-          style={styles.footerFade}
-          pointerEvents="none"
-        />
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <Button
-            label={fromMenu ? 'Save' : 'Continue'}
-            onPress={() => {
-              void handleContinue();
-            }}
-            disabled={!canContinue || saveVibes.isPending || isLoadingOptions}
-            loading={saveVibes.isPending}
+      {skippingSavedVibes ? null : (
+        <View style={styles.footerWrap}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0)', palette.white]}
+            style={styles.footerFade}
+            pointerEvents="none"
           />
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <Button
+              label={fromMenu ? (hasSavedVibes ? 'Update' : 'Save') : 'Continue'}
+              onPress={() => {
+                void handleContinue();
+              }}
+              disabled={!canContinue || saveVibes.isPending || isLoadingOptions}
+              loading={saveVibes.isPending}
+            />
+          </View>
         </View>
-      </View>
+      )}
     </ProfileStackScreen>
   );
 }

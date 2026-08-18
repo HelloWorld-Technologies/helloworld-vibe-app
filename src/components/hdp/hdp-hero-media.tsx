@@ -28,6 +28,7 @@ export const HDP_HERO_TOTAL_HEIGHT = 460;
 
 const EDGE_SWIPE_DISTANCE = 64;
 const EDGE_SWIPE_VELOCITY = 850;
+const HERO_CAROUSEL_LIMIT = 8;
 
 type HdpHeroMediaProps = {
   propertyVideos: HdpHeroSlide[];
@@ -60,6 +61,9 @@ function HeroVideoSlide({
         }
         style={{ width, height }}
         contentFit="cover"
+        cachePolicy="memory-disk"
+        recyclingKey={slide.id}
+        transition={0}
       />
     );
   }
@@ -94,6 +98,9 @@ function HeroImageSlide({
       source={failed || !slide.imageUri ? ImageAssets.loginBento1 : { uri: slide.imageUri }}
       style={{ width, height }}
       contentFit="cover"
+      cachePolicy="memory-disk"
+      recyclingKey={slide.id}
+      transition={0}
       onError={onError}
     />
   );
@@ -134,7 +141,7 @@ export function HdpHeroMedia({
         propertyVideos,
         moments: momentSlides,
         photos,
-      }),
+      }).slice(0, HERO_CAROUSEL_LIMIT),
     [activeTab, propertyVideos, momentSlides, photos],
   );
 
@@ -185,7 +192,7 @@ export function HdpHeroMedia({
         propertyVideos,
         moments: momentSlides,
         photos,
-      });
+      }).slice(0, HERO_CAROUSEL_LIMIT);
       const targetIndex =
         startAt === 'last' ? Math.max(nextSlides.length - 1, 0) : 0;
 
@@ -274,6 +281,8 @@ export function HdpHeroMedia({
           source={ImageAssets.loginBento1}
           style={{ width, height: HDP_HERO_TOTAL_HEIGHT }}
           contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={0}
         />
       </View>
     );

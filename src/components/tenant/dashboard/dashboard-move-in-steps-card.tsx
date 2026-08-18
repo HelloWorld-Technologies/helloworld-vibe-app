@@ -10,6 +10,7 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { useBookingStatus } from '@/queries/use-booking-status';
 import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
+import { useUserVibes } from '@/queries/use-vibes';
 import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
 import { buildMoveInPendingMessage, buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
 
@@ -19,6 +20,7 @@ export function useMoveInDashboardCard() {
   const moveInBackground = useTenantStore((state) => state.moveInBackground);
   const { data: status } = useBookingStatus();
   const { data: moveInPayments } = useMoveInPaymentDetails();
+  useUserVibes();
 
   if (!profile?.bookingId || !status) {
     return { visible: false, pendingCount: 0 };

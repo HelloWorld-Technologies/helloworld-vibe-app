@@ -8,6 +8,7 @@ import type {
   PropertyListPayload,
   PropertyListResponse,
 } from '@/types/property';
+import { getGenderDisplayLabel } from '@/utils/gender-label';
 import { formatPropertyImageUrl, getPropertyImageKeys } from '@/utils/images';
 import { parseVibeMatchScore } from '@/utils/map-hdp-vibes';
 
@@ -53,6 +54,14 @@ export async function lookupPropertyIdByName(name: string): Promise<number | nul
   } catch {
     return null;
   }
+}
+
+/** Website HDP slugs are `createSlug(name)` — hyphens instead of spaces. */
+export async function lookupPropertyIdBySlug(slug: string): Promise<number | null> {
+  const trimmed = slug.trim();
+  if (!trimmed) return null;
+  const fromHyphens = trimmed.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+  return (await lookupPropertyIdByName(fromHyphens)) ?? (await lookupPropertyIdByName(trimmed));
 }
 
 export async function getPropertyCategories(
@@ -196,9 +205,9 @@ function buildBadges(property: ApiProperty): PropertyBadge[] {
     badges.push({ label: 'Filling Fast', variant: 'filling-fast' });
   }
 
-  const gender = property.gender?.toLowerCase() ?? '';
-  if (gender.includes('female') || gender.includes('women')) {
-    badges.push({ label: 'Women Only', variant: 'women-only' });
+  const genderLabel = getGenderDisplayLabel(property.gender);
+  if (genderLabel) {
+    badges.push({ label: genderLabel, variant: 'gender' });
   }
 
   return badges;

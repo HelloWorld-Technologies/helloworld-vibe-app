@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchPropertyList, mapApiPropertyToListing } from '@/api/property';
 import { queryKeys } from '@/queries/keys';
 
-export const SRP_PAGE_SIZE = 10;
+export const SRP_PAGE_SIZE = 6;
 
 export function useSrpProperties(
   city: string,

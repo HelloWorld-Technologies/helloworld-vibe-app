@@ -1,24 +1,32 @@
-const env = "staging" as "staging" | "production";
-// const env = "production" as "staging" | "production";
+type Env = "staging" | "production";
 
-const PUBLIC_URL =
-  env === "production"
-    ? "https://thehelloworld.com"
-    : "https://staging.thehelloworld.com";
-
-const config = () => {
-  return {
-    APP_VERSION_IOS: "v4.9.2",
-    APP_VERSION_ANDROID: "v4.9.2",
-    // BASE_URL: "https://89c4f24dba03.ngrok-free.app",
-    // BASE_URL: "http://localhost:3000",
-    // BASE_URL: "https://api.thehelloworld.com",
-    BASE_URL: "https://apistaging.thehelloworld.com",
-    S3_IMAGE_BUCKET_BASE_URL: "https://images.thehelloworld.com/",
-    PUBLIC_URL,
-    // KYC_IMAGE_BASE_URL: process.env.KYC_IMAGE_BASE_URL,
-    env,
-  };
+const shared = {
+  APP_VERSION_IOS: "v4.9.2",
+  APP_VERSION_ANDROID: "v4.9.2",
+  S3_IMAGE_BUCKET_BASE_URL: "https://images.thehelloworld.com/",
+  /** Dev-only HTTP curl logs. Flip to `false` to silence them. */
+  LOG_HTTP_CURL: false,
 };
 
-export default config();
+const configs = {
+  staging: {
+    ...shared,
+    // BASE_URL: "https://89c4f24dba03.ngrok-free.app",
+    // BASE_URL: "http://localhost:3000",
+    BASE_URL: "https://apistaging.thehelloworld.com",
+    PUBLIC_URL: "https://staging.thehelloworld.com",
+    env: "staging" as const,
+  },
+  production: {
+    ...shared,
+    BASE_URL: "https://api.thehelloworld.com",
+    PUBLIC_URL: "https://thehelloworld.com",
+    env: "production" as const,
+  },
+};
+
+/** Switch app environment here. */
+// const env: Env = "production";
+const env: Env = "production";
+
+export default configs[env];

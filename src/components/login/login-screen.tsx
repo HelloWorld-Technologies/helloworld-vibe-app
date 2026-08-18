@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   BackHandler,
@@ -19,15 +19,22 @@ import { fontStyleForWeight } from '@/constants/fonts'
 import palette from '@/constants/palette'
 import { Radius } from '@/constants/theme'
 import { useSendOtpMutation } from '@/queries/use-auth'
+import { getAppVersionLabel } from '@/utils/app-version'
 
 const PHONE_ACCESSORY_ID = 'login-phone-accessory'
+
+function digitsFromParam(value?: string | string[]) {
+  const raw = Array.isArray(value) ? value[0] : value
+  return (raw ?? '').replace(/\D/g, '').slice(-10)
+}
 
 export function LoginScreen () {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const inputRef = useRef<TextInput>(null)
+  const { mobile: mobileParam } = useLocalSearchParams<{ mobile?: string | string[] }>()
 
-  const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState(() => digitsFromParam(mobileParam))
   const [error, setError] = useState('')
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const sendOtp = useSendOtpMutation()
@@ -69,7 +76,7 @@ export function LoginScreen () {
     try {
       await sendOtp.mutateAsync(digits)
       Keyboard.dismiss()
-      router.replace({ pathname: '/otp', params: { mobile: digits } })
+      router.push({ pathname: '/otp', params: { mobile: digits } })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send OTP')
     }
@@ -151,6 +158,10 @@ export function LoginScreen () {
               HelloWorld&apos;s Terms and conditions.
             </Text>
           </Text>
+
+          {keyboardVisible ? null : (
+            <Text style={styles.version}>{getAppVersionLabel()}</Text>
+          )}
         </View>
       </KeyboardAvoidingView>
       {/* 
@@ -267,6 +278,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     color: palette.blue[700]
+  },
+  version: {
+    textAlign: 'center',
+    fontSize: 12,
+    lineHeight: 18,
+    ...fontStyleForWeight('regular'),
+    color: palette.gray[500],
+    marginTop: 4
   },
   accessory: {
     flexDirection: 'row',

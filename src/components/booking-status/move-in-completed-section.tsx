@@ -24,7 +24,7 @@ function CompletedRow({ step, showDivider }: { step: MoveInStep; showDivider: bo
         </View>
         <View style={styles.completedBadge}>
           <Typography variant="text" size="xs" weight="medium" color={palette.lime[800]}>
-            Completed
+            {step.completedLabel ?? 'Completed'}
           </Typography>
         </View>
       </View>

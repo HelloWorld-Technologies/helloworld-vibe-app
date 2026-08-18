@@ -20,6 +20,8 @@ import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
 import { useSendOtpMutation, useVerifyOtpMutation } from '@/queries/use-auth';
 import { useTenantStore } from '@/stores/tenant-store';
+import { consumePendingDeepLink } from '@/utils/pending-deep-link';
+import { hrefFromHdpPath } from '@/utils/property-deep-link';
 import { getDefaultTabRoute } from '@/utils/tenant-routing';
 
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -57,10 +59,20 @@ export default function OtpScreen() {
       await verifyOtp.mutateAsync({ mobile, otp });
       await useTenantStore.getState().fetchProfile();
       const isTenant = Boolean(useTenantStore.getState().profile?.bookingId);
-      router.replace(getDefaultTabRoute(isTenant));
+      const pending = await consumePendingDeepLink();
+      router.replace(pending ? hrefFromHdpPath(pending) : getDefaultTabRoute(isTenant));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Please enter correct OTP');
     }
+  }
+
+  function onEditPhone() {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace({ pathname: '/login', params: { mobile } });
   }
 
   async function onResendSms() {
@@ -107,7 +119,7 @@ export default function OtpScreen() {
                 +91-{mobile}
               </Typography>
               <Pressable
-                onPress={() => router.back()}
+                onPress={onEditPhone}
                 style={styles.editButton}
                 accessibilityRole="button"
                 accessibilityLabel="Edit phone number">

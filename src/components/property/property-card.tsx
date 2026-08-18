@@ -1,7 +1,7 @@
 import { Image, type ImageSource } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRef, useState } from 'react';
-import { LayoutAnimation, Pressable, StyleSheet, Text, UIManager, View, type StyleProp, type ViewStyle } from 'react-native';
+import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { ICarouselInstance } from 'react-native-reanimated-carousel';
 
 import { HwSymbol } from '@/components/ui/hw-symbol';
@@ -19,7 +19,7 @@ import { COMING_SOON_IMAGE_URI } from '@/utils/images';
 import { getImageUriFromSource, shareProperty } from '@/utils/share-property';
 import { SHARE_SYMBOL } from '@/constants/symbols';
 
-if (UIManager.setLayoutAnimationEnabledExperimental) {
+if (Platform.OS === 'ios' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -62,6 +62,8 @@ type PropertyCardProps = {
   onFavoritePress?: () => void;
   onSharePress?: () => void;
   isFavorite?: boolean;
+  /** Skip inner image carousel — used on HDP similar properties to avoid nested carousels. */
+  compactMedia?: boolean;
 };
 
 function formatRent(amount: number) {
@@ -98,6 +100,7 @@ export function PropertyCard({
   onFavoritePress,
   onSharePress,
   isFavorite,
+  compactMedia = false,
 }: PropertyCardProps) {
   const wishlist = useOptionalWishlist();
   const propertyActions = useOptionalPropertyActions();
@@ -112,20 +115,35 @@ export function PropertyCard({
   const carouselRef = useRef<ICarouselInstance>(null);
   const [carouselWidth, setCarouselWidth] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
+  const [loadedIndexes, setLoadedIndexes] = useState<Set<number>>(() => new Set([0]));
   const [failedIndexes, setFailedIndexes] = useState<Set<number>>(new Set());
 
+  function markIndexLoaded(index: number) {
+    setLoadedIndexes((current) => {
+      if (current.has(index)) return current;
+      const next = new Set(current);
+      next.add(index);
+      return next;
+    });
+  }
+
   function handleImageIndexChange(index: number) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (Platform.OS === 'ios') {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
     setImageIndex(index);
+    markIndexLoaded(index);
   }
 
   function showPreviousImage() {
     if (imageCount <= 1) return;
+    markIndexLoaded((imageIndex - 1 + imageCount) % imageCount);
     carouselRef.current?.scrollTo({ count: -1, animated: true });
   }
 
   function showNextImage() {
     if (imageCount <= 1) return;
+    markIndexLoaded((imageIndex + 1) % imageCount);
     carouselRef.current?.scrollTo({ count: 1, animated: true });
   }
 
@@ -200,11 +218,14 @@ export function PropertyCard({
           <View
             style={styles.mediaSection}
             onLayout={(event) => setCarouselWidth(event.nativeEvent.layout.width)}>
-            {imageCount === 1 ? (
+            {imageCount === 1 || compactMedia ? (
               <Image
                 source={resolveSlideSource(0, cardImages[0]?.source ?? { uri: COMING_SOON_IMAGE_URI })}
                 style={styles.heroImage}
                 contentFit="cover"
+                cachePolicy="memory-disk"
+                recyclingKey={`${property.id}-0`}
+                transition={0}
                 onError={() => setFailedIndexes((current) => new Set(current).add(0))}
               />
             ) : carouselWidth > 0 ? (
@@ -219,9 +240,16 @@ export function PropertyCard({
                 style={styles.carousel}
                 renderItem={({ item, index }) => (
                   <Image
-                    source={resolveSlideSource(index, item.source)}
+                    source={
+                      loadedIndexes.has(index)
+                        ? resolveSlideSource(index, item.source)
+                        : null
+                    }
                     style={[styles.heroImage, { width: carouselWidth, height: MEDIA_HEIGHT }]}
                     contentFit="cover"
+                    cachePolicy="memory-disk"
+                    recyclingKey={`${property.id}-${index}`}
+                    transition={0}
                     onError={() =>
                       setFailedIndexes((current) => new Set(current).add(index))
                     }
@@ -233,41 +261,45 @@ export function PropertyCard({
                 source={resolveSlideSource(0, cardImages[0]?.source ?? { uri: COMING_SOON_IMAGE_URI })}
                 style={styles.heroImage}
                 contentFit="cover"
+                cachePolicy="memory-disk"
+                recyclingKey={`${property.id}-0`}
+                transition={0}
+                onError={() => setFailedIndexes((current) => new Set(current).add(0))}
               />
             )}
 
-        {imageCount > 1 ? (
-          <>
-            <Pressable
-              onPress={(event) => {
-                event.stopPropagation();
-                showPreviousImage();
-              }}
-              style={[styles.carouselButton, styles.carouselButtonLeft]}
-              accessibilityRole="button"
-              accessibilityLabel="Previous photo">
-              <HwSymbol name="chevron.left" size={14} weight="semibold" tintColor={palette.white} />
-            </Pressable>
-            <Pressable
-              onPress={(event) => {
-                event.stopPropagation();
-                showNextImage();
-              }}
-              style={[styles.carouselButton, styles.carouselButtonRight]}
-              accessibilityRole="button"
-              accessibilityLabel="Next photo">
-              <HwSymbol name="chevron.right" size={14} weight="semibold" tintColor={palette.white} />
-            </Pressable>
-            <View style={styles.dotsRow}>
-              {cardImages.map((slide, index) => (
-                <View
-                  key={slide.id}
-                  style={[styles.dot, index === imageIndex ? styles.dotActive : null]}
-                />
-              ))}
-            </View>
-          </>
-        ) : null}
+            {imageCount > 1 && !compactMedia ? (
+              <>
+                <Pressable
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    showPreviousImage();
+                  }}
+                  style={[styles.carouselButton, styles.carouselButtonLeft]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous photo">
+                  <HwSymbol name="chevron.left" size={14} weight="semibold" tintColor={palette.white} />
+                </Pressable>
+                <Pressable
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    showNextImage();
+                  }}
+                  style={[styles.carouselButton, styles.carouselButtonRight]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Next photo">
+                  <HwSymbol name="chevron.right" size={14} weight="semibold" tintColor={palette.white} />
+                </Pressable>
+                <View style={styles.dotsRow}>
+                  {cardImages.map((slide, index) => (
+                    <View
+                      key={slide.id}
+                      style={[styles.dot, index === imageIndex ? styles.dotActive : null]}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
 
         {property.badges && property.badges.length > 0 ? (
           <View style={styles.badgesOverlay} pointerEvents="box-none">
@@ -275,7 +307,7 @@ export function PropertyCard({
               <BadgePill
                 key={`${property.id}-${badge.label}`}
                 badge={badge}
-                style={badge.variant === 'women-only' ? styles.badgeRight : styles.badgeLeft}
+                style={badge.variant === 'gender' ? styles.badgeRight : styles.badgeLeft}
               />
             ))}
           </View>

@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useMemo } from 'react';
@@ -20,6 +19,7 @@ import {
   useTenantProfile,
   useTenantStore,
 } from '@/stores/tenant-store';
+import { getAppVersionLabel } from '@/utils/app-version';
 import { useLogoutToLogin } from '@/utils/logout';
 import {
   getMenuExternalUrl,
@@ -27,8 +27,6 @@ import {
   isTabMenuRoute,
 } from '@/utils/menu-navigation';
 import { buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
-
-const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function MenuScreen() {
   const router = useRouter();
@@ -194,7 +192,7 @@ export default function MenuScreen() {
         {sectionCards}
 
         <Text style={styles.footer}>
-          V {APP_VERSION} | Made with <Text style={styles.heart}>❤️</Text> in Bengaluru
+          {getAppVersionLabel()} | Made with <Text style={styles.heart}>❤️</Text> in Bengaluru
         </Text>
       </ScrollView>
     </SafeAreaView>

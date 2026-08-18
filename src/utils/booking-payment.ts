@@ -6,21 +6,18 @@ export function formatBookingAmount(amount: number) {
 
 /** Same copy shown after apply and in the payment summary. */
 export function getAppliedDiscountMessage(discount: AppliedDiscount) {
+  if (discount.type === 'referral') {
+    return `Your referral code ${discount.code} has been applied`;
+  }
+
   const fromApi = discount.message?.trim();
   if (fromApi) return fromApi;
 
-  if (discount.type === 'coupon') {
-    if (discount.amount > 0) {
-      return `Coupon code applied successfully. ${formatBookingAmount(discount.amount)} discount has been added to your booking.`;
-    }
-    return 'Coupon code applied successfully.';
-  }
-
   if (discount.amount > 0) {
-    return `Referral code applied. ${formatBookingAmount(discount.amount)} discount added.`;
+    return `Coupon code applied successfully. ${formatBookingAmount(discount.amount)} discount has been added to your booking.`;
   }
 
-  return 'Referral code applied.';
+  return 'Coupon code applied successfully.';
 }
 
 type TaxableChargeAmount = {

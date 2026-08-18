@@ -2,43 +2,77 @@ import { http } from '@/api/http';
 import { FALLBACK_API_VIBES } from '@/constants/vibes';
 import type { Vibe, VibesApiResponse } from '@/types/vibes';
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+}
+
+function unwrapVibeRecord(item: unknown): Record<string, unknown> | null {
+  const record = asRecord(item);
+  if (!record) return null;
+
+  const nested = record.Vibes ?? record.Vibe ?? record.vibe ?? record.vibes;
+  const nestedRecord = asRecord(nested);
+  return nestedRecord ?? record;
+}
+
+function parseVibeId(record: Record<string, unknown>): number | null {
+  const raw = record.id ?? record.vibe_id ?? record.vibeId;
+  const id = typeof raw === 'number' ? raw : Number(raw);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
 function asVibeList(data: unknown): Vibe[] {
+  const record = asRecord(data);
   const source = Array.isArray(data)
     ? data
-    : data && typeof data === 'object' && Array.isArray((data as { vibes?: unknown }).vibes)
-      ? (data as { vibes: unknown[] }).vibes
-      : data && typeof data === 'object' && Array.isArray((data as { list?: unknown }).list)
-        ? (data as { list: unknown[] }).list
-        : null;
+    : Array.isArray(record?.data)
+      ? record.data
+      : Array.isArray(record?.vibes)
+        ? record.vibes
+        : Array.isArray(record?.list)
+          ? record.list
+          : null;
 
   if (!source) return [];
 
   return source.flatMap((item) => {
-    if (!item || typeof item !== 'object') return [];
-    const record = item as Record<string, unknown>;
-    const id = typeof record.id === 'number' ? record.id : Number(record.id);
+    const vibe = unwrapVibeRecord(item);
+    if (!vibe) return [];
+
+    const id = parseVibeId(vibe);
+    if (id == null) return [];
+
     const code =
-      typeof record.code === 'string'
-        ? record.code
-        : typeof record.slug === 'string'
-          ? record.slug
-          : typeof record.name === 'string'
-            ? record.name
+      typeof vibe.code === 'string'
+        ? vibe.code
+        : typeof vibe.slug === 'string'
+          ? vibe.slug
+          : typeof vibe.name === 'string'
+            ? vibe.name
             : '';
     const displayName =
-      typeof record.display_name === 'string'
-        ? record.display_name
-        : typeof record.displayName === 'string'
-          ? record.displayName
-          : typeof record.name === 'string'
-            ? record.name
-            : typeof record.label === 'string'
-              ? record.label
+      typeof vibe.display_name === 'string'
+        ? vibe.display_name
+        : typeof vibe.displayName === 'string'
+          ? vibe.displayName
+          : typeof vibe.name === 'string'
+            ? vibe.name
+            : typeof vibe.label === 'string'
+              ? vibe.label
               : '';
-    // API returns string ids (e.g. "1"); Number("1") is valid.
-    if (!Number.isFinite(id) || id <= 0 || !displayName) return [];
-    return [{ id, code: code || displayName, display_name: displayName }];
+
+    return [
+      {
+        id,
+        code: code || displayName || String(id),
+        display_name: displayName || code || String(id),
+      },
+    ];
   });
+}
+
+export function extractVibeIds(data: unknown): string[] {
+  return [...new Set(asVibeList(data).map((vibe) => String(vibe.id)))];
 }
 
 function withFallback(list: Vibe[]): Vibe[] {
@@ -72,9 +106,11 @@ export async function getVibesList(): Promise<VibesApiResponse<Vibe[]>> {
 export async function getUserVibes(): Promise<VibesApiResponse<Vibe[]>> {
   try {
     const { data } = await http.get<VibesApiResponse<Vibe[]> | Vibe[]>('user/vibes');
-    const list = asVibeList(
-      data && typeof data === 'object' && 'data' in data ? data.data : data,
-    );
+    const payload =
+      data && typeof data === 'object' && 'data' in data
+        ? (data as VibesApiResponse<Vibe[]>).data
+        : data;
+    const list = asVibeList(payload);
     return {
       success: Array.isArray(data)
         ? true

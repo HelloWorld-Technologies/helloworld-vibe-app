@@ -1,6 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import {
+  InteractionManager,
   Linking,
   Pressable,
   StyleSheet,
@@ -14,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { lookupPropertyIdBySlug } from '@/api/property';
 import { HdpScreenSkeleton } from '@/components/skeleton';
 import { HdpSimilarPropertiesSection } from '@/components/hdp/hdp-similar-properties-section';
 import { HdpDayFromHereSection } from '@/components/hdp/hdp-day-from-here-section';
@@ -39,7 +42,7 @@ import {
 import palette from '@/constants/palette';
 import { useSimilarProperties } from '@/hooks/use-similar-properties';
 import { usePropertyDetail } from '@/queries/use-property-detail';
-import { usePropertyCategories } from '@/queries/use-property-categories';
+import { queryKeys } from '@/queries/keys';
 import { useVibesList } from '@/queries/use-vibes';
 import { useWishlist } from '@/providers/wishlist-provider';
 import { useSelectedCity } from '@/stores/auth-store';
@@ -65,6 +68,8 @@ import {
   parseVibeMatchScore,
 } from '@/utils/map-hdp-vibes';
 import { shareProperty } from '@/utils/share-property';
+import { clearPendingDeepLink } from '@/utils/pending-deep-link';
+import { firstSearchParam } from '@/utils/property-deep-link';
 import { getExploreHomeRoute } from '@/utils/tenant-routing';
 import { emojiForVibeCode } from '@/constants/vibes';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -131,14 +136,37 @@ export function HdpScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isTenant = useIsTenant();
-  const { id, name, image, openBook } = useLocalSearchParams<{
-    id: string;
-    name?: string;
-    image?: string;
-    openBook?: string;
+  const params = useLocalSearchParams<{
+    id?: string | string[];
+    name?: string | string[];
+    image?: string | string[];
+    openBook?: string | string[];
+    slug?: string | string[];
   }>();
+  const paramId = firstSearchParam(params.id);
+  const paramSlug = firstSearchParam(params.slug);
+  const name = firstSearchParam(params.name) || undefined;
+  const image = firstSearchParam(params.image) || undefined;
+  const openBook = firstSearchParam(params.openBook);
 
-  const propertyId = id ?? '';
+  const slugLookup = useQuery({
+    queryKey: queryKeys.propertyByName(paramSlug),
+    queryFn: () => lookupPropertyIdBySlug(paramSlug),
+    enabled: !paramId && Boolean(paramSlug),
+    staleTime: 5 * 60_000,
+  });
+
+  const propertyId = paramId || (slugLookup.data != null ? String(slugLookup.data) : '');
+  const isResolvingId = !paramId && Boolean(paramSlug) && slugLookup.isLoading;
+  const slugFailed =
+    !paramId &&
+    Boolean(paramSlug) &&
+    (slugLookup.isError || (slugLookup.isSuccess && slugLookup.data == null));
+
+  useEffect(() => {
+    void clearPendingDeepLink();
+  }, []);
+
   const selectedVibes = useSelectedVibeIds();
   const vibeIds = useMemo(() => toVibeApiIds(selectedVibes), [selectedVibes]);
   const vibeKey = vibeIds.join(',');
@@ -151,8 +179,8 @@ export function HdpScreen() {
       .filter((id) => Number.isFinite(id) && id > 0);
   }, [debouncedVibeKey]);
   const { data: apiVibes = [] } = useVibesList();
-  const { data, isLoading, isError } = usePropertyDetail(propertyId, debouncedVibeIds);
-  const { data: categories = [] } = usePropertyCategories(propertyId);
+  const { data, isLoading: isDetailLoading, isError } = usePropertyDetail(propertyId, debouncedVibeIds);
+  const isLoading = isResolvingId || isDetailLoading;
   const { isWishlisted, toggleWishlist } = useWishlist();
   const selectedCity = useSelectedCity();
   const numericPropertyId = Number(propertyId);
@@ -160,11 +188,16 @@ export function HdpScreen() {
   const [showFooter, setShowFooter] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [visitSheetOpen, setVisitSheetOpen] = useState(false);
+  const [visitSheetMounted, setVisitSheetMounted] = useState(false);
   const [visitSheetTab, setVisitSheetTab] = useState<'schedule' | 'book'>('schedule');
   const [showStickyTabs, setShowStickyTabs] = useState(false);
+  const [heavyReady, setHeavyReady] = useState(false);
   const autoOpenedBookRef = useRef(false);
   const scrollY = useSharedValue(0);
-  const lastScrollYRef = useRef(0);
+  const lastScrollYSV = useSharedValue(0);
+  const footerVisibleSV = useSharedValue(1);
+  const stickyVisibleSV = useSharedValue(0);
+  const tabStickYSV = useSharedValue(Number.POSITIVE_INFINITY);
   /** Content offset where the inline section nav reaches the sticky header. Unset until measured. */
   const tabStickScrollYRef = useRef(Number.POSITIVE_INFINITY);
   const tabAnchorRef = useRef<View>(null);
@@ -172,6 +205,17 @@ export function HdpScreen() {
   const scrollContentRef = useRef<View>(null);
   const sectionRefs = useRef<Partial<Record<HdpSectionId, View | null>>>({});
   const stickyTop = insets.top + HEADER_BAR_HEIGHT;
+
+  useEffect(() => {
+    if (isLoading || !propertyId) {
+      setHeavyReady(false);
+      return;
+    }
+    const task = InteractionManager.runAfterInteractions(() => {
+      setHeavyReady(true);
+    });
+    return () => task.cancel();
+  }, [isLoading, propertyId]);
 
   const updateStickyTabs = useCallback((currentY: number) => {
     const threshold = tabStickScrollYRef.current;
@@ -187,12 +231,14 @@ export function HdpScreen() {
     anchor.measureLayout(
       content,
       (_x, y) => {
-        tabStickScrollYRef.current = Math.max(0, y - stickyTop);
-        updateStickyTabs(lastScrollYRef.current);
+        const next = Math.max(0, y - stickyTop);
+        tabStickScrollYRef.current = next;
+        tabStickYSV.value = next;
+        updateStickyTabs(lastScrollYSV.value);
       },
       () => {},
     );
-  }, [stickyTop, updateStickyTabs]);
+  }, [stickyTop, tabStickYSV, lastScrollYSV, updateStickyTabs]);
 
   const handleSectionChange = useCallback(
     (sectionId: HdpSectionId) => {
@@ -216,30 +262,41 @@ export function HdpScreen() {
     [stickyTop],
   );
 
-  const updateFooterVisibility = useCallback((currentY: number) => {
-    const previousY = lastScrollYRef.current;
-    const scrollingDown = currentY > previousY;
-    const isAtTop = currentY <= 0;
-
-    if (isAtTop) {
-      setShowFooter(true);
-    } else if (scrollingDown && currentY > 24) {
-      setShowFooter(false);
-    } else if (!scrollingDown) {
-      setShowFooter(true);
-    }
-
-    lastScrollYRef.current = currentY;
-  }, []);
-
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       const currentY = event.contentOffset.y;
       scrollY.value = currentY;
-      runOnJS(updateFooterVisibility)(currentY);
-      runOnJS(updateStickyTabs)(currentY);
+
+      const sticky = currentY >= tabStickYSV.value;
+      if (sticky !== (stickyVisibleSV.value === 1)) {
+        stickyVisibleSV.value = sticky ? 1 : 0;
+        runOnJS(setShowStickyTabs)(sticky);
+      }
+
+      const scrollingDown = currentY > lastScrollYSV.value;
+      let nextFooter = footerVisibleSV.value === 1;
+      if (currentY <= 0) {
+        nextFooter = true;
+      } else if (scrollingDown && currentY > 24) {
+        nextFooter = false;
+      } else if (!scrollingDown) {
+        nextFooter = true;
+      }
+
+      if (nextFooter !== (footerVisibleSV.value === 1)) {
+        footerVisibleSV.value = nextFooter ? 1 : 0;
+        runOnJS(setShowFooter)(nextFooter);
+      }
+
+      lastScrollYSV.value = currentY;
     },
   });
+
+  function openVisitSheet(tab: 'schedule' | 'book') {
+    setVisitSheetTab(tab);
+    setVisitSheetMounted(true);
+    setVisitSheetOpen(true);
+  }
 
   const property = data?.success ? (data.data as Record<string, any>) : null;
   const googleData = data?.googleData ?? property?.googleData ?? null;
@@ -263,8 +320,7 @@ export function HdpScreen() {
     if (isLoading || !property) return;
 
     autoOpenedBookRef.current = true;
-    setVisitSheetTab('book');
-    setVisitSheetOpen(true);
+    openVisitSheet('book');
   }, [isLoading, openBook, property]);
 
   const displayName = property?.display_name ?? property?.name ?? name ?? 'Property';
@@ -398,9 +454,12 @@ export function HdpScreen() {
     property,
     city: propertyCity,
     locality: propertyLocality,
+    limit: 5,
+    enabled: heavyReady,
   });
 
-  const showError = !isLoading && (isError || (data && !data.success && !property));
+  const showError =
+    !isLoading && (slugFailed || isError || (data && !data.success && !property));
 
   function handleShare() {
     void shareProperty({
@@ -578,11 +637,11 @@ export function HdpScreen() {
 
               <HdpMomentsSection
                 propertyName={displayName}
-                moments={moments}
+                moments={heavyReady ? moments : []}
                 carouselWidth={width - 48}
               />
 
-              {hasReviews ? (
+              {heavyReady && hasReviews ? (
                 <View ref={assignSectionRef(sectionRefs, 'reviews')} collapsable={false}>
                   <HdpReviewsSection
                     summary={reviewSummary}
@@ -592,14 +651,16 @@ export function HdpScreen() {
                 </View>
               ) : null}
 
-              <HdpSimilarPropertiesSection listings={similarListings} />
+              {heavyReady ? <HdpSimilarPropertiesSection listings={similarListings} /> : null}
 
+              {heavyReady ? (
               <View style={styles.section}>
                 <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
                   Frequently Asked Questions
                 </Typography>
                 <HdpFaqList items={HDP_SAMPLE_FAQ} />
               </View>
+              ) : null}
               </View>
             </View>
             </View>
@@ -617,19 +678,13 @@ export function HdpScreen() {
 
           <HdpFooterBar
             visible={showFooter}
-            onScheduleVisit={() => {
-              setVisitSheetTab('schedule');
-              setVisitSheetOpen(true);
-            }}
-            onBookNow={() => {
-              setVisitSheetTab('book');
-              setVisitSheetOpen(true);
-            }}
+            onScheduleVisit={() => openVisitSheet('schedule')}
+            onBookNow={() => openVisitSheet('book')}
           />
         </>
       )}
 
-      {!isLoading && !showError ? (
+      {!isLoading && !showError && visitSheetMounted ? (
         <HdpVisitSheet
             visible={visitSheetOpen}
             onClose={() => setVisitSheetOpen(false)}
@@ -643,7 +698,6 @@ export function HdpScreen() {
             startingRent={typeof startingRent === 'number' ? startingRent : undefined}
             minStayMonths={typeof minStayMonths === 'number' ? minStayMonths : 3}
             roomTypes={roomTypes}
-            categories={categories}
             initialTab={visitSheetTab}
           />
       ) : null}

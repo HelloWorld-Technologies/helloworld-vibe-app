@@ -21,6 +21,7 @@ import {
   type TenantTabRouteName,
 } from '@/constants/tab-bar';
 import { useIsTablet } from '@/hooks/use-is-tablet';
+import { getDefaultTabName } from '@/utils/tenant-routing';
 
 type TabRoute = { key: string; name: string; params?: object };
 
@@ -85,17 +86,32 @@ export function HwBottomTabBar({
     })
     .filter(Boolean) as { route: TabRoute; meta: TabMeta }[];
 
+  const defaultTabName = getDefaultTabName(isTenant);
   const focusedName = state.routes[state.index]?.name;
-  const focusedVisibleIndex = Math.max(
+  const focusedVisibleIndex = visibleTabs.findIndex((tab) => tab.route.name === focusedName);
+  const selectedName = focusedVisibleIndex >= 0 ? focusedName : defaultTabName;
+  const selectedVisibleIndex = Math.max(
     0,
-    visibleTabs.findIndex((tab) => tab.route.name === focusedName),
+    focusedVisibleIndex >= 0
+      ? focusedVisibleIndex
+      : visibleTabs.findIndex((tab) => tab.route.name === selectedName),
   );
 
   const barPad = floating ? FLOATING_INNER_PAD : DEFAULT_BAR_PAD;
 
   useEffect(() => {
-    activeIndex.value = withTiming(focusedVisibleIndex, PILL_TIMING);
-  }, [focusedVisibleIndex, activeIndex]);
+    if (!focusedName || focusedVisibleIndex >= 0) return;
+
+    if (typeof navigation.jumpTo === 'function') {
+      navigation.jumpTo(defaultTabName);
+    } else {
+      navigation.navigate(defaultTabName);
+    }
+  }, [defaultTabName, focusedName, focusedVisibleIndex, navigation]);
+
+  useEffect(() => {
+    activeIndex.value = withTiming(selectedVisibleIndex, PILL_TIMING);
+  }, [selectedVisibleIndex, activeIndex]);
 
   const pillAnimatedStyle = useAnimatedStyle(() => {
     const tabCount = visibleTabs.length;
@@ -144,7 +160,7 @@ export function HwBottomTabBar({
           />
 
           {visibleTabs.map(({ route, meta }) => {
-            const isFocused = focusedName === route.name;
+            const isFocused = selectedName === route.name;
 
             function onPress() {
               const event = navigation.emit({

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUserVibes, getVibesList, postUserVibes } from '@/api/vibes';
 import { queryKeys } from '@/queries/keys';
 import { useIsAuthenticated } from '@/stores/auth-store';
+import { useTenantStore } from '@/stores/tenant-store';
 import type { Vibe } from '@/types/vibes';
 
 export function useVibesList() {
@@ -22,7 +23,11 @@ export function useUserVibes() {
     queryKey: queryKeys.userVibes,
     queryFn: async () => {
       const result = await getUserVibes();
-      return result.data ?? [];
+      const vibes = result.data ?? [];
+      if (vibes.length > 0) {
+        useTenantStore.getState().setMoveInInterests(vibes.map((vibe) => String(vibe.id)));
+      }
+      return vibes;
     },
     enabled: isAuthenticated,
   });
@@ -40,6 +45,8 @@ export function useSaveUserVibes() {
       return { ...result, vibeIds };
     },
     onSuccess: (result) => {
+      useTenantStore.getState().setMoveInInterests(result.vibeIds.map(String));
+
       const list = queryClient.getQueryData<Vibe[]>(queryKeys.vibesList);
       if (list?.length) {
         queryClient.setQueryData(

@@ -24,6 +24,7 @@ import { useInvoiceDetails } from '@/queries/use-invoice-details';
 import type { InvoiceDetails, InvoiceLineItem, InvoiceLineItemTax, TenantInvoice } from '@/types/invoice';
 import {
   formatDisplayDate,
+  getInvoicePaidDate,
   getInvoiceDueLabel,
   priceFormatter,
 } from '@/utils/tenant-format';
@@ -315,7 +316,14 @@ export function InvoiceViewerScreen() {
                   {isPaid ? 'Paid on' : 'Due date'}
                 </Typography>
                 <Typography variant="text" size="sm" weight="medium">
-                  {formatDisplayDate(data.due_date ?? undefined)}
+                  {formatDisplayDate(
+                    isPaid
+                      ? getInvoicePaidDate({
+                          last_payment_date: data.last_payment_date ?? undefined,
+                          due_date: data.due_date ?? undefined,
+                        })
+                      : (data.due_date ?? undefined),
+                  )}
                 </Typography>
               </View>
             </View>

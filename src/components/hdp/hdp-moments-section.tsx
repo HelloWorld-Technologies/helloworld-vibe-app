@@ -57,6 +57,9 @@ function MomentCard({
         source={showThumbnail ? { uri: moment.imageUri } : ImageAssets.comingSoon}
         style={styles.cardImage}
         contentFit="cover"
+        cachePolicy="memory-disk"
+        recyclingKey={moment.id}
+        transition={0}
         onError={() => setThumbFailed(true)}
       />
       <LinearGradient

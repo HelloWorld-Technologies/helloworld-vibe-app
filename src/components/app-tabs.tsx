@@ -15,6 +15,7 @@ import {
 } from '@/constants/tab-bar';
 import { useIsTablet } from '@/hooks/use-is-tablet';
 import { useIsTenant } from '@/stores/tenant-store';
+import { getDefaultTabName } from '@/utils/tenant-routing';
 
 const PROSPECT_TAB_ICONS = {
   home: {
@@ -77,11 +78,6 @@ const nativeTabStyle = {
   },
 } as const;
 
-const ALL_TAB_NAMES = [
-  ...PROSPECT_TAB_ORDER,
-  ...TENANT_TAB_ORDER,
-] as const satisfies readonly (ProspectTabRouteName | TenantTabRouteName)[];
-
 function NativeAppTabs({ isTenant }: { isTenant: boolean }) {
   if (isTenant) {
     return (
@@ -129,9 +125,18 @@ function CustomAppTabs({
   floating: boolean;
 }) {
   const visibleTabs = new Set<string>(isTenant ? TENANT_TAB_ORDER : PROSPECT_TAB_ORDER);
+  const initialRouteName = getDefaultTabName(isTenant);
+  // Visible tabs first so the default/first route matches the role. Otherwise
+  // Android back can land on prospect `home` while the tenant bar shows Dashboard.
+  const tabScreenOrder = isTenant
+    ? [...TENANT_TAB_ORDER, ...PROSPECT_TAB_ORDER]
+    : [...PROSPECT_TAB_ORDER, ...TENANT_TAB_ORDER];
 
   return (
     <Tabs
+      key={isTenant ? 'tenant' : 'prospect'}
+      initialRouteName={initialRouteName}
+      backBehavior="history"
       tabBar={(props) => (
         <HwBottomTabBar {...props} isTenant={isTenant} floating={floating} />
       )}
@@ -160,7 +165,7 @@ function CustomAppTabs({
               shadowOpacity: 0,
             },
       }}>
-      {ALL_TAB_NAMES.map((name) => {
+      {tabScreenOrder.map((name) => {
         const isVisible = visibleTabs.has(name);
 
         return (

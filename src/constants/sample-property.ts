@@ -12,7 +12,7 @@ export const SAMPLE_PROPERTY: PropertyListing = {
   images: [ImageAssets.loginBento1, ImageAssets.loginBento2, ImageAssets.loginBento3],
   badges: [
     { label: 'Filling Fast', variant: 'filling-fast' },
-    { label: 'Women Only', variant: 'women-only' },
+    { label: 'Women Only', variant: 'gender' },
   ],
 };
 
@@ -36,7 +36,7 @@ export const SAMPLE_PROPERTIES: PropertyListing[] = [
     rating: 4.7,
     vibeMatchPercent: 91,
     startingRent: 15000,
-    badges: [{ label: 'Women Only', variant: 'women-only' }],
+    badges: [{ label: 'Women Only', variant: 'gender' }],
     images: [ImageAssets.loginBento3, ImageAssets.loginBento4, ImageAssets.loginBento1],
   },
 ];

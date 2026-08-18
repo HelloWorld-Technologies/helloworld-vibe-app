@@ -14,6 +14,7 @@ import palette from '@/constants/palette';
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
 import { useTenantProfile } from '@/stores/tenant-store';
 import { buildBookingPaymentPayload, buildBookingVerifyPayload } from '@/utils/booking-checkout';
+import { buildEventVerifyPayload } from '@/utils/event-payment';
 import { buildInvoiceId } from '@/utils/booking-payment';
 import { resetRootRoute } from '@/utils/navigation-reset';
 import { getPaymentLogoImage } from '@/utils/payment-logo';
@@ -39,24 +40,72 @@ type InitPaymentData = {
   data?: Record<string, unknown>;
 };
 
-function parseRazorpayError(error: unknown): string {
+function isUsefulErrorText(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  const normalized = trimmed.toLowerCase();
+  return (
+    normalized !== 'undefined' &&
+    normalized !== 'null' &&
+    normalized !== '[object object]' &&
+    normalized !== 'error'
+  );
+}
+
+function parseJsonValue(value: string): unknown | null {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
+
   try {
-    if (typeof error === 'string') {
-      const parsed = JSON.parse(error) as {
-        error?: { description?: string };
-        description?: string;
-      };
-      return parsed?.error?.description || parsed?.description || 'Payment failed';
-    }
-    if (error && typeof error === 'object') {
-      const record = error as { error?: { description?: string }; description?: string };
-      if (record.error) return record.error.description || String(record.error);
-      if (record.description) return record.description;
-    }
+    return JSON.parse(trimmed) as unknown;
   } catch {
-    return 'Payment failed. Please try again later.';
+    return null;
   }
-  return 'Payment failed. Please try again later.';
+}
+
+function collectErrorText(value: unknown, depth = 0): string | null {
+  if (depth > 4 || value == null) return null;
+
+  if (typeof value === 'string') {
+    if (!isUsefulErrorText(value)) return null;
+    const parsed = parseJsonValue(value);
+    return parsed ? collectErrorText(parsed, depth + 1) : value.trim();
+  }
+
+  if (typeof value !== 'object') return null;
+
+  const record = value as Record<string, unknown>;
+  const candidates = [
+    typeof record.getMessage === 'function' ? record.getMessage() : null,
+    record.description,
+    record.message,
+    record.reason,
+    record.error_description,
+    record.error && typeof record.error === 'object'
+      ? (record.error as Record<string, unknown>).description ??
+        (record.error as Record<string, unknown>).message ??
+        (record.error as Record<string, unknown>).reason
+      : record.error,
+    record.details && typeof record.details === 'object'
+      ? (record.details as Record<string, unknown>).description ??
+        (record.details as Record<string, unknown>).message
+      : record.details,
+  ];
+
+  for (const candidate of candidates) {
+    const nestedText = collectErrorText(candidate, depth + 1);
+    if (nestedText) return nestedText;
+  }
+
+  if (value instanceof Error && isUsefulErrorText(value.message)) {
+    return collectErrorText(value.message, depth + 1) ?? value.message.trim();
+  }
+
+  return null;
+}
+
+function parseRazorpayError(error: unknown): string {
+  return collectErrorText(error) || 'Payment failed. Please try again later.';
 }
 
 function parsePayloadParam(payload: string | string[] | undefined) {
@@ -173,7 +222,7 @@ export function CompletePaymentScreen() {
       },
       onError(error) {
         setStatus('failed');
-        setErrorMessage(error?.getMessage?.() || 'Payment failed');
+        setErrorMessage(parseRazorpayError(error));
       },
     });
 
@@ -190,7 +239,14 @@ export function CompletePaymentScreen() {
     const isCashfree = Boolean(initData.paymentObj.paymentSessionId);
 
     if (paymentType === 'booking') {
-      return buildBookingVerifyPayload(initData, razorpayData, initData.amount ?? amount);
+      return buildBookingVerifyPayload(initData, razorpayData, initData.amount ?? amount, {
+        customerId: mobile,
+        propertyName: pendingCheckout?.draft.propertyName,
+      });
+    }
+
+    if (paymentType === 'events') {
+      return buildEventVerifyPayload(initData, razorpayData, initData.amount ?? amount);
     }
 
     if (paymentType === 'movein') {
@@ -259,7 +315,7 @@ export function CompletePaymentScreen() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [amount, handlePaymentSuccess, params.bookingId, params.paymentFor, paymentPayload, paymentType, profile?.bookingId, verifyApi],
+    [amount, handlePaymentSuccess, mobile, params.bookingId, params.paymentFor, paymentPayload, paymentType, pendingCheckout, profile?.bookingId, verifyApi],
   );
 
   useEffect(() => {

@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { consumeFreshSandboxInstall } from '@/utils/fresh-install';
+
 type AuthState = {
   token: string | null;
   mobile: string | null;
@@ -40,8 +42,17 @@ export const useAuthStore = create<AuthState>()(
         selectedCity: state.selectedCity,
         selectedLocality: state.selectedLocality,
       }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated(true);
+      onRehydrateStorage: () => () => {
+        void (async () => {
+          try {
+            const isFreshInstall = await consumeFreshSandboxInstall();
+            if (isFreshInstall) {
+              useAuthStore.getState().clearSession();
+            }
+          } finally {
+            useAuthStore.getState().setHydrated(true);
+          }
+        })();
       },
     },
   ),

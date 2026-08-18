@@ -32,6 +32,7 @@ function StatColumn ({
         size='xl'
         weight='bold'
         color={palette.gray[900]}
+        style={styles.statText}
       >
         {value}
       </Typography>
@@ -46,6 +47,7 @@ function StatColumn ({
           size='xs'
           weight='medium'
           color={palette.gray[400]}
+          style={styles.statText}
         >
           {label}
         </Typography>
@@ -108,11 +110,13 @@ export function HdpRatingCard ({
       <View style={styles.divider} />
 
       <View style={styles.statsRow}>
-        <StatColumn value={rating.toFixed(1)} label='Rating' star />
-        <View style={styles.statDivider} />
-        <StatColumn value={String(visitsToday)} label='Visits today' />
-        <View style={styles.statDivider} />
-        <StatColumn value={String(reviewCount)} label='Reviews' />
+        <View style={styles.statsGroup}>
+          <StatColumn value={rating.toFixed(1)} label='Rating' star />
+          <View style={styles.statDivider} />
+          <StatColumn value={String(visitsToday)} label='Visits today' />
+          <View style={styles.statDivider} />
+          <StatColumn value={String(reviewCount)} label='Reviews' />
+        </View>
         <Image
           source={ImageAssets.hdpTrophy}
           style={styles.trophy}
@@ -133,7 +137,6 @@ const styles = StyleSheet.create({
   },
   top: {
     gap: 8,
-    paddingRight: 72
   },
   trendingBadge: {
     alignSelf: 'flex-start',
@@ -150,28 +153,35 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20,
-    position: 'relative'
+    gap: 8,
+  },
+  statsGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   statCol: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 2,
-    minWidth: 56
+  },
+  statText: {
+    textAlign: 'center',
   },
   statLabelRow: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statDivider: {
     width: 1,
     height: 31,
-    backgroundColor: palette.gray[300]
+    backgroundColor: palette.gray[300],
   },
   trophy: {
-    position: 'absolute',
-    right: 0,
-    bottom: -8,
-    width: 72,
-    height: 72
-  }
+    width: 56,
+    height: 56,
+    flexShrink: 0,
+  },
 })

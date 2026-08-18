@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getMoveInChecklist, updateMoveInChecklist } from '@/api/booking';
@@ -21,7 +22,6 @@ import { Typography } from '@/components/ui/typography';
 import { fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
-import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import type { MoveInChecklistItems } from '@/types/move-in-checklist';
 import {
   extractFeedbackComments,
@@ -34,9 +34,8 @@ type ScreenStatus = 'loading' | 'form' | 'submitting' | 'submitted' | 'approved'
 
 export function MoveInChecklistScreen() {
   const insets = useSafeAreaInsets();
-  const restingInset = Math.max(insets.bottom, 16);
-  const footerInset = useKeyboardBottomInset(restingInset);
-  const keyboardOpen = footerInset > restingInset;
+  const keyboardOpen = useKeyboardState((state) => state.isVisible);
+  const footerInset = keyboardOpen ? 8 : Math.max(insets.bottom, 16);
   const queryClient = useQueryClient();
   const profile = useTenantProfile();
   const bookingId = profile?.bookingId ?? '';
@@ -148,7 +147,7 @@ export function MoveInChecklistScreen() {
 
   return (
     <ProfileStackScreen title="Move-in Checklist" centerTitle style={styles.screen}>
-      <View style={styles.flex}>
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
@@ -207,7 +206,7 @@ export function MoveInChecklistScreen() {
             )}
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </ProfileStackScreen>
   );
 }

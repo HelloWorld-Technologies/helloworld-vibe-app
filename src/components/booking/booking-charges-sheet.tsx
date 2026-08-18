@@ -44,9 +44,11 @@ function ChargeSummaryRow({ charge }: ChargeSummaryRowProps) {
         <Typography variant="text" size="sm" style={styles.chargeLabel}>
           {charge.label}
         </Typography>
-        <Typography variant="text" size="xs" style={styles.chargeDescription}>
-          {charge.description}
-        </Typography>
+        {charge.description ? (
+          <Typography variant="text" size="xs" style={styles.chargeDescription}>
+            {charge.description}
+          </Typography>
+        ) : null}
         {charge.badge ? (
           <View style={styles.requiredBadge}>
             <Typography variant="text" size="xs" style={styles.requiredBadgeText}>

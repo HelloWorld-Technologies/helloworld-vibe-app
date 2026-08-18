@@ -27,6 +27,8 @@ export type MoveInStep = {
   actionLabel?: string;
   route?: string;
   completed: boolean;
+  /** Badge on the completed list. Defaults to Completed. */
+  completedLabel?: string;
   /** When false, the step is visible but not actionable yet. */
   enabled?: boolean;
   lockedMessage?: string;

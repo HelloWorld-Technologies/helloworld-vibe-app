@@ -49,7 +49,7 @@ export const ImageAssets = {
   appIcon: require('../../assets/images/icon.png'),
   paymentLogo: require('../../assets/images/icon.png'),
   splashIcon: require('../../assets/images/splash-icon.png'),
-  hdpTrophy: require('../../assets/hw-vibe/HDP/Top choice trophy.png'),
+  hdpTrophy: require('../../assets/bundled/hdp/top-choice-trophy.png'),
   tourConfirmed: require('../../assets/hw-vibe/HDP/Tour Confirmed.png'),
 } as const;
 

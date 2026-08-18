@@ -61,7 +61,11 @@ export function getPropertyShareUrl(params: {
 
   const srp = srpSlug(city);
   const path = locality ? `/${srp}/${locality}/${hdp}` : `/${srp}/${hdp}`;
-  return `${config.PUBLIC_URL}${path}`;
+  const url = new URL(`${config.PUBLIC_URL}${path}`);
+  if (params.id != null && String(params.id).trim()) {
+    url.searchParams.set('id', String(params.id));
+  }
+  return url.toString();
 }
 
 export async function shareProperty(params: {

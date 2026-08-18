@@ -30,6 +30,7 @@ export type BookingChargeOption = {
   description: string;
   required?: boolean;
   badge?: string;
+  disabled?: boolean;
 };
 
 export type AppliedDiscount = {

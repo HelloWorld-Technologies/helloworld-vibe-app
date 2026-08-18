@@ -5,6 +5,7 @@ import { useSrpProperties } from '@/queries/use-srp-properties';
 import {
   SIMILAR_PROPERTIES_LIMIT,
   buildSimilarPropertyListings,
+  extractSimilarProperties,
 } from '@/utils/similar-properties';
 
 type UseSimilarPropertiesArgs = {
@@ -14,6 +15,7 @@ type UseSimilarPropertiesArgs = {
   city?: string;
   locality?: string | null;
   limit?: number;
+  enabled?: boolean;
 };
 
 function listingsKey(listings: { id: string }[] | undefined) {
@@ -27,8 +29,14 @@ export function useSimilarProperties({
   city,
   locality = null,
   limit = SIMILAR_PROPERTIES_LIMIT,
+  enabled = true,
 }: UseSimilarPropertiesArgs) {
-  const { data: srpData, isLoading: isSrpLoading } = useSrpProperties(city ?? '', locality);
+  const embeddedCount = extractSimilarProperties(detail, property).length;
+  const fetchSrp = enabled && embeddedCount < limit;
+  const { data: srpData, isLoading: isSrpLoading } = useSrpProperties(
+    fetchSrp ? (city ?? '') : '',
+    fetchSrp ? locality : null,
+  );
 
   const listings = useMemo(
     () =>
@@ -39,7 +47,7 @@ export function useSimilarProperties({
         srpListings: srpData?.listings ?? [],
         nearByListings: srpData?.nearByListings ?? [],
         limit,
-        useSampleFallback: !city || !isSrpLoading,
+        useSampleFallback: fetchSrp ? !city || !isSrpLoading : true,
       }),
     [
       city,
@@ -50,11 +58,12 @@ export function useSimilarProperties({
       listingsKey(srpData?.listings),
       property,
       propertyId,
+      fetchSrp,
     ],
   );
 
   return {
     listings,
-    isLoading: Boolean(city) && isSrpLoading && listings.length === 0,
+    isLoading: fetchSrp && Boolean(city) && isSrpLoading && listings.length === 0,
   };
 }

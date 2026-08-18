@@ -20,6 +20,8 @@ export {
 } from '@/components/skeleton/card-skeletons';
 export { PropertyCardSkeleton } from '@/components/skeleton/property-card-skeleton';
 export {
+  BookingChargeOptionSkeleton,
+  BookingChargesSkeleton,
   ChecklistSkeleton,
   CreateTicketSkeleton,
   DashboardEventsSkeleton,

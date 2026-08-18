@@ -9,6 +9,7 @@ export type TenantInvoice = {
   due_date?: string;
   date?: string;
   paid_date?: string;
+  last_payment_date?: string;
   customer_id?: string;
   invoice_url?: string;
   [key: string]: unknown;
@@ -44,6 +45,7 @@ export type InvoiceDetails = {
   status?: string | null;
   date?: string | null;
   due_date?: string | null;
+  last_payment_date?: string | null;
   created_time?: string | null;
   last_modified_time?: string | null;
   customer_id?: string | null;

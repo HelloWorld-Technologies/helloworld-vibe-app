@@ -16,9 +16,11 @@ import { BookingPaymentOption } from '@/components/booking/booking-payment-optio
 import { BookingPropertySummary } from '@/components/booking/booking-property-summary';
 import { DiscountCodeInput } from '@/components/booking/discount-code-input';
 import { HdpVisitSheet } from '@/components/hdp/hdp-visit-sheet';
+import { BookingChargesSkeleton } from '@/components/skeleton';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Typography } from '@/components/ui/typography';
-import { BOOKING_TERMS, DEFAULT_BOOKING_CHARGES } from '@/constants/booking';
+import { BOOKING_TERMS } from '@/constants/booking';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { usePropertyCategories } from '@/queries/use-property-categories';
@@ -27,7 +29,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useBookingDraftStore } from '@/stores/booking-draft-store';
 import { useIsTenant } from '@/stores/tenant-store';
 import { useBookingPayment } from '@/hooks/use-booking-payment';
-import type { AppliedDiscount, BookingChargeId, BookingPricingDetails } from '@/types/booking-payment';
+import type { AppliedDiscount, BookingChargeId, BookingChargeOption, BookingPricingDetails } from '@/types/booking-payment';
 import {
   formatBookingAmount,
   formatBookingApiDate,
@@ -38,6 +40,7 @@ import {
   buildChargesFromPricing,
   computePayableSubtotal,
   mapPaymentDetailsData,
+  syncSelectedCharges,
 } from '@/utils/booking-pricing';
 import { getExploreHomeRoute } from '@/utils/tenant-routing';
 
@@ -70,7 +73,8 @@ export function BookingScreen() {
   const [discountPricingDetails, setDiscountPricingDetails] = useState<BookingPricingDetails | null>(
     null,
   );
-  const [charges, setCharges] = useState(DEFAULT_BOOKING_CHARGES);
+  const [pricingLoading, setPricingLoading] = useState(true);
+  const [charges, setCharges] = useState<BookingChargeOption[]>([]);
   const [selected, setSelected] = useState<Record<BookingChargeId, boolean>>(DEFAULT_SELECTED);
   const [referralInput, setReferralInput] = useState('');
   const [couponInput, setCouponInput] = useState('');
@@ -82,6 +86,7 @@ export function BookingScreen() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedDiscount | null>(null);
   const [chargesSheetOpen, setChargesSheetOpen] = useState(false);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [editBookStep, setEditBookStep] = useState<'rooms' | 'details'>('rooms');
   const storedMobile = useAuthStore((state) => state.mobile);
 
   const activePricing = appliedCoupon && discountPricingDetails ? discountPricingDetails : pricingDetails;
@@ -135,6 +140,7 @@ export function BookingScreen() {
     if (!draft) return;
 
     const draftSnapshot = draft;
+    let cancelled = false;
 
     async function loadPaymentDetails(couponCode?: string) {
       const response = await getPaymentDetails({
@@ -160,21 +166,36 @@ export function BookingScreen() {
     }
 
     async function fetchPricing() {
-      const pricing = await loadPaymentDetails();
-      if (!pricing) return;
+      setPricingLoading(true);
+      try {
+        const pricing = await loadPaymentDetails();
+        if (cancelled || !pricing) return;
 
-      setPricingDetails(pricing);
-      setCharges(buildChargesFromPricing(pricing));
+        const nextCharges = buildChargesFromPricing(pricing, draftSnapshot.moveInDate);
+        setPricingDetails(pricing);
+        setCharges(nextCharges);
+        setSelected((current) => syncSelectedCharges(current, nextCharges));
+      } finally {
+        if (!cancelled) {
+          setPricingLoading(false);
+        }
+      }
     }
 
     void fetchPricing();
+
+    return () => {
+      cancelled = true;
+    };
   }, [draft]);
 
   useEffect(() => {
     if (!appliedCoupon) {
       setDiscountPricingDetails(null);
       if (pricingDetails) {
-        setCharges(buildChargesFromPricing(pricingDetails));
+        const nextCharges = buildChargesFromPricing(pricingDetails, draft?.moveInDate);
+        setCharges(nextCharges);
+        setSelected((current) => syncSelectedCharges(current, nextCharges));
       }
     }
   }, [appliedCoupon, pricingDetails]);
@@ -190,9 +211,8 @@ export function BookingScreen() {
     }
     return sumSelectedCharges(charges, selected);
   }, [activePricing, charges, selected]);
-  // Coupon is already baked into discounted pricing (same as helloworld-vibe).
-  const savings = appliedReferral?.amount ?? 0;
-  const total = Math.max(subtotal - savings, 0);
+  // Referral is first-rent / post move-in (helloworld-next). Coupon is already in discounted pricing.
+  const total = subtotal;
   const selectedIds = useMemo(
     () => new Set(charges.filter((charge) => selected[charge.id]).map((charge) => charge.id)),
     [charges, selected],
@@ -206,6 +226,8 @@ export function BookingScreen() {
 
   function toggleCharge(id: BookingChargeId) {
     if (id === 'token') return;
+    const charge = charges.find((item) => item.id === id);
+    if (charge?.disabled || charge?.required) return;
 
     setSelected((current) => ({
       ...current,
@@ -213,22 +235,33 @@ export function BookingScreen() {
     }));
   }
 
+  function openPropertyEdit() {
+    setEditBookStep('rooms');
+    setEditSheetOpen(true);
+  }
+
+  function openOccupantEdit() {
+    setEditBookStep('details');
+    setEditSheetOpen(true);
+  }
+
   async function handleApplyReferral() {
     setReferralError('');
     setReferralLoading(true);
 
     try {
+      const code = referralInput.trim();
       const response = await verifyReferralCode({
-        referralCode: referralInput.trim(),
+        referralCode: code,
         propertyName: bookingDraft.propertyName,
       });
 
       if (response.isValid) {
         setAppliedReferral({
           type: 'referral',
-          code: referralInput.trim().toUpperCase(),
-          amount: 1000,
-          message: response.message,
+          code,
+          amount: 0,
+          message: `Your referral code ${code} has been applied`,
         });
         setReferralInput('');
       } else {
@@ -281,10 +314,12 @@ export function BookingScreen() {
       const discountedSubtotal = computePayableSubtotal(discountedPricing, selected);
 
       setDiscountPricingDetails(discountedPricing);
-      setCharges(buildChargesFromPricing(discountedPricing));
+      const nextCharges = buildChargesFromPricing(discountedPricing, bookingDraft.moveInDate);
+      setCharges(nextCharges);
+      setSelected((current) => syncSelectedCharges(current, nextCharges));
       setAppliedCoupon({
         type: 'coupon',
-        code: code.toUpperCase(),
+        code,
         amount: Math.max(0, originalSubtotal - discountedSubtotal),
         message: response.discountMessage || response.message,
       });
@@ -297,6 +332,7 @@ export function BookingScreen() {
   }
 
   function handlePayNow() {
+    if (pricingLoading || !activePricing) return;
     setChargesSheetOpen(true);
   }
 
@@ -364,12 +400,12 @@ export function BookingScreen() {
           rent={bookingDraft.roomPrice}
           moveInDate={bookingDraft.moveInDate}
           imageUri={bookingDraft.imageUri}
-          onEdit={() => setEditSheetOpen(true)}
+          onEdit={openPropertyEdit}
         />
 
         <BookingOccupantSummary
           occupant={bookingDraft.occupant}
-          onEdit={() => setEditSheetOpen(true)}
+          onEdit={openOccupantEdit}
         />
 
         <View style={styles.section}>
@@ -377,19 +413,23 @@ export function BookingScreen() {
             Choose what to pay now
           </Typography>
           <View style={styles.optionList}>
-            {charges.map((charge) => (
-              <BookingPaymentOption
-                key={charge.id}
-                label={charge.label}
-                amount={charge.amount}
-                description={charge.description}
-                selected={selected[charge.id]}
-                required={charge.required}
-                badge={charge.badge}
-                disabled={charge.required}
-                onPress={() => toggleCharge(charge.id)}
-              />
-            ))}
+            {pricingLoading ? (
+              <BookingChargesSkeleton />
+            ) : (
+              charges.map((charge) => (
+                <BookingPaymentOption
+                  key={charge.id}
+                  label={charge.label}
+                  amount={charge.amount}
+                  description={charge.description}
+                  selected={selected[charge.id]}
+                  required={charge.required}
+                  badge={charge.badge}
+                  disabled={charge.required || charge.disabled}
+                  onPress={() => toggleCharge(charge.id)}
+                />
+              ))
+            )}
           </View>
         </View>
 
@@ -436,9 +476,13 @@ export function BookingScreen() {
             Total Amount
           </Typography>
           <View style={styles.totalValue}>
-            <Typography variant="text" size="md" weight="bold">
-              {formatBookingAmount(total)}
-            </Typography>
+            {pricingLoading ? (
+              <Skeleton width={72} height={20} />
+            ) : (
+              <Typography variant="text" size="md" weight="bold">
+                {formatBookingAmount(total)}
+              </Typography>
+            )}
             <HwSymbol name="chevron.right" size={12} tintColor={palette.gray[500]} />
           </View>
         </Pressable>
@@ -466,7 +510,7 @@ export function BookingScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <Button label="Pay Now" onPress={handlePayNow} disabled={!activePricing} />
+        <Button label="Pay Now" onPress={handlePayNow} disabled={pricingLoading || !activePricing} />
       </View>
 
       <BookingChargesSheet
@@ -495,6 +539,7 @@ export function BookingScreen() {
         categories={categories}
         bookOnly
         editDraft={bookingDraft}
+        initialBookStep={editBookStep}
         onBookingUpdated={() => setEditSheetOpen(false)}
       />
     </SafeAreaView>

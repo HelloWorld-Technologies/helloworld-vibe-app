@@ -11,5 +11,6 @@ export function usePropertyDetail(id: string, vibeIds: readonly number[] = []) {
     queryKey: queryKeys.propertyDetail(id, vibesKey),
     queryFn: () => getPropertyData(id, { vibes }),
     enabled: Boolean(id),
+    staleTime: 5 * 60_000,
   });
 }

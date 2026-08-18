@@ -10,6 +10,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { getTicketConversations, postTicketComment, reopenSupportTicket } from '@/api/tickets';
 import { ChatThreadSkeleton } from '@/components/skeleton';
@@ -183,7 +184,7 @@ export function TicketDetailsScreen() {
         </View>
       </View>
 
-      <View style={styles.flex}>
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         {loading ? (
           <ChatThreadSkeleton style={styles.loader} />
         ) : (
@@ -222,7 +223,7 @@ export function TicketDetailsScreen() {
             sending={sending}
           />
         )}
-      </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }

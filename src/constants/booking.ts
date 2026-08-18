@@ -8,32 +8,3 @@ export const BOOKING_TERMS = (lockInMonths = 3) => [
   'At the end of your stay, a move-out charge of INR 3000 per tenant will be deducted to cover the upkeep of bed and room inventory.',
   'HelloWorld reserves the right to establish community guidelines, which may include rules regarding the usage of common areas.',
 ];
-
-export const DEFAULT_BOOKING_CHARGES = [
-  {
-    id: 'token' as const,
-    label: 'Token Amount',
-    amount: 999,
-    description: 'Required to confirm booking',
-    required: true,
-    badge: 'Required',
-  },
-  {
-    id: 'moveIn' as const,
-    label: 'Move-in Charges',
-    amount: 2000,
-    description: 'One-time setup fee',
-  },
-  {
-    id: 'security' as const,
-    label: 'Security Deposit',
-    amount: 11001,
-    description: 'Refundable at checkout',
-  },
-  {
-    id: 'advanceRent' as const,
-    label: 'Advance Rent (10 days)',
-    amount: 3340,
-    description: 'Pro-rated first month',
-  },
-];

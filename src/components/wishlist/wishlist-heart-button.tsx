@@ -1,6 +1,6 @@
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import type { GestureResponderEvent } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -8,8 +8,43 @@ import Animated, {
   withSequence,
   withSpring,
 } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 
 import palette from '@/constants/palette';
+
+const HEART_PATH =
+  'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
+
+function HeartGlyph({
+  filled,
+  size,
+  color,
+}: {
+  filled: boolean;
+  size: number;
+  color: string;
+}) {
+  if (Platform.OS === 'ios') {
+    return (
+      <HwSymbol
+        name={filled ? 'heart.fill' : 'heart'}
+        size={size}
+        tintColor={color}
+      />
+    );
+  }
+
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d={HEART_PATH}
+        fill={filled ? color : 'none'}
+        stroke={color}
+        strokeWidth={filled ? 0 : 1.8}
+      />
+    </Svg>
+  );
+}
 
 type WishlistHeartButtonProps = {
   isFavorite: boolean;
@@ -77,10 +112,10 @@ export function WishlistHeartButton({
       accessibilityRole="button"
       accessibilityLabel={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
       accessibilityState={{ selected: isFavorite }}>
-      <HwSymbol
-        name={isFavorite ? 'heart.fill' : 'heart'}
+      <HeartGlyph
+        filled={isFavorite}
         size={size}
-        tintColor={isFavorite ? activeColor : inactiveColor}
+        color={isFavorite ? activeColor : inactiveColor}
       />
     </AnimatedPressable>
   );

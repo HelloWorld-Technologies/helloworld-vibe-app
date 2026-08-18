@@ -2,19 +2,14 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { PropertyCard } from '@/components/property/property-card';
-import { HwParallaxCarousel } from '@/components/ui/carousel';
+import { HwCarousel } from '@/components/ui/carousel';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { useIsTablet } from '@/hooks/use-is-tablet';
 import type { PropertyListing } from '@/types/property';
 
-const ITEM_GAP = 10;
+const ITEM_GAP = 12;
 const PROPERTY_CAROUSEL_HEIGHT = 488;
-const PARALLAX_MODE_CONFIG = {
-  parallaxScrollingScale: 0.92,
-  parallaxScrollingOffset: 28,
-  parallaxAdjacentItemScale: 0.86,
-};
 
 type HdpSimilarPropertiesSectionProps = {
   listings: PropertyListing[];
@@ -62,18 +57,17 @@ export function HdpSimilarPropertiesSection({ listings }: HdpSimilarPropertiesSe
         </Typography>
       </View>
 
-      <HwParallaxCarousel
+      <HwCarousel
         data={listings}
         width={slideWidth}
         windowWidth={carouselWindowWidth}
         height={PROPERTY_CAROUSEL_HEIGHT}
         showPagination={false}
-        modeConfig={isTablet ? undefined : PARALLAX_MODE_CONFIG}
-        style={styles.carousel}
         renderItem={({ item }) => (
           <PropertyCard
             property={item}
-            style={{ width: cardWidth, alignSelf: 'center' }}
+            compactMedia
+            style={{ width: cardWidth }}
             onPress={() => openProperty(item)}
           />
         )}
@@ -88,8 +82,5 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: 4,
-  },
-  carousel: {
-    marginHorizontal: -4,
   },
 });

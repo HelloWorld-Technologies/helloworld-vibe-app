@@ -24,6 +24,7 @@ import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
 import { Typography } from '@/components/ui/typography';
 import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
+import { usePropertyCategories } from '@/queries/use-property-categories';
 import { queryKeys } from '@/queries/keys';
 import { usePropertyVisitSlots } from '@/queries/use-property-visit-slots';
 import { useAuthStore } from '@/stores/auth-store';
@@ -92,6 +93,8 @@ type HdpVisitSheetProps = {
   bookOnly?: boolean;
   /** Pre-fill room and occupant details when editing an existing booking draft. */
   editDraft?: BookingDraft | null;
+  /** Book-now step to open on. Occupant edit from checkout should skip category/room selection. */
+  initialBookStep?: BookStep;
   /** Called after the booking draft is saved instead of navigating to /booking. */
   onBookingUpdated?: () => void;
 };
@@ -242,6 +245,7 @@ export function HdpVisitSheet({
   visitOnly = false,
   bookOnly = false,
   editDraft = null,
+  initialBookStep = 'rooms',
   onBookingUpdated,
 }: HdpVisitSheetProps) {
   const router = useRouter();
@@ -255,12 +259,17 @@ export function HdpVisitSheet({
     () => ({ profile, mobile: storedMobile }),
     [profile, storedMobile],
   );
+  const { data: fetchedCategories = [] } = usePropertyCategories(
+    propertyId,
+    visible && (categories == null || categories.length === 0),
+  );
+  const resolvedCategories = categories && categories.length > 0 ? categories : fetchedCategories;
   const fallbackDates = useMemo(() => buildVisitDateOptions(), []);
   const occupancyOptions = useMemo(() => {
-    const fromCategories = getAvailableOccupancies(categories ?? []);
+    const fromCategories = getAvailableOccupancies(resolvedCategories);
     if (fromCategories.length > 0) return fromCategories;
     return buildOccupancyOptions(roomTypes);
-  }, [categories, roomTypes]);
+  }, [resolvedCategories, roomTypes]);
 
   const [activeTab, setActiveTab] = useState<VisitSheetTab>(initialTab);
   const { data: slotDays = [], isLoading: slotsLoading } = usePropertyVisitSlots(
@@ -304,8 +313,8 @@ export function HdpVisitSheet({
   }, [hasApiSlots, selectedDate.date, selectedSlotDay]);
 
   const bookRooms = useMemo(
-    () => buildBookRoomOptions(categories, selectedOccupancy, startingRent),
-    [categories, selectedOccupancy, startingRent],
+    () => buildBookRoomOptions(resolvedCategories, selectedOccupancy, startingRent),
+    [resolvedCategories, selectedOccupancy, startingRent],
   );
 
   useEffect(() => {
@@ -340,7 +349,7 @@ export function HdpVisitSheet({
     if (!visible) return;
 
     setScheduleStep('datetime');
-    setBookStep('rooms');
+    setBookStep(initialBookStep);
     setActiveTab(bookOnly ? 'book' : visitOnly ? 'schedule' : initialTab);
 
     const draftOccupancy = editDraft ? occupancyFromDraft(editDraft) : occupancyOptions[0];
@@ -348,7 +357,7 @@ export function HdpVisitSheet({
       ? draftOccupancy
       : occupancyOptions[0];
     const defaultRoomId =
-      buildBookRoomOptions(categories, resolvedOccupancy, startingRent)[0]?.id ?? '1';
+      buildBookRoomOptions(resolvedCategories, resolvedOccupancy, startingRent)[0]?.id ?? '1';
 
     setSelectedDate(fallbackDates[0]);
     setSelectedTime(DEFAULT_VISIT_TIME_SLOTS[0]);
@@ -365,10 +374,11 @@ export function HdpVisitSheet({
     );
   }, [
     bookOnly,
-    categories,
+    resolvedCategories,
     editDraft,
     fallbackDates,
     formPrefillSource,
+    initialBookStep,
     initialTab,
     occupancyOptions,
     startingRent,
@@ -383,10 +393,10 @@ export function HdpVisitSheet({
   function handleViewTours() {
     const href = getMyVisitsRoute(isTenant);
     handleClose();
-    // Wait for the Modal to dismiss, then use the singleton router so this
-    // still runs if the sheet unmounts with the parent close handler.
+    // Wait for the Modal to dismiss, then push the stack screen so this
+    // still runs if the sheet unmounts — and works from Home as well as SRP.
     setTimeout(() => {
-      expoRouter.navigate(href);
+      expoRouter.push(href);
     }, 360);
   }
 

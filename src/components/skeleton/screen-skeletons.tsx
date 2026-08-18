@@ -175,6 +175,29 @@ export function ReferralScreenSkeleton() {
   );
 }
 
+export function BookingChargeOptionSkeleton() {
+  return (
+    <View style={styles.bookingChargeCard}>
+      <Skeleton width={22} height={22} borderRadius={11} />
+      <View style={styles.bookingChargeCopy}>
+        <Skeleton width="46%" height={16} />
+        <Skeleton width="88%" height={12} />
+      </View>
+      <Skeleton width={64} height={16} />
+    </View>
+  );
+}
+
+export function BookingChargesSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <View style={styles.bookingCharges}>
+      {Array.from({ length: count }, (_, i) => (
+        <BookingChargeOptionSkeleton key={i} />
+      ))}
+    </View>
+  );
+}
+
 export function MoveInPaymentSkeleton() {
   return (
     <View style={styles.payment}>
@@ -391,6 +414,24 @@ const styles = StyleSheet.create({
   referral: {
     padding: 20,
     gap: 16,
+  },
+  bookingCharges: {
+    gap: 10,
+  },
+  bookingChargeCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: palette.gray[200],
+    borderRadius: Radius.md,
+    padding: 14,
+    backgroundColor: palette.white,
+  },
+  bookingChargeCopy: {
+    flex: 1,
+    gap: 8,
+    paddingTop: 2,
   },
   payment: {
     padding: 20,

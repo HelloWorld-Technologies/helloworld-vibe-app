@@ -2,7 +2,7 @@ import type { BookingStatus, MoveInStep } from '@/types/booking-status';
 import type { MoveInBackground } from '@/types/move-in-background';
 import { EMPTY_MOVE_IN_BACKGROUND } from '@/types/move-in-background';
 import type { TenantProfile } from '@/types/tenant';
-import { isMoveInAboutYouComplete } from '@/utils/move-in-background';
+import { isMoveInAboutYouComplete, isMoveInBackgroundComplete } from '@/utils/move-in-background';
 import { isMoveInPaymentComplete } from '@/utils/move-in-payment';
 
 export function buildMoveInSteps(
@@ -15,6 +15,9 @@ export function buildMoveInSteps(
   const tokenPaid = profile?.paymentInfo?.isTokenPaid ?? true;
   const paymentComplete = isMoveInPaymentComplete(status, remainingMoveInAmount, profile);
   const paymentLockedMessage = 'Complete move-in payment to unlock this step.';
+  const vibesAlreadySaved = moveInInterests.length > 0;
+  const backgroundComplete = isMoveInBackgroundComplete(moveInBackground);
+  const aboutYouComplete = isMoveInAboutYouComplete(moveInBackground, moveInInterests);
 
   return [
     {
@@ -36,10 +39,14 @@ export function buildMoveInSteps(
     {
       id: 'personal-profile',
       title: 'A Little About You',
-      description: 'Your interests help us build the right community around you.',
-      actionLabel: 'Continue',
-      route: '/move-in-about-you',
-      completed: isMoveInAboutYouComplete(moveInBackground, moveInInterests),
+      description: vibesAlreadySaved
+        ? 'Your vibes are already saved. Add college and work details if needed.'
+        : 'Your interests help us build the right community around you.',
+      actionLabel: vibesAlreadySaved ? 'Update' : 'Continue',
+      route:
+        vibesAlreadySaved && !backgroundComplete ? '/move-in-background' : '/move-in-about-you',
+      completed: aboutYouComplete,
+      completedLabel: vibesAlreadySaved ? 'Updated' : 'Completed',
       enabled: true,
     },
     {

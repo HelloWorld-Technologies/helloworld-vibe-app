@@ -22,6 +22,7 @@ import palette from '@/constants/palette';
 import { useMoveInPayment } from '@/hooks/use-move-in-payment';
 import { useBookingStatus } from '@/queries/use-booking-status';
 import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
+import { useUserVibes } from '@/queries/use-vibes';
 import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
 import type { MoveInStep } from '@/types/booking-status';
 import { buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
@@ -39,6 +40,7 @@ export function MoveInStepsScreen() {
   const { data: moveInPayments, refetch: refetchMoveInPayments } = useMoveInPaymentDetails();
   const { data: status, isLoading, isError, refetch, isRefetching } = useBookingStatus();
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  useUserVibes();
 
   const refreshAll = useCallback(async () => {
     await Promise.all([

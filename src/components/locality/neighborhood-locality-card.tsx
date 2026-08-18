@@ -62,7 +62,8 @@ export function NeighborhoodLocalityCard({
             size="xl"
             weight="bold"
             color={palette.white}
-            numberOfLines={1}>
+            numberOfLines={1}
+            style={styles.title}>
             {item.name}
           </Typography>
           {meta ? (
@@ -123,6 +124,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 4,
+  },
+  title: {
+    textTransform: 'capitalize',
   },
   arrow: {
     flexShrink: 0,

@@ -8,21 +8,34 @@ import { Radius } from '@/constants/theme';
 import type { LocalityRatings } from '@/types/locality';
 
 const RATING_ITEMS = [
-  { id: 'transport', key: 'transport', emoji: '🚍', label: 'Transit' },
-  { id: 'dining', key: 'dining', emoji: '🍽️', label: 'Dining' },
-  { id: 'nightlife', key: 'nightlife', emoji: '🌙', label: 'Night Life' },
-  { id: 'health', key: 'health', emoji: '🏥', label: 'Health' },
-] as const;
+  { id: 'transit', keys: ['transit', 'transport'] as const, emoji: '🚍', label: 'Transit' },
+  { id: 'dining', keys: ['dining'] as const, emoji: '🍽️', label: 'Dining' },
+  { id: 'nightlife', keys: ['night_life', 'nightlife'] as const, emoji: '🌙', label: 'Night Life' },
+  { id: 'health', keys: ['health'] as const, emoji: '🏥', label: 'Health' },
+];
 
 function formatScore(value?: number) {
   if (value == null || !Number.isFinite(value)) return null;
   return value.toFixed(1);
 }
 
+function readRating(
+  ratings: LocalityRatings | null | undefined,
+  keys: readonly (keyof LocalityRatings)[],
+) {
+  if (!ratings) return undefined;
+  for (const key of keys) {
+    const raw = ratings[key];
+    const value = typeof raw === 'number' ? raw : Number(raw);
+    if (Number.isFinite(value)) return value;
+  }
+  return undefined;
+}
+
 export function LocalityRatingsGrid({ ratings }: { ratings?: LocalityRatings | null }) {
   const items = RATING_ITEMS.map((item) => ({
     ...item,
-    score: formatScore(ratings?.[item.key]),
+    score: formatScore(readRating(ratings, item.keys)),
   })).filter((item) => item.score);
 
   if (items.length === 0) return null;

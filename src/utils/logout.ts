@@ -3,12 +3,14 @@ import { useCallback } from 'react';
 
 import { queryClient } from '@/queries/query-client';
 import { useAuthStore } from '@/stores/auth-store';
+import { useSelectedVibesStore } from '@/stores/selected-vibes-store';
 import { useTenantStore } from '@/stores/tenant-store';
 import { resetRootRoute } from '@/utils/navigation-reset';
 
 function clearAppSession() {
   useAuthStore.getState().clearSession();
   useTenantStore.getState().clearProfile();
+  useSelectedVibesStore.getState().clearSelectedIds();
   queryClient.clear();
 }
 

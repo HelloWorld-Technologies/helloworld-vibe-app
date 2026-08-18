@@ -62,15 +62,36 @@ const PENDING_INVOICE_STATUSES = new Set([
   'due',
 ]);
 
+function invoiceTimestamp(value?: string | null) {
+  const normalized = toInvoiceDateString(value);
+  if (!normalized) return 0;
+  const ms = new Date(normalized).getTime();
+  return Number.isNaN(ms) ? 0 : ms;
+}
+
+export function getInvoicePaidDate(
+  invoice: Pick<TenantInvoice, 'last_payment_date' | 'paid_date' | 'due_date'>,
+) {
+  return invoice.last_payment_date ?? invoice.paid_date ?? invoice.due_date;
+}
+
 export function filterInvoices(invoices: TenantInvoice[]) {
-  const pending = invoices.filter((invoice) => {
-    const status = (invoice.status ?? '').replace(/[\s-]+/g, '_');
-    if (PENDING_INVOICE_STATUSES.has(status) || PENDING_INVOICE_STATUSES.has(invoice.status ?? '')) {
-      return true;
-    }
-    return (invoice.balance ?? 0) > 0 && status !== 'paid' && status !== 'void';
-  });
-  const paid = invoices.filter((invoice) => invoice.status === 'paid');
+  const pending = invoices
+    .filter((invoice) => {
+      const status = (invoice.status ?? '').replace(/[\s-]+/g, '_');
+      if (PENDING_INVOICE_STATUSES.has(status) || PENDING_INVOICE_STATUSES.has(invoice.status ?? '')) {
+        return true;
+      }
+      return (invoice.balance ?? 0) > 0 && status !== 'paid' && status !== 'void';
+    })
+    .sort((a, b) => invoiceTimestamp(a.due_date) - invoiceTimestamp(b.due_date));
+
+  const paid = invoices
+    .filter((invoice) => invoice.status === 'paid')
+    .sort(
+      (a, b) => invoiceTimestamp(getInvoicePaidDate(b)) - invoiceTimestamp(getInvoicePaidDate(a)),
+    );
+
   return { pending, paid };
 }
 

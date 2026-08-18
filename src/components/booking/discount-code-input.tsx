@@ -60,7 +60,9 @@ export function DiscountCodeInput({
           placeholder={placeholder}
           placeholderTextColor={palette.textPlaceholder}
           editable={editable && !isApplied && !loading}
-          autoCapitalize="characters"
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
           style={styles.input}
         />
 

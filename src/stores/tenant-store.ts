@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { getTenantProfile } from '@/api/user';
+import { extractVibeIds, getUserVibes } from '@/api/vibes';
 import { EMPTY_MOVE_IN_BACKGROUND } from '@/types/move-in-background';
 import type { MoveInBackground } from '@/types/move-in-background';
 import type { TenantProfile } from '@/types/tenant';
@@ -40,9 +41,25 @@ export const useTenantStore = create<TenantState>()(
       fetchProfile: async () => {
         set({ profileLoaded: false });
         try {
-          const data = await getTenantProfile();
+          const localVibeIds = useTenantStore.getState().moveInInterests;
+          const [data, userVibes] = await Promise.all([
+            getTenantProfile(),
+            getUserVibes().catch(() => ({ success: false, data: [] as { id: number }[] })),
+          ]);
+          const apiVibeIds = extractVibeIds(userVibes.data);
+          const vibeIds =
+            apiVibeIds.length > 0
+              ? apiVibeIds
+              : localVibeIds.length > 0
+                ? localVibeIds
+                : [];
+
           if (data?.status === 404 || !data?.bookingId) {
-            set({ profile: null, profileLoaded: true });
+            set({
+              profile: null,
+              profileLoaded: true,
+              ...(vibeIds.length > 0 ? { moveInInterests: vibeIds } : null),
+            });
             return;
           }
 
@@ -58,6 +75,7 @@ export const useTenantStore = create<TenantState>()(
             return {
               profile: data,
               profileLoaded: true,
+              ...(vibeIds.length > 0 ? { moveInInterests: vibeIds } : null),
               ...(shouldUpdateBackground
                 ? { moveInBackground: mergedBackground }
                 : null),

@@ -2,7 +2,7 @@ import type { ImageSource } from 'expo-image';
 
 import type { LocalityInfo } from '@/types/locality';
 
-export type PropertyBadgeVariant = 'filling-fast' | 'women-only';
+export type PropertyBadgeVariant = 'filling-fast' | 'gender';
 
 export type PropertyBadge = {
   label: string;

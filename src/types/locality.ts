@@ -3,7 +3,9 @@ export type LocalityRatings = {
   health?: number;
   safety?: number;
   nightlife?: number;
+  night_life?: number;
   transport?: number;
+  transit?: number;
 };
 
 export type LocalityNearbyPlace = {

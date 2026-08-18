@@ -58,6 +58,9 @@ function normalizeTenantInvoice(item: unknown): TenantInvoice {
     ),
     date: toInvoiceDateString(nested.date ?? nested.invoice_date ?? nested.invoiceDate),
     paid_date: toInvoiceDateString(nested.paid_date ?? nested.paidDate ?? nested.payment_date),
+    last_payment_date: toInvoiceDateString(
+      nested.last_payment_date ?? nested.lastPaymentDate ?? nested.paid_date ?? nested.paidDate ?? nested.payment_date,
+    ),
     invoice_url:
       (nested.invoice_url as string | undefined) ?? (nested.invoiceUrl as string | undefined),
   };
@@ -114,6 +117,10 @@ function normalizeInvoiceDetails(payload: unknown, invoiceId: string): InvoiceDe
     due_date:
       toInvoiceDateString(
         nested.due_date ?? nested.dueDate ?? nested.due_on ?? nested.dueOn ?? nested.date,
+      ) ?? null,
+    last_payment_date:
+      toInvoiceDateString(
+        nested.last_payment_date ?? nested.lastPaymentDate ?? nested.paid_date ?? nested.paidDate,
       ) ?? null,
     created_time: (nested.created_time as string | null | undefined) ?? null,
     last_modified_time: (nested.last_modified_time as string | null | undefined) ?? null,

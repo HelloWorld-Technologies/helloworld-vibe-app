@@ -205,17 +205,15 @@ export function CityDetailsTab({
         {description ||
           `${placeLabel} sits close to daily essentials, transit links, and social spots across ${city}. It is a practical base if you want a balanced coliving experience with easy commutes and a lively neighborhood feel.`}
       </Typography>
-      {description ? (
-        <Pressable onPress={() => setDescriptionExpanded((open) => !open)} accessibilityRole="button">
-          <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
-            {descriptionExpanded ? 'Read Less' : 'Read More'}
-          </Typography>
-        </Pressable>
-      ) : (
+      <Pressable
+        onPress={() => setDescriptionExpanded((open) => !open)}
+        accessibilityRole="button"
+        accessibilityLabel={descriptionExpanded ? 'Show less about this locality' : 'Show more about this locality'}
+        hitSlop={8}>
         <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
-          Read More
+          {descriptionExpanded ? 'Show less' : 'Show more'}
         </Typography>
-      )}
+      </Pressable>
 
       {popularLocalities.length > 0 ? (
         <>
