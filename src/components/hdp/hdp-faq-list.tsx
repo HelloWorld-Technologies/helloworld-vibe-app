@@ -54,7 +54,9 @@ function FaqAccordionItem({
 }
 
 export function HdpFaqList({ items }: HdpFaqListProps) {
-  const [openIndex, setOpenIndex] = useState<number | null>(2);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  if (items.length === 0) return null;
 
   return (
     <View style={styles.list}>
@@ -92,5 +94,6 @@ const styles = StyleSheet.create({
   },
   answer: {
     paddingBottom: 8,
+    lineHeight: 22,
   },
 });

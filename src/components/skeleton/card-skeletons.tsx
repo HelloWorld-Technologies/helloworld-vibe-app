@@ -236,6 +236,36 @@ export function SmartMeterRoomSkeleton({ style }: { style?: StyleProp<ViewStyle>
   );
 }
 
+export function DashboardSmartMeterSkeleton({
+  isTablet = false,
+  style,
+}: {
+  isTablet?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[styles.dashboardMeterCard, isTablet ? styles.dashboardMeterCardTablet : null, style]}>
+      <View style={styles.rowBetween}>
+        <View style={styles.flex}>
+          <Skeleton width={56} height={12} />
+          <Skeleton width={104} height={24} style={styles.mt6} />
+        </View>
+        <Skeleton width={44} height={44} borderRadius={Radius.full} />
+      </View>
+      <View style={[styles.dashboardMeterActions, isTablet ? styles.dashboardMeterActionsTablet : null]}>
+        {Array.from({ length: 3 }, (_, i) => (
+          <View
+            key={i}
+            style={[styles.dashboardMeterAction, isTablet ? styles.dashboardMeterActionTablet : null]}>
+            <Skeleton width={32} height={32} borderRadius={Radius.full} />
+            <Skeleton width={52} height={12} />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export function LocalityResultSkeleton({ count = 6, style }: CountProps) {
   return (
     <View style={[styles.list, style]}>
@@ -354,6 +384,45 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 16,
     gap: 10,
+  },
+  dashboardMeterCard: {
+    backgroundColor: palette.white,
+    borderRadius: Radius.md,
+    padding: 16,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: palette.gray[200],
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  dashboardMeterCardTablet: {
+    padding: 20,
+    gap: 20,
+  },
+  dashboardMeterActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  dashboardMeterActionsTablet: {
+    gap: 12,
+  },
+  dashboardMeterAction: {
+    flex: 1,
+    minHeight: 72,
+    borderRadius: Radius.sm,
+    backgroundColor: palette.blue[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 10,
+  },
+  dashboardMeterActionTablet: {
+    minHeight: 84,
+    paddingVertical: 14,
   },
   localityRow: {
     flexDirection: 'row',

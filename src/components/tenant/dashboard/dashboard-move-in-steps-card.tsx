@@ -12,6 +12,7 @@ import { useBookingStatus } from '@/queries/use-booking-status';
 import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
 import { useUserVibes } from '@/queries/use-vibes';
 import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
+import { isBookingCancelled } from '@/utils/booking-details-format';
 import { buildMoveInPendingMessage, buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
 
 export function useMoveInDashboardCard() {
@@ -22,7 +23,7 @@ export function useMoveInDashboardCard() {
   const { data: moveInPayments } = useMoveInPaymentDetails();
   useUserVibes();
 
-  if (!profile?.bookingId || !status) {
+  if (!profile?.bookingId || !status || isBookingCancelled(profile)) {
     return { visible: false, pendingCount: 0 };
   }
 

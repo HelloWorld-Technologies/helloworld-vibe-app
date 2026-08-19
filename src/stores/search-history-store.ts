@@ -59,24 +59,41 @@ export function normalizeSearchHistoryItem(value: unknown): SearchHistoryItem | 
   };
 }
 
+function uniqueHistory(items: SearchHistoryItem[]): SearchHistoryItem[] {
+  const seen = new Set<string>();
+  const unique: SearchHistoryItem[] = [];
+  for (const item of items) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    unique.push(item);
+  }
+  return unique.slice(0, SEARCH_HISTORY_LIMIT);
+}
+
 function upsertHistory(
   current: SearchHistoryItem[] | undefined,
   item: SearchHistoryItem,
 ): SearchHistoryItem[] {
   const nextItem = normalizeSearchHistoryItem(item);
-  if (!nextItem) return current ?? [];
-  const existing = (current ?? [])
-    .map(normalizeSearchHistoryItem)
-    .filter((entry): entry is SearchHistoryItem => entry != null);
-  const withoutDuplicate = existing.filter((entry) => entry.id !== nextItem.id);
-  return [nextItem, ...withoutDuplicate].slice(0, SEARCH_HISTORY_LIMIT);
+  if (!nextItem) return uniqueHistory(current ?? []);
+  const existing = uniqueHistory(
+    (current ?? [])
+      .map(normalizeSearchHistoryItem)
+      .filter((entry): entry is SearchHistoryItem => entry != null),
+  );
+  return [nextItem, ...existing.filter((entry) => entry.id !== nextItem.id)].slice(
+    0,
+    SEARCH_HISTORY_LIMIT,
+  );
 }
 
 function normalizeCityHistory(items: unknown): SearchHistoryItem[] {
   if (!Array.isArray(items)) return [];
-  return items
-    .map(normalizeSearchHistoryItem)
-    .filter((item): item is SearchHistoryItem => item != null);
+  return uniqueHistory(
+    items
+      .map(normalizeSearchHistoryItem)
+      .filter((item): item is SearchHistoryItem => item != null),
+  );
 }
 
 export const useSearchHistoryStore = create<SearchHistoryState>()(

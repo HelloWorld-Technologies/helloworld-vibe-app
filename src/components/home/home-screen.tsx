@@ -119,7 +119,7 @@ export function HomeScreen() {
     debouncedVibeIds,
   );
   const { data: localitiesResponse, isLoading: isLoadingLocalities } =
-    usePopularLocalities(city);
+    usePopularLocalities(city, 7);
   const { data: feedData, isLoading: isLoadingFeed } = useMomentsFeed();
   const { data: apiVibes = [] } = useVibesList();
   const properties = srpData?.listings ?? [];

@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import type { PlatformSymbolName } from '@/constants/symbols';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { getSmartMeterBalance, resolveSmartMeterBookingId } from '@/api/smart-meter';
+import { DashboardSmartMeterSkeleton } from '@/components/skeleton';
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -52,50 +53,52 @@ export function DashboardSmartMeterCard() {
   const isTablet = useIsTablet();
   const profile = useTenantProfile();
   const bookingId = resolveSmartMeterBookingId(profile?.bookingId);
-  const { data: rooms = [], isLoading } = useSmartMeterRooms(bookingId);
-  const balance = rooms.length > 0 ? getSmartMeterBalance(rooms) : null;
+  const { data: rooms, isPending } = useSmartMeterRooms(bookingId);
+  const roomList = rooms ?? [];
+  const balance = roomList.length > 0 ? getSmartMeterBalance(roomList) : null;
+  const showSkeleton = Boolean(bookingId) && isPending;
 
   return (
     <View style={styles.section}>
       <DashboardSectionHeader title="Smart Meter" subtitle="Electricity prepaid balance" />
 
-      <View style={[styles.card, isTablet ? styles.cardTablet : null]}>
-        <View style={styles.balanceRow}>
-          <View style={styles.balanceCopy}>
-            <Typography variant="label" size="xs" color={palette.gray[500]}>
-              Balance
-            </Typography>
-            {isLoading ? (
-              <ActivityIndicator color={palette.lime[700]} style={styles.balanceLoader} />
-            ) : (
+      {showSkeleton ? (
+        <DashboardSmartMeterSkeleton isTablet={isTablet} />
+      ) : (
+        <View style={[styles.card, isTablet ? styles.cardTablet : null]}>
+          <View style={styles.balanceRow}>
+            <View style={styles.balanceCopy}>
+              <Typography variant="label" size="xs" color={palette.gray[500]}>
+                Balance
+              </Typography>
               <Typography variant="display" size="xs" weight="bold" color={palette.gray[900]}>
                 {balance != null ? priceFormatter(balance) : '—'}
               </Typography>
-            )}
+            </View>
+            <View style={styles.flashBadge}>
+              <HwSymbol name={BALANCE_ICON} size={20} tintColor={palette.lime[700]} />
+            </View>
           </View>
-          <View style={styles.flashBadge}>
-            <HwSymbol name={BALANCE_ICON} size={20} tintColor={palette.lime[700]} />
-          </View>
-        </View>
 
-        <View style={[styles.actionsRow, isTablet ? styles.actionsRowTablet : null]}>
-          {ACTIONS.map((action) => (
-            <Pressable
-              key={action.id}
-              style={[styles.actionTile, isTablet ? styles.actionTileTablet : null]}
-              onPress={() => router.push(action.route)}
-              accessibilityRole="button"
-              accessibilityLabel={action.label}>
-              <View style={styles.actionIcon}>
-                <HwSymbol name={action.icon} size={18} tintColor={palette.blue[800]} />
-              </View>
-              <Typography variant="label" size="xs" weight="medium" color={palette.gray[800]}>
-                {action.label}
-              </Typography>
-            </Pressable>
-          ))}
+          <View style={[styles.actionsRow, isTablet ? styles.actionsRowTablet : null]}>
+            {ACTIONS.map((action) => (
+              <Pressable
+                key={action.id}
+                style={[styles.actionTile, isTablet ? styles.actionTileTablet : null]}
+                onPress={() => router.push(action.route)}
+                accessibilityRole="button"
+                accessibilityLabel={action.label}>
+                <View style={styles.actionIcon}>
+                  <HwSymbol name={action.icon} size={18} tintColor={palette.blue[800]} />
+                </View>
+                <Typography variant="label" size="xs" weight="medium" color={palette.gray[800]}>
+                  {action.label}
+                </Typography>
+              </Pressable>
+            ))}
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -130,10 +133,6 @@ const styles = StyleSheet.create({
   balanceCopy: {
     flex: 1,
     gap: 4,
-  },
-  balanceLoader: {
-    alignSelf: 'flex-start',
-    marginTop: 6,
   },
   flashBadge: {
     width: 44,

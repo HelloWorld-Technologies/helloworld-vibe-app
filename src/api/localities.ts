@@ -7,6 +7,7 @@ export async function fetchLocalities(params: {
   isPopular?: boolean;
   page?: number;
   pageSize?: number;
+  count?: number;
 }): Promise<LocalitiesResponse> {
   try {
     const { data } = await http.get<LocalitiesResponse>('hello/localities', {
@@ -15,6 +16,7 @@ export async function fetchLocalities(params: {
         ...(params.isPopular ? { is_popular: true } : {}),
         ...(params.page != null ? { page: params.page } : {}),
         ...(params.pageSize != null ? { page_size: params.pageSize } : {}),
+        ...(params.count != null ? { count: params.count } : {}),
       },
     });
     return data;
@@ -25,13 +27,17 @@ export async function fetchLocalities(params: {
 }
 
 /** Popular localities for a city — falls back to all localities when none are marked popular. */
-export async function fetchPopularLocalities(city: string): Promise<LocalitiesResponse> {
-  const popular = await fetchLocalities({ city, isPopular: true, pageSize: 20 });
+export async function fetchPopularLocalities(
+  city: string,
+  count?: number,
+): Promise<LocalitiesResponse> {
+  const limit = { ...(count != null ? { count } : { pageSize: 20 }) };
+  const popular = await fetchLocalities({ city, isPopular: true, ...limit });
   if (popular.success && (popular.data?.length ?? 0) > 0) {
     return popular;
   }
 
-  return fetchLocalities({ city, pageSize: 20 });
+  return fetchLocalities({ city, ...limit });
 }
 
 export function mapLocalityToNeighborhoodCard(

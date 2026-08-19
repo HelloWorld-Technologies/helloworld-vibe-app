@@ -1,5 +1,6 @@
 import type { BookingStatus } from '@/types/booking-status';
 import type { TenantProfile } from '@/types/tenant';
+import { isBookingCancelled } from '@/utils/booking-details-format';
 
 export function shouldShowMoveInPendingPaymentCard(
   profile?: TenantProfile | null,
@@ -7,6 +8,7 @@ export function shouldShowMoveInPendingPaymentCard(
   remainingAmount?: number | null,
 ) {
   if (!profile?.bookingId || !status) return false;
+  if (isBookingCancelled(profile)) return false;
   if (status.moved_in) return false;
   if (status.payment) return false;
 

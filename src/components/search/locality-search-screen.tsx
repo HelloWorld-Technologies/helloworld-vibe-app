@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { HwSymbol } from '@/components/ui/hw-symbol';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Keyboard,
   Platform,
@@ -52,7 +52,9 @@ function SearchResultRow({
       style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}>
-      <HwSymbol name={icon} size={20} tintColor={palette.gray[700]} style={styles.resultIcon} />
+      <View collapsable={false} style={styles.resultIcon}>
+        <HwSymbol name={icon} size={20} tintColor={palette.gray[700]} />
+      </View>
       <Typography variant="text" size="md" style={styles.resultLabel} numberOfLines={2}>
         {label}
       </Typography>
@@ -78,6 +80,8 @@ export function LocalitySearchScreen() {
   const history = useSearchHistory(city);
 
   const [keyword, setKeyword] = useState('');
+  const [isLeaving, setIsLeaving] = useState(false);
+  const leavingRef = useRef(false);
   const { data, isFetching, isFetched } = useLocalitySearch(keyword, city);
 
   const results = data?.success ? data.data : null;
@@ -86,9 +90,9 @@ export function LocalitySearchScreen() {
   const trimmedKeyword = keyword.trim();
   const hasInput = trimmedKeyword.length > 0;
   const hasKeyword = trimmedKeyword.length >= 3;
-  const showHistory = !hasInput && history.length > 0;
+  const showHistory = !isLeaving && !hasInput && history.length > 0;
   const showNoLocality =
-    hasKeyword && isFetched && !isFetching && localities.length === 0;
+    !isLeaving && hasKeyword && isFetched && !isFetching && localities.length === 0;
   const showEmptyState =
     showNoLocality && properties.length === 0;
   const resultSetKey = `${city}-${trimmedKeyword.toLowerCase()}`;
@@ -102,23 +106,30 @@ export function LocalitySearchScreen() {
     action();
   }
 
+  function leaveAndRun(action: () => void) {
+    if (leavingRef.current) return;
+    leavingRef.current = true;
+    setIsLeaving(true);
+    afterKeyboard(action);
+  }
+
   function handleSelectLocality(locality: string) {
     const nextLocality = locality.trim();
     if (!nextLocality) return;
-    afterKeyboard(() => {
+    leaveAndRun(() => {
+      setSelectedLocality(nextLocality);
+      router.replace('/srp');
       addSearch(city, {
         type: 'locality',
         id: `locality:${nextLocality.toLowerCase()}`,
         label: nextLocality,
         locality: nextLocality,
       });
-      setSelectedLocality(nextLocality);
-      router.replace('/srp');
     });
   }
 
   function handleShowAllProperties() {
-    afterKeyboard(() => {
+    leaveAndRun(() => {
       setSelectedLocality(null);
       router.replace('/srp');
     });
@@ -128,17 +139,17 @@ export function LocalitySearchScreen() {
     const propertyId = Number(property.id);
     const propertyName = property.name?.trim();
     if (!Number.isFinite(propertyId) || propertyId <= 0 || !propertyName) return;
-    afterKeyboard(() => {
+    leaveAndRun(() => {
+      router.replace({
+        pathname: '/hdp',
+        params: { id: String(propertyId), name: propertyName },
+      });
       addSearch(city, {
         type: 'property',
         id: `property:${propertyId}`,
         label: propertyName,
         propertyId,
         propertyName,
-      });
-      router.replace({
-        pathname: '/hdp',
-        params: { id: String(propertyId), name: propertyName },
       });
     });
   }
@@ -190,9 +201,9 @@ export function LocalitySearchScreen() {
         </Typography>
       </View>
 
-      {isFetching && hasKeyword ? (
-        <LocalityResultSkeleton style={styles.loader} />
-      ) : null}
+        {isFetching && hasKeyword && !isLeaving ? (
+          <LocalityResultSkeleton style={styles.loader} />
+        ) : null}
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
@@ -206,9 +217,10 @@ export function LocalitySearchScreen() {
             {history
               .map(normalizeSearchHistoryItem)
               .filter((item): item is SearchHistoryItem => item != null)
+              .filter((item, index, items) => items.findIndex((entry) => entry.id === item.id) === index)
               .map((item, index) => (
                 <SearchResultRow
-                  key={item.id}
+                  key={`${item.id}-${index}`}
                   index={index}
                   label={item.label}
                   icon="clock"
@@ -220,7 +232,7 @@ export function LocalitySearchScreen() {
           </View>
         ) : null}
 
-        {hasKeyword && !isFetching && localities.length > 0 ? (
+        {hasKeyword && !isLeaving && !isFetching && localities.length > 0 ? (
           <View key={`localities-${resultSetKey}`} style={styles.section}>
             <Animated.View entering={FadeIn.duration(180)}>
               <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
@@ -240,7 +252,7 @@ export function LocalitySearchScreen() {
           </View>
         ) : null}
 
-        {hasKeyword && !isFetching && properties.length > 0 ? (
+        {hasKeyword && !isLeaving && !isFetching && properties.length > 0 ? (
           <View key={`properties-${resultSetKey}`} style={styles.section}>
             <Animated.View entering={FadeIn.duration(180)}>
               <Typography variant="text" size="sm" weight="medium" color={palette.textSecondary}>
@@ -275,7 +287,7 @@ export function LocalitySearchScreen() {
           </Animated.View>
         ) : null}
 
-        {!hasInput && !showHistory ? (
+        {!hasInput && !showHistory && !isLeaving ? (
           <Typography variant="text" size="sm" color={palette.textSecondary} style={styles.empty}>
             Type at least 3 characters to search localities, offices, or colleges.
           </Typography>

@@ -1,7 +1,10 @@
 export const queryKeys = {
   common: ['common'] as const,
   home: (city: string) => ['home', city] as const,
-  popularLocalities: (city: string) => ['localities', 'popular', city] as const,
+  popularLocalities: (city: string, count?: number) =>
+    count != null
+      ? (['localities', 'popular', city, count] as const)
+      : (['localities', 'popular', city] as const),
   localitySearch: (city: string, keyword: string) =>
     ['locality-search', city, keyword] as const,
   srpProperties: (city: string, locality: string, vibesKey = '') =>

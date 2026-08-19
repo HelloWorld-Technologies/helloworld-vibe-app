@@ -27,6 +27,7 @@ import {
   isTabMenuRoute,
 } from '@/utils/menu-navigation';
 import { buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
+import { isBookingCancelled } from '@/utils/booking-details-format';
 
 export default function MenuScreen() {
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function MenuScreen() {
       return MENU_SECTIONS;
     }
 
-    if (!bookingStatus) {
+    if (!bookingStatus || isBookingCancelled(tenantProfile)) {
       return buildTenantMenuSections(false);
     }
 

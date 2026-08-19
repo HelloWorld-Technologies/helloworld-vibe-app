@@ -20,6 +20,12 @@ export const DASHBOARD_MOVE_IN_CARD_GRADIENT = {
   end: { x: 0, y: 0 } as const,
 };
 
+export const DASHBOARD_CANCELLED_CARD_GRADIENT = {
+  colors: [palette.red[50], palette.red[25], palette.white] as const,
+  start: { x: 0, y: 0 } as const,
+  end: { x: 1, y: 1 } as const,
+};
+
 export const DASHBOARD_REFERRAL_GRADIENT = {
   colors: [palette.white, palette.blue[100]] as const,
   start: { x: 0, y: 0 } as const,

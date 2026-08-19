@@ -26,9 +26,7 @@ export function TenantScreenHeader({ title, onBack, style }: TenantScreenHeaderP
             accessibilityLabel="Go back">
             <HwSymbol name="chevron.left" size={16} tintColor={palette.black} />
           </Pressable>
-        ) : (
-          <View style={styles.backPlaceholder} />
-        )}
+        ) : null}
         <Typography variant="text" size="lg" weight="medium">
           {title}
         </Typography>
@@ -57,8 +55,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: palette.white,
-  },
-  backPlaceholder: {
-    width: 44,
   },
 });

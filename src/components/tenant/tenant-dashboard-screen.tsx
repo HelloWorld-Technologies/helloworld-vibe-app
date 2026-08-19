@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPropertyManagerByBookingId } from '@/api/user';
 import { resolveSmartMeterBookingId } from '@/api/smart-meter';
 import { DashboardIcon } from '@/components/dashboard/dashboard-icon';
+import { DashboardBookingCancelledCard } from '@/components/tenant/dashboard/dashboard-booking-cancelled-card';
 import { DashboardEventsSection } from '@/components/tenant/dashboard/dashboard-events-section';
 import { DashboardMoveInPendingPaymentCard } from '@/components/tenant/dashboard/dashboard-move-in-pending-payment-card';
 import {
@@ -59,6 +60,7 @@ import {
   shouldShowMoveInPendingPaymentCard,
 } from '@/utils/move-in-payment';
 import { getDashboardRentDueDate } from '@/utils/tenant-format';
+import { isBookingCancelled, isMovedOut } from '@/utils/booking-details-format';
 
 export function TenantDashboardScreen() {
   const router = useRouter();
@@ -103,6 +105,8 @@ export function TenantDashboardScreen() {
   const creditInfo = profile?.creditInfo;
   const rentAmount = nextPending?.balance ?? profile?.paymentInfo?.rent ?? 0;
   const { visible: showMoveInCard } = useMoveInDashboardCard();
+  const bookingCancelled = isBookingCancelled(profile);
+  const showPropertyManager = Boolean(pmName) && !bookingCancelled && !isMovedOut(profile);
   const remainingMoveInAmount = moveInPayments?.finalAmount ?? null;
   const showMoveInPendingPayment = shouldShowMoveInPendingPaymentCard(
     profile,
@@ -120,7 +124,7 @@ export function TenantDashboardScreen() {
   );
 
   useEffect(() => {
-    if (!profile?.bookingId) return;
+    if (!profile?.bookingId || bookingCancelled || isMovedOut(profile)) return;
     getPropertyManagerByBookingId(profile.bookingId).then((res) => {
       if (res?.success && res?.data) {
         setPmName(res.data.name ?? '');
@@ -128,7 +132,7 @@ export function TenantDashboardScreen() {
         setPmPhoto(res.data.photo ?? res.data.image ?? null);
       }
     });
-  }, [profile?.bookingId]);
+  }, [bookingCancelled, profile, profile?.bookingId]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -230,7 +234,15 @@ export function TenantDashboardScreen() {
         ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}>
-        {showMoveInPendingPayment ? (
+        {bookingCancelled ? (
+          <DashboardBookingCancelledCard
+            propertyName={profile?.propertyInfo?.name ?? 'Your property'}
+            locality={propertyLocality}
+            imageUrl={profile?.propertyInfo?.imageUrl}
+            onExplorePress={() => router.navigate('/(tabs)/explore')}
+            onSupportPress={() => router.navigate('/(tabs)/support')}
+          />
+        ) : showMoveInPendingPayment ? (
           <DashboardMoveInPendingPaymentCard
             propertyName={profile?.propertyInfo?.name ?? 'Your property'}
             locality={propertyLocality}
@@ -248,7 +260,7 @@ export function TenantDashboardScreen() {
           />
         )}
 
-        {pmName ? (
+        {showPropertyManager ? (
           <DashboardPmCard
             name={pmName}
             phone={pmPhone}

@@ -9,23 +9,25 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { getPropertyManagerByBookingId } from '@/api/user';
 import { useTenantProfile } from '@/stores/tenant-store';
+import { isBookingCancelled, isMovedOut } from '@/utils/booking-details-format';
 
 export function SosScreen() {
   const profile = useTenantProfile();
+  const hidePropertyManager = isBookingCancelled(profile) || isMovedOut(profile);
   const [pmName, setPmName] = useState(profile?.propertyInfo?.propertyManager?.name ?? '');
   const [pmPhone, setPmPhone] = useState(
     profile?.propertyInfo?.propertyManager?.mobile ?? '',
   );
 
   useEffect(() => {
-    if (!profile?.bookingId) return;
+    if (!profile?.bookingId || hidePropertyManager) return;
     getPropertyManagerByBookingId(profile.bookingId).then((res) => {
       if (res?.success && res?.data) {
         setPmName(res.data.name ?? '');
         setPmPhone(res.data.phone ?? res.data.mobile ?? '');
       }
     });
-  }, [profile?.bookingId]);
+  }, [hidePropertyManager, profile?.bookingId]);
 
   const contacts = [
     {
@@ -34,7 +36,7 @@ export function SosScreen() {
       subtitle: SOS_CONFIG.emergencySubtitle,
       phone: SOS_CONFIG.emergencyHelpline,
     },
-    ...(pmName && pmPhone
+    ...(!hidePropertyManager && pmName && pmPhone
       ? [
           {
             id: 'pm',

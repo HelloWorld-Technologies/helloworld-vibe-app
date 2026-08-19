@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import {
   InteractionManager,
   Linking,
   Pressable,
+  RefreshControl,
   StyleSheet,
   View,
   useWindowDimensions,
@@ -35,7 +36,6 @@ import { ScrollRevealHeader } from '@/components/navigation/scroll-reveal-header
 import { Typography } from '@/components/ui/typography';
 import {
   HDP_SAMPLE_AMENITIES,
-  HDP_SAMPLE_FAQ,
   HDP_SECTION_NAV,
   type HdpSectionId,
 } from '@/constants/hdp';
@@ -55,6 +55,7 @@ import {
   momentsToHeroSlides,
 } from '@/utils/hdp-media';
 import { extractNearByFromDetail, mapNearByToDayCards } from '@/utils/hdp-nearby';
+import { extractHdpFaqs } from '@/utils/hdp-faqs';
 import { extractMomentsFromHdp } from '@/utils/hdp-moments';
 import {
   mapGoogleDataToReviewSummary,
@@ -149,6 +150,7 @@ export function HdpScreen() {
   const image = firstSearchParam(params.image) || undefined;
   const openBook = firstSearchParam(params.openBook);
 
+  const queryClient = useQueryClient();
   const slugLookup = useQuery({
     queryKey: queryKeys.propertyByName(paramSlug),
     queryFn: () => lookupPropertyIdBySlug(paramSlug),
@@ -179,7 +181,12 @@ export function HdpScreen() {
       .filter((id) => Number.isFinite(id) && id > 0);
   }, [debouncedVibeKey]);
   const { data: apiVibes = [] } = useVibesList();
-  const { data, isLoading: isDetailLoading, isError } = usePropertyDetail(propertyId, debouncedVibeIds);
+  const {
+    data,
+    isLoading: isDetailLoading,
+    isError,
+    refetch: refetchPropertyDetail,
+  } = usePropertyDetail(propertyId, debouncedVibeIds);
   const isLoading = isResolvingId || isDetailLoading;
   const { isWishlisted, toggleWishlist } = useWishlist();
   const selectedCity = useSelectedCity();
@@ -192,6 +199,7 @@ export function HdpScreen() {
   const [visitSheetTab, setVisitSheetTab] = useState<'schedule' | 'book'>('schedule');
   const [showStickyTabs, setShowStickyTabs] = useState(false);
   const [heavyReady, setHeavyReady] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const autoOpenedBookRef = useRef(false);
   const scrollY = useSharedValue(0);
   const lastScrollYSV = useSharedValue(0);
@@ -205,6 +213,22 @@ export function HdpScreen() {
   const scrollContentRef = useRef<View>(null);
   const sectionRefs = useRef<Partial<Record<HdpSectionId, View | null>>>({});
   const stickyTop = insets.top + HEADER_BAR_HEIGHT;
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchPropertyDetail(),
+        paramSlug ? slugLookup.refetch() : Promise.resolve(),
+        propertyId
+          ? queryClient.invalidateQueries({ queryKey: queryKeys.propertyCategories(propertyId) })
+          : Promise.resolve(),
+        queryClient.invalidateQueries({ queryKey: ['srp-properties'] }),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [paramSlug, propertyId, queryClient, refetchPropertyDetail, slugLookup]);
 
   useEffect(() => {
     if (isLoading || !propertyId) {
@@ -404,6 +428,7 @@ export function HdpScreen() {
     [data, property],
   );
   const hasNearby = dayFromHereCards.length > 0;
+  const faqs = useMemo(() => extractHdpFaqs(data, property), [data, property]);
   const sectionNavItems = useMemo(
     () =>
       HDP_SECTION_NAV.filter((item) => {
@@ -522,6 +547,14 @@ export function HdpScreen() {
             showsVerticalScrollIndicator={false}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => void handleRefresh()}
+                tintColor={palette.lime[700]}
+                colors={[palette.lime[700]]}
+              />
+            }
             contentContainerStyle={{ paddingBottom: FOOTER_HEIGHT + 32 }}>
             <View ref={scrollContentRef} collapsable={false}>
             <HdpHeroMedia
@@ -653,12 +686,12 @@ export function HdpScreen() {
 
               {heavyReady ? <HdpSimilarPropertiesSection listings={similarListings} /> : null}
 
-              {heavyReady ? (
+              {heavyReady && faqs.length > 0 ? (
               <View style={styles.section}>
                 <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
                   Frequently Asked Questions
                 </Typography>
-                <HdpFaqList items={HDP_SAMPLE_FAQ} />
+                <HdpFaqList items={faqs} />
               </View>
               ) : null}
               </View>

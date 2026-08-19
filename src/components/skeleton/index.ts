@@ -2,6 +2,7 @@ export {
   CategoryListSkeleton,
   CategoryRowSkeleton,
   ChatThreadSkeleton,
+  DashboardSmartMeterSkeleton,
   EventCardSkeleton,
   EventGridSkeleton,
   FormSkeleton,

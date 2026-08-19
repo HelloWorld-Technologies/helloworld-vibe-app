@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useMemo, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
 import { ImageAssets } from '@/constants/assets';
@@ -67,18 +67,21 @@ function DayCard({
         {active?.walkTime ?? card.walkTime}
       </Typography>
 
-      <Pressable onPress={onPressLink} accessibilityRole="button" style={styles.cardLink}>
-        <Typography variant="text" size="sm" weight="bold" color={palette.lime[600]}>
-          {card.linkLabel}
-        </Typography>
-        <HwSymbol name="chevron.right" size={12} weight="semibold" tintColor={palette.lime[600]} />
-      </Pressable>
+      {card.options.length > 1 ? (
+        <Pressable onPress={onPressLink} accessibilityRole="button" style={styles.cardLink}>
+          <Typography variant="text" size="sm" weight="bold" color={palette.lime[600]}>
+            {card.linkLabel}
+          </Typography>
+          <HwSymbol name="chevron.right" size={12} weight="semibold" tintColor={palette.lime[600]} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
 export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFromHereSectionProps) {
   const [selectedByCard, setSelectedByCard] = useState<Record<string, number>>({});
+  const [pickerCard, setPickerCard] = useState<HdpDayCard | null>(null);
 
   const subtitle = useMemo(
     () => `What living at ${propertyName} actually looks like.`,
@@ -99,25 +102,14 @@ export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFro
   }
 
   function handleCardLinkPress(card: HdpDayCard) {
-    if (card.options.length <= 1) {
-      if (mapUrl) void Linking.openURL(mapUrl);
-      return;
-    }
+    if (card.options.length <= 1) return;
+    setPickerCard(card);
+  }
 
-    Alert.alert(
-      card.linkLabel,
-      'Choose a nearby place',
-      [
-        ...card.options.map((option, index) => ({
-          text: `${option.placeName} · ${option.walkTime}`,
-          onPress: () => {
-            setSelectedByCard((current) => ({ ...current, [card.id]: index }));
-          },
-        })),
-        { text: 'Cancel', style: 'cancel' },
-      ],
-      { cancelable: true },
-    );
+  function handleSelectPlace(index: number) {
+    if (!pickerCard) return;
+    setSelectedByCard((current) => ({ ...current, [pickerCard.id]: index }));
+    setPickerCard(null);
   }
 
   return (
@@ -164,6 +156,68 @@ export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFro
           </View>
         ))}
       </ScrollView>
+
+      <Modal
+        transparent
+        visible={pickerCard != null}
+        animationType="fade"
+        onRequestClose={() => setPickerCard(null)}>
+        <View style={styles.overlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPickerCard(null)} />
+          <View style={styles.pickerCard}>
+            <View style={styles.pickerHeader}>
+              <Typography variant="text" size="md" weight="bold">
+                {pickerCard?.linkLabel}
+              </Typography>
+              <Typography variant="text" size="sm" color={palette.gray[600]}>
+                Choose a nearby place
+              </Typography>
+            </View>
+
+            <ScrollView
+              bounces={false}
+              style={styles.pickerList}
+              contentContainerStyle={styles.pickerListContent}>
+              {pickerCard?.options.map((option, index) => {
+                const selected = getSelectedIndex(pickerCard) === index;
+                return (
+                  <Pressable
+                    key={option.id}
+                    onPress={() => handleSelectPlace(index)}
+                    style={[styles.pickerRow, selected && styles.pickerRowSelected]}
+                    accessibilityRole="button">
+                    <Typography
+                      variant="text"
+                      size="sm"
+                      weight="medium"
+                      style={styles.pickerName}
+                      numberOfLines={2}>
+                      {option.placeName}
+                    </Typography>
+                    <Typography
+                      variant="text"
+                      size="sm"
+                      weight="medium"
+                      color={palette.blue[600]}
+                      style={styles.pickerDistance}>
+                      {option.walkTime}
+                    </Typography>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <Pressable
+              onPress={() => setPickerCard(null)}
+              style={styles.pickerCancel}
+              accessibilityRole="button">
+              <Typography variant="text" size="sm" weight="bold" color={palette.gray[700]}>
+                Cancel
+              </Typography>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -247,5 +301,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
     marginTop: 2,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(16, 24, 40, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  pickerCard: {
+    width: '100%',
+    maxWidth: 360,
+    maxHeight: '70%',
+    backgroundColor: palette.white,
+    borderRadius: 20,
+    overflow: 'hidden',
+    paddingTop: 20,
+  },
+  pickerHeader: {
+    paddingHorizontal: 20,
+    gap: 4,
+    paddingBottom: 12,
+  },
+  pickerList: {
+    flexGrow: 0,
+  },
+  pickerListContent: {
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    borderRadius: Radius.md,
+  },
+  pickerRowSelected: {
+    backgroundColor: palette.lime[50],
+  },
+  pickerName: {
+    flex: 1,
+    color: palette.gray[900],
+  },
+  pickerDistance: {
+    flexShrink: 0,
+    textAlign: 'right',
+  },
+  pickerCancel: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.gray[200],
   },
 });

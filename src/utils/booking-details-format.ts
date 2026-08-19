@@ -70,6 +70,21 @@ function normalizeBookingState(value?: string) {
   return (value ?? '').trim().toLowerCase().replace(/[_\s-]+/g, '');
 }
 
+export function isBookingCancelled(profile?: TenantProfile | null) {
+  const bookingState = normalizeBookingState(profile?.userInfo?.bookingStatus);
+  return bookingState.includes('cancel');
+}
+
+export function isMovedOut(profile?: TenantProfile | null) {
+  const bookingState = normalizeBookingState(profile?.userInfo?.bookingStatus);
+  return (
+    bookingState === 'movedout' ||
+    bookingState === 'moveout' ||
+    bookingState === 'paststay' ||
+    bookingState.includes('movedout')
+  );
+}
+
 export function getResidenceStatus(
   profile?: TenantProfile | null,
   _bookingStatus?: BookingStatus,
@@ -80,12 +95,7 @@ export function getResidenceStatus(
     return { label: 'Currently Residing' };
   }
 
-  if (
-    bookingState === 'movedout' ||
-    bookingState === 'moveout' ||
-    bookingState === 'paststay' ||
-    bookingState.includes('movedout')
-  ) {
+  if (isMovedOut(profile)) {
     return { label: 'Past Stay' };
   }
 
