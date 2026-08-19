@@ -5,8 +5,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
+import { Pressable as GesturePressable } from 'react-native-gesture-handler';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getPaymentDetails, verifyReferralCode } from '@/api/booking';
@@ -17,10 +19,10 @@ import { BookingPropertySummary } from '@/components/booking/booking-property-su
 import { DiscountCodeInput } from '@/components/booking/discount-code-input';
 import { HdpVisitSheet } from '@/components/hdp/hdp-visit-sheet';
 import { BookingChargesSkeleton } from '@/components/skeleton';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Typography } from '@/components/ui/typography';
 import { BOOKING_TERMS } from '@/constants/booking';
+import { fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { usePropertyCategories } from '@/queries/use-property-categories';
@@ -60,6 +62,39 @@ function formatRentLabel(amount?: number) {
 function formatDepositLabel(months?: number) {
   if (!months || months <= 0) return '1 months rent';
   return `${months} month${months > 1 ? 's' : ''} rent`;
+}
+
+function PayNowButton({
+  disabled,
+  onPress,
+}: {
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <View collapsable={false} style={styles.payCtaHit}>
+      <GesturePressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        disabled={disabled}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.payCta,
+          disabled && styles.payCtaDisabled,
+          pressed && !disabled && styles.payCtaPressed,
+        ]}>
+        <View pointerEvents="none" style={styles.payCtaInner}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            style={styles.payCtaLabel}>
+            Pay Now
+          </Text>
+        </View>
+      </GesturePressable>
+    </View>
+  );
 }
 
 export function BookingScreen() {
@@ -378,10 +413,11 @@ export function BookingScreen() {
       </View>
 
       <ScrollView
+        style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
         automaticallyAdjustKeyboardInsets
-        contentContainerStyle={[styles.content, { paddingBottom: 120 + insets.bottom }]}>
+        contentContainerStyle={styles.content}>
         <Typography variant="display" size="sm" weight="bold">
           You&apos;re Almost There!
         </Typography>
@@ -509,8 +545,14 @@ export function BookingScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <Button label="Pay Now" onPress={handlePayNow} disabled={pricingLoading || !activePricing} />
+      <View
+        style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}
+        pointerEvents="auto"
+        collapsable={false}>
+        <PayNowButton
+          disabled={pricingLoading || !activePricing}
+          onPress={handlePayNow}
+        />
       </View>
 
       <BookingChargesSheet
@@ -570,8 +612,12 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 40,
   },
+  scroll: {
+    flex: 1,
+  },
   content: {
     paddingHorizontal: 24,
+    paddingBottom: 24,
     gap: 20,
   },
   infoBanner: {
@@ -609,14 +655,43 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+    zIndex: 8,
+    elevation: 8,
     backgroundColor: palette.white,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: palette.gray[200],
     paddingHorizontal: 24,
     paddingTop: 16,
+  },
+  payCtaHit: {
+    zIndex: 9,
+    elevation: 9,
+    width: '100%',
+  },
+  payCta: {
+    minHeight: 48,
+    width: '100%',
+    borderRadius: Radius.sm,
+    backgroundColor: palette.lime[300],
+    alignSelf: 'stretch',
+  },
+  payCtaPressed: {
+    backgroundColor: palette.lime[400],
+  },
+  payCtaDisabled: {
+    opacity: 0.5,
+  },
+  payCtaInner: {
+    minHeight: 48,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  payCtaLabel: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: palette.gray[800],
+    ...fontStyleForWeight('bold'),
   },
 });

@@ -35,10 +35,8 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
+  // Always mount the navigator so Expo Router can apply the initial URL.
+  // Returning null here races linking state updates with first mount.
   return (
     <AppProviders>
       <RootNavigator />

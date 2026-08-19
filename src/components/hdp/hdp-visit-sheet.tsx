@@ -4,9 +4,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable as GesturePressable } from 'react-native-gesture-handler';
 import Animated, { FadeOut, SlideInLeft, SlideInRight } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { createVisit } from '@/api/visit';
 import { HdpBookOccupantForm, type OccupantFormErrors } from '@/components/hdp/hdp-book-occupant-form';
@@ -23,7 +23,9 @@ import { Button } from '@/components/ui/button';
 import { SegmentedTabToggle } from '@/components/ui/segmented-tab-toggle';
 import { Typography } from '@/components/ui/typography';
 import { ImageAssets } from '@/constants/assets';
+import { fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
+import { Radius } from '@/constants/theme';
 import { usePropertyCategories } from '@/queries/use-property-categories';
 import { queryKeys } from '@/queries/keys';
 import { usePropertyVisitSlots } from '@/queries/use-property-visit-slots';
@@ -98,6 +100,14 @@ type HdpVisitSheetProps = {
   /** Called after the booking draft is saved instead of navigating to /booking. */
   onBookingUpdated?: () => void;
 };
+
+function isSameCalendarDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
 
 function validateVisitName(name: string) {
   return /^[a-zA-Z\s]{1,40}$/.test(name.trim());
@@ -208,6 +218,39 @@ function VisitConfirmedContent({
   );
 }
 
+function VisitForFreeButton({
+  disabled,
+  onPress,
+}: {
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <View collapsable={false} style={styles.visitCtaHit}>
+      <GesturePressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        disabled={disabled}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.visitCta,
+          disabled && styles.visitCtaDisabled,
+          pressed && !disabled && styles.visitCtaPressed,
+        ]}>
+        <View pointerEvents="none" style={styles.visitCtaInner}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            style={styles.visitCtaLabel}>
+            Visit for Free
+          </Text>
+        </View>
+      </GesturePressable>
+    </View>
+  );
+}
+
 function occupancyFromDraft(draft: BookingDraft): OccupancyType {
   const label = draft.occupancyLabel.toLowerCase();
   if (label.includes('private')) return 'private';
@@ -254,7 +297,6 @@ export function HdpVisitSheet({
   const storedMobile = useAuthStore((state) => state.mobile);
   const isTenant = useIsTenant();
   const profile = useTenantProfile();
-  const insets = useSafeAreaInsets();
   const formPrefillSource = useMemo(
     () => ({ profile, mobile: storedMobile }),
     [profile, storedMobile],
@@ -295,8 +337,8 @@ export function HdpVisitSheet({
 
   const hasApiSlots = slotDays.length > 0;
   const visitDates = useMemo(
-    () => (hasApiSlots ? mapSlotDaysToDateOptions(slotDays) : fallbackDates),
-    [fallbackDates, hasApiSlots, slotDays],
+    () => (hasApiSlots ? mapSlotDaysToDateOptions(slotDays) : []),
+    [hasApiSlots, slotDays],
   );
 
   const selectedSlotDay = useMemo(
@@ -332,10 +374,15 @@ export function HdpVisitSheet({
   useEffect(() => {
     if (!visitDates.length) return;
 
-    if (!visitDates.some((date) => date.id === selectedDate.id)) {
-      setSelectedDate(visitDates[0]);
+    const matched =
+      visitDates.find((date) => date.id === selectedDate.id) ??
+      visitDates.find((date) => isSameCalendarDay(date.date, selectedDate.date)) ??
+      visitDates[0];
+
+    if (matched.id !== selectedDate.id || matched.slotId !== selectedDate.slotId) {
+      setSelectedDate(matched);
     }
-  }, [selectedDate.id, visitDates]);
+  }, [selectedDate.date, selectedDate.id, selectedDate.slotId, visitDates]);
 
   useEffect(() => {
     if (!visitTimeSlots.length) return;
@@ -352,13 +399,6 @@ export function HdpVisitSheet({
     setBookStep(initialBookStep);
     setActiveTab(bookOnly ? 'book' : visitOnly ? 'schedule' : initialTab);
 
-    const draftOccupancy = editDraft ? occupancyFromDraft(editDraft) : occupancyOptions[0];
-    const resolvedOccupancy = occupancyOptions.includes(draftOccupancy)
-      ? draftOccupancy
-      : occupancyOptions[0];
-    const defaultRoomId =
-      buildBookRoomOptions(resolvedCategories, resolvedOccupancy, startingRent)[0]?.id ?? '1';
-
     setSelectedDate(fallbackDates[0]);
     setSelectedTime(DEFAULT_VISIT_TIME_SLOTS[0]);
     setVisitContact(buildVisitContactPrefill(formPrefillSource));
@@ -367,24 +407,33 @@ export function HdpVisitSheet({
     setOccupantErrors({});
     setOccupantFormError('');
     setCreatingVisit(false);
-    setSelectedOccupancy(resolvedOccupancy);
-    setSelectedRoomId(editDraft?.roomId ?? defaultRoomId);
     setOccupantDetails(
       editDraft ? occupantFromDraft(editDraft) : buildOccupantPrefill(formPrefillSource),
     );
   }, [
     bookOnly,
-    resolvedCategories,
     editDraft,
     fallbackDates,
     formPrefillSource,
     initialBookStep,
     initialTab,
-    occupancyOptions,
-    startingRent,
     visible,
     visitOnly,
   ]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const draftOccupancy = editDraft ? occupancyFromDraft(editDraft) : occupancyOptions[0];
+    const resolvedOccupancy = occupancyOptions.includes(draftOccupancy)
+      ? draftOccupancy
+      : occupancyOptions[0];
+    const defaultRoomId =
+      buildBookRoomOptions(resolvedCategories, resolvedOccupancy, startingRent)[0]?.id ?? '1';
+
+    setSelectedOccupancy(resolvedOccupancy);
+    setSelectedRoomId(editDraft?.roomId ?? defaultRoomId);
+  }, [editDraft, occupancyOptions, resolvedCategories, startingRent, visible]);
 
   function handleClose() {
     onClose();
@@ -553,151 +602,176 @@ export function HdpVisitSheet({
     !slotsLoading &&
     hasApiSlots &&
     visitTimeSlots.length > 0 &&
-    Boolean(selectedDate.slotId);
+    Boolean(selectedDate.slotId) &&
+    Boolean(selectedTime?.value);
+  const showVisitDatetimeCta =
+    showSchedulePanel &&
+    scheduleStep === 'datetime' &&
+    !showScheduleConfirmed &&
+    (slotsLoading || hasApiSlots);
 
   return (
     <BottomSheet visible={visible} onClose={handleClose}>
-      <ScrollView
-        style={styles.sheetScroll}
-        bounces={false}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        keyboardDismissMode="on-drag"
-        contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        {showScheduleConfirmed ? (
-          <VisitConfirmedContent
-            scheduleLabel={scheduleLabel}
-            onViewTours={handleViewTours}
-            onDone={handleClose}
-          />
-        ) : (
-          <>
-            {!visitOnly && !bookOnly ? (
-              <SegmentedTabToggle value={activeTab} onChange={setActiveTab} tabs={VISIT_SHEET_TABS} />
-            ) : null}
+      <View style={styles.sheetBody} pointerEvents="auto" collapsable={false}>
+        <ScrollView
+          style={styles.sheetScroll}
+          bounces={false}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: showVisitDatetimeCta ? 8 : 12 },
+          ]}>
+          {showScheduleConfirmed ? (
+            <VisitConfirmedContent
+              scheduleLabel={scheduleLabel}
+              onViewTours={handleViewTours}
+              onDone={handleClose}
+            />
+          ) : (
+            <>
+              {!visitOnly && !bookOnly ? (
+                <SegmentedTabToggle value={activeTab} onChange={setActiveTab} tabs={VISIT_SHEET_TABS} />
+              ) : null}
 
-            {showSchedulePanel ? (
-              <Animated.View
-                key="visit-schedule-panel"
-                entering={SlideInLeft.duration(240)}
-                exiting={FadeOut.duration(140)}
-                style={styles.tabPanel}>
-                {scheduleStep === 'details' ? (
-                  <HdpVisitDetailsForm
-                    value={visitContact}
-                    errors={visitErrors}
-                    submitError={visitSubmitError}
-                    scheduleLabel={scheduleLabel}
-                    loading={creatingVisit}
-                    onChange={handleVisitContactChange}
-                    onBack={() => setScheduleStep('datetime')}
-                    onSubmit={handleCreateVisit}
-                  />
-                ) : (
-                  <>
-                    {!visitOnly ? (
-                      <PricingRow rentLabel={rentLabel} depositLabel={depositLabel} />
-                    ) : null}
-
-                    <Typography variant="text" size="md" weight="bold" style={styles.sectionTitle}>
-                      Pick your visit date & time
-                    </Typography>
-
-                    {slotsLoading ? (
-                      <View style={styles.slotsLoader}>
-                        <ActivityIndicator color={palette.helloLime} />
-                      </View>
-                    ) : visitDates.length === 0 ? (
-                      <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.emptySlots}>
-                        No visit slots are available right now. Please try again later.
-                      </Typography>
-                    ) : (
-                      <>
-                        <VisitDateCardsRow
-                          dates={visitDates}
-                          selectedId={selectedDate.id}
-                          onSelect={setSelectedDate}
-                          variant="compact"
-                          contentContainerStyle={styles.dateTimeRow}
-                        />
-
-                        {visitTimeSlots.length > 0 ? (
-                          <VisitTimeSlotsRow
-                            slots={visitTimeSlots}
-                            selectedId={selectedTime.id}
-                            onSelect={setSelectedTime}
-                            contentContainerStyle={styles.dateTimeRow}
-                            animationKey={selectedDate.id}
-                          />
-                        ) : (
-                          <Typography variant="text" size="sm" color={palette.gray[600]}>
-                            No time slots available for this date.
-                          </Typography>
-                        )}
-                      </>
-                    )}
-
-                    <Button
-                      label="Visit for Free"
-                      onPress={handleContinueToDetails}
-                      disabled={!canContinueVisit}
-                      style={styles.cta}
+              {showSchedulePanel ? (
+                <Animated.View
+                  key="visit-schedule-panel"
+                  entering={SlideInLeft.duration(240)}
+                  exiting={FadeOut.duration(140)}
+                  style={styles.tabPanel}>
+                  {scheduleStep === 'details' ? (
+                    <HdpVisitDetailsForm
+                      value={visitContact}
+                      errors={visitErrors}
+                      submitError={visitSubmitError}
+                      scheduleLabel={scheduleLabel}
+                      loading={creatingVisit}
+                      onChange={handleVisitContactChange}
+                      onBack={() => setScheduleStep('datetime')}
+                      onSubmit={handleCreateVisit}
                     />
+                  ) : (
+                    <>
+                      {!visitOnly ? (
+                        <PricingRow rentLabel={rentLabel} depositLabel={depositLabel} />
+                      ) : null}
 
-                    <View style={styles.footerNote}>
-                      <Typography variant="text" size="xs" color={palette.gray[500]}>
-                        Completely Free
+                      <Typography variant="text" size="md" weight="bold" style={styles.sectionTitle}>
+                        Pick your visit date & time
                       </Typography>
-                      <View style={styles.footerDivider} />
-                      <Typography variant="text" size="xs" color={palette.gray[500]}>
-                        Reschedule Anytime
-                      </Typography>
-                    </View>
-                  </>
-                )}
-              </Animated.View>
-            ) : null}
 
-            {showBookPanel ? (
-              <Animated.View
-                key="visit-book-panel"
-                entering={SlideInRight.duration(240)}
-                exiting={FadeOut.duration(140)}
-                style={styles.tabPanel}>
-                {bookStep === 'rooms' ? (
-                  <HdpBookRoomSelection
-                    occupancyOptions={occupancyOptions}
-                    selectedOccupancy={selectedOccupancy}
-                    onOccupancyChange={setSelectedOccupancy}
-                    rooms={bookRooms}
-                    selectedRoomId={selectedRoomId}
-                    onRoomSelect={setSelectedRoomId}
-                    minStayMonths={minStayMonths}
-                    onBookNow={handleBookNow}
-                  />
-                ) : (
-                  <HdpBookOccupantForm
-                    value={occupantDetails}
-                    errors={occupantErrors}
-                    formError={occupantFormError}
-                    phoneEditable={!normalizeMobile(storedMobile)}
-                    onChange={handleOccupantChange}
-                    onBack={() => setBookStep('rooms')}
-                    onVerifyPhone={handleVerifyPhone}
-                  />
-                )}
-              </Animated.View>
-            ) : null}
-          </>
-        )}
-      </ScrollView>
+                      {slotsLoading ? (
+                        <View style={styles.slotsLoader}>
+                          <ActivityIndicator color={palette.helloLime} />
+                        </View>
+                      ) : visitDates.length === 0 ? (
+                        <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.emptySlots}>
+                          No visit slots are available right now. Please try again later.
+                        </Typography>
+                      ) : (
+                        <>
+                          <View style={styles.dateTimeScrollClip}>
+                            <VisitDateCardsRow
+                              dates={visitDates}
+                              selectedId={selectedDate.id}
+                              onSelect={setSelectedDate}
+                              variant="compact"
+                              contentContainerStyle={styles.dateTimeRow}
+                            />
+                          </View>
+
+                          {visitTimeSlots.length > 0 ? (
+                            <View style={styles.dateTimeScrollClip}>
+                              <VisitTimeSlotsRow
+                                slots={visitTimeSlots}
+                                selectedId={selectedTime.id}
+                                onSelect={setSelectedTime}
+                                contentContainerStyle={styles.dateTimeRow}
+                                animationKey={selectedDate.id}
+                              />
+                            </View>
+                          ) : (
+                            <Typography variant="text" size="sm" color={palette.gray[600]}>
+                              No time slots available for this date.
+                            </Typography>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </Animated.View>
+              ) : null}
+
+              {showBookPanel ? (
+                <Animated.View
+                  key="visit-book-panel"
+                  entering={SlideInRight.duration(240)}
+                  exiting={FadeOut.duration(140)}
+                  style={styles.tabPanel}>
+                  {bookStep === 'rooms' ? (
+                    <HdpBookRoomSelection
+                      occupancyOptions={occupancyOptions}
+                      selectedOccupancy={selectedOccupancy}
+                      onOccupancyChange={setSelectedOccupancy}
+                      rooms={bookRooms}
+                      selectedRoomId={selectedRoomId}
+                      onRoomSelect={setSelectedRoomId}
+                      minStayMonths={minStayMonths}
+                      onBookNow={handleBookNow}
+                    />
+                  ) : (
+                    <HdpBookOccupantForm
+                      value={occupantDetails}
+                      errors={occupantErrors}
+                      formError={occupantFormError}
+                      phoneEditable={!normalizeMobile(storedMobile)}
+                      onChange={handleOccupantChange}
+                      onBack={() => setBookStep('rooms')}
+                      onVerifyPhone={handleVerifyPhone}
+                    />
+                  )}
+                </Animated.View>
+              ) : null}
+            </>
+          )}
+        </ScrollView>
+
+        {showVisitDatetimeCta ? (
+          <View style={styles.ctaDock} pointerEvents="auto" collapsable={false}>
+            <VisitForFreeButton
+              disabled={!canContinueVisit}
+              onPress={handleContinueToDetails}
+            />
+
+            <View style={styles.footerNote}>
+              <Typography variant="text" size="xs" color={palette.gray[500]}>
+                Completely Free
+              </Typography>
+              <View style={styles.footerDivider} />
+              <Typography variant="text" size="xs" color={palette.gray[500]}>
+                Reschedule Anytime
+              </Typography>
+            </View>
+          </View>
+        ) : null}
+      </View>
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
+  sheetBody: {
+    flexShrink: 1,
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
   sheetScroll: {
+    flexGrow: 0,
+    flexShrink: 1,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     backgroundColor: palette.white,
@@ -731,8 +805,49 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 2,
   },
-  cta: {
-    marginTop: 4,
+  dateTimeScrollClip: {
+    flexGrow: 0,
+    overflow: 'hidden',
+  },
+  ctaDock: {
+    zIndex: 8,
+    elevation: 8,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 16,
+    backgroundColor: palette.white,
+  },
+  visitCtaHit: {
+    zIndex: 9,
+    elevation: 9,
+    width: '100%',
+  },
+  visitCta: {
+    minHeight: 48,
+    width: '100%',
+    borderRadius: Radius.sm,
+    backgroundColor: palette.lime[300],
+    alignSelf: 'stretch',
+  },
+  visitCtaPressed: {
+    backgroundColor: palette.lime[400],
+  },
+  visitCtaDisabled: {
+    opacity: 0.5,
+  },
+  visitCtaInner: {
+    minHeight: 48,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  visitCtaLabel: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: palette.gray[800],
+    ...fontStyleForWeight('bold'),
   },
   slotsLoader: {
     paddingVertical: 24,

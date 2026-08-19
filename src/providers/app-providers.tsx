@@ -25,7 +25,7 @@ function AppProvidersInner({ children }: AppProvidersProps) {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider statusBarTranslucent navigationBarTranslucent preserveEdgeToEdge>
+      <KeyboardProvider>
         <QueryClientProvider client={queryClient}>
           <AppProvidersInner>{children}</AppProvidersInner>
         </QueryClientProvider>

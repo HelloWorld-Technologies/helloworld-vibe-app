@@ -13,6 +13,7 @@ export type HdpReview = {
   rating: number;
   text: string;
   avatarUri?: string;
+  dateLabel?: string;
 };
 
 export const HDP_DUMMY_CATEGORY_RATINGS = [

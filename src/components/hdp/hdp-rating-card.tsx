@@ -10,10 +10,11 @@ import { Radius } from '@/constants/theme'
 type HdpRatingCardProps = {
   propertyName: string
   locality: string
-  rating: number
-  visitsToday: number
+  rating: number | null
+  visitsScheduled: number
   reviewCount: number
   trending?: boolean
+  topChoiceDate?: string
 }
 
 function StatColumn ({
@@ -60,9 +61,10 @@ export function HdpRatingCard ({
   propertyName,
   locality,
   rating,
-  visitsToday,
+  visitsScheduled,
   reviewCount,
-  trending = true
+  trending = false,
+  topChoiceDate
 }: HdpRatingCardProps) {
   return (
     <LinearGradient
@@ -105,15 +107,24 @@ export function HdpRatingCard ({
         >
           is the top choice in {locality}.
         </Typography>
+        {topChoiceDate ? (
+          <Typography variant='text' size='sm' color={palette.gray[500]}>
+            {topChoiceDate}
+          </Typography>
+        ) : null}
       </View>
 
       <View style={styles.divider} />
 
       <View style={styles.statsRow}>
         <View style={styles.statsGroup}>
-          <StatColumn value={rating.toFixed(1)} label='Rating' star />
+          <StatColumn
+            value={rating != null && Number.isFinite(rating) ? rating.toFixed(1) : '—'}
+            label='Rating'
+            star
+          />
           <View style={styles.statDivider} />
-          <StatColumn value={String(visitsToday)} label='Visits today' />
+          <StatColumn value={String(visitsScheduled)} label='Visits scheduled' />
           <View style={styles.statDivider} />
           <StatColumn value={String(reviewCount)} label='Reviews' />
         </View>

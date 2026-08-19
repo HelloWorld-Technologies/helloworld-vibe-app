@@ -1,4 +1,4 @@
-import palette from '@/constants/palette';
+export const HOME_NEIGHBORHOOD_COUNT = 7;
 
 /** Home hero background — linear gradient top → bottom per Figma. */
 export const HOME_BACKGROUND_GRADIENT = {

@@ -29,7 +29,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Typography } from '@/components/ui/typography';
 import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
-import { HOME_BACKGROUND_GRADIENT } from '@/constants/home';
+import { HOME_BACKGROUND_GRADIENT, HOME_NEIGHBORHOOD_COUNT } from '@/constants/home';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
@@ -119,15 +119,15 @@ export function HomeScreen() {
     debouncedVibeIds,
   );
   const { data: localitiesResponse, isLoading: isLoadingLocalities } =
-    usePopularLocalities(city, 7);
+    usePopularLocalities(city, HOME_NEIGHBORHOOD_COUNT);
   const { data: feedData, isLoading: isLoadingFeed } = useMomentsFeed();
   const { data: apiVibes = [] } = useVibesList();
   const properties = srpData?.listings ?? [];
   const neighborhoods = useMemo(
     () =>
-      (localitiesResponse?.data ?? []).map((item) =>
-        mapLocalityToNeighborhoodCard(item, properties),
-      ),
+      (localitiesResponse?.data ?? [])
+        .slice(0, HOME_NEIGHBORHOOD_COUNT)
+        .map((item) => mapLocalityToNeighborhoodCard(item, properties)),
     [localitiesResponse?.data, properties],
   );
   const feedMoments = (feedData?.moments ?? []).slice(0, 8);

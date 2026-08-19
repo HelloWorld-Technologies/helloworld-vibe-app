@@ -1,12 +1,13 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable as GesturePressable } from 'react-native-gesture-handler';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
+import { fontStyleForWeight } from '@/constants/fonts';
+import palette from '@/constants/palette';
+import { Radius } from '@/constants/theme';
 import type { AppliedDiscount, BookingChargeOption } from '@/types/booking-payment';
 import { formatBookingAmount, getAppliedDiscountMessage } from '@/utils/booking-payment';
-import { Radius } from '@/constants/theme';
 
 type BookingChargesSheetProps = {
   visible: boolean;
@@ -64,6 +65,47 @@ function ChargeSummaryRow({ charge }: ChargeSummaryRowProps) {
   );
 }
 
+function PayNowButton({
+  disabled,
+  loading,
+  onPress,
+}: {
+  disabled: boolean;
+  loading?: boolean;
+  onPress: () => void;
+}) {
+  const isDisabled = disabled || Boolean(loading);
+
+  return (
+    <View collapsable={false} style={styles.payCtaHit}>
+      <GesturePressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled }}
+        disabled={isDisabled}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.payCta,
+          isDisabled && !loading && styles.payCtaDisabled,
+          pressed && !isDisabled && styles.payCtaPressed,
+        ]}>
+        <View pointerEvents="none" style={styles.payCtaInner}>
+          {loading ? (
+            <ActivityIndicator color={palette.gray[800]} />
+          ) : (
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+              style={styles.payCtaLabel}>
+              Pay Now
+            </Text>
+          )}
+        </View>
+      </GesturePressable>
+    </View>
+  );
+}
+
 function DiscountSummaryRow({ discount }: { discount: AppliedDiscount }) {
   const message = getAppliedDiscountMessage(discount);
   const showAmount = discount.amount > 0;
@@ -106,70 +148,86 @@ export function BookingChargesSheet({
   onPayNow,
   paying,
 }: BookingChargesSheetProps) {
-  const insets = useSafeAreaInsets();
   const selectedCharges = charges.filter((charge) => selectedIds.has(charge.id));
   const unselectedCharges = charges.filter((charge) => !selectedIds.has(charge.id));
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <ScrollView
-        bounces={false}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <View style={styles.chargeList}>
-          {selectedCharges.map((charge) => (
-            <ChargeSummaryRow key={charge.id} charge={charge} />
-          ))}
-
-          {unselectedCharges.length > 0 ? (
-            <>
-              <Typography
-                variant="text"
-                size="xs"
-                style={styles.notSelectedLabel}
-                accessibilityRole="header">
-                NOT SELECTED
-              </Typography>
-
-              <View style={styles.unselectedGroup}>
-                {unselectedCharges.map((charge) => (
-                  <ChargeSummaryRow key={charge.id} charge={charge} />
-                ))}
-              </View>
-            </>
-          ) : null}
-        </View>
-
-        {discounts.length > 0 ? (
-          <View style={styles.discountBox}>
-            {discounts.map((discount, index) => (
-              <View key={`${discount.type}-${discount.code}`}>
-                {index > 0 ? <View style={styles.discountDivider} /> : null}
-                <DiscountSummaryRow discount={discount} />
-              </View>
+      <View style={styles.sheetBody} pointerEvents="auto" collapsable={false}>
+        <ScrollView
+          style={styles.sheetScroll}
+          bounces={false}
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="always"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}>
+          <View style={styles.chargeList}>
+            {selectedCharges.map((charge) => (
+              <ChargeSummaryRow key={charge.id} charge={charge} />
             ))}
+
+            {unselectedCharges.length > 0 ? (
+              <>
+                <Typography
+                  variant="text"
+                  size="xs"
+                  style={styles.notSelectedLabel}
+                  accessibilityRole="header">
+                  NOT SELECTED
+                </Typography>
+
+                <View style={styles.unselectedGroup}>
+                  {unselectedCharges.map((charge) => (
+                    <ChargeSummaryRow key={charge.id} charge={charge} />
+                  ))}
+                </View>
+              </>
+            ) : null}
           </View>
-        ) : null}
 
-        <View style={styles.totalBlock}>
-          <Typography variant="text" size="sm" style={styles.totalLabel}>
-            Total payable now
-          </Typography>
-          <Typography variant="display" size="sm" weight="bold" style={styles.totalAmount}>
-            {formatBookingAmount(total)}
-          </Typography>
+          {discounts.length > 0 ? (
+            <View style={styles.discountBox}>
+              {discounts.map((discount, index) => (
+                <View key={`${discount.type}-${discount.code}`}>
+                  {index > 0 ? <View style={styles.discountDivider} /> : null}
+                  <DiscountSummaryRow discount={discount} />
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          <View style={styles.totalBlock}>
+            <Typography variant="text" size="sm" style={styles.totalLabel}>
+              Total payable now
+            </Typography>
+            <Typography variant="display" size="sm" weight="bold" style={styles.totalAmount}>
+              {formatBookingAmount(total)}
+            </Typography>
+          </View>
+        </ScrollView>
+
+        <View style={styles.ctaDock} pointerEvents="auto" collapsable={false}>
+          <PayNowButton disabled={Boolean(paying)} loading={paying} onPress={onPayNow} />
         </View>
-
-        <Button label="Pay Now" onPress={onPayNow} loading={paying} style={styles.cta} />
-      </ScrollView>
+      </View>
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
+  sheetBody: {
+    flexShrink: 1,
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  sheetScroll: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
   content: {
     paddingHorizontal: 24,
     paddingTop: 24,
+    paddingBottom: 8,
     gap: 16,
   },
   chargeList: {
@@ -296,7 +354,43 @@ const styles = StyleSheet.create({
     color: SUMMARY_COLORS.primary,
     lineHeight: 30,
   },
-  cta: {
-    marginTop: 0,
+  ctaDock: {
+    zIndex: 8,
+    elevation: 8,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: palette.white,
+  },
+  payCtaHit: {
+    zIndex: 9,
+    elevation: 9,
+    width: '100%',
+  },
+  payCta: {
+    minHeight: 48,
+    width: '100%',
+    borderRadius: Radius.sm,
+    backgroundColor: palette.lime[300],
+    alignSelf: 'stretch',
+  },
+  payCtaPressed: {
+    backgroundColor: palette.lime[400],
+  },
+  payCtaDisabled: {
+    opacity: 0.5,
+  },
+  payCtaInner: {
+    minHeight: 48,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  payCtaLabel: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: palette.gray[800],
+    ...fontStyleForWeight('bold'),
   },
 });

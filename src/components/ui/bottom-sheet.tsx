@@ -53,10 +53,11 @@ export function BottomSheet({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Modal can report 0 bottom inset on Android — fall back to window metrics.
+  // Keep a larger Android minimum so the CTA is not in the system nav / gesture zone.
   const bottomInset = Math.max(
     insets.bottom,
     initialWindowMetrics?.insets.bottom ?? 0,
-    Platform.OS === 'android' ? 16 : 12,
+    Platform.OS === 'android' ? 24 : 12,
   );
 
   useEffect(() => {
@@ -187,7 +188,7 @@ export function BottomSheet({
           />
 
           <Pressable
-            style={StyleSheet.absoluteFill}
+            style={styles.dismissArea}
             onPress={() => {
               if (keyboardHeight > 0) {
                 Keyboard.dismiss();
@@ -208,37 +209,40 @@ export function BottomSheet({
             </Pressable>
           ) : null}
 
-          <GestureDetector gesture={panGesture}>
-            <Animated.View
+          <Animated.View
+            style={[
+              styles.sheetTranslate,
+              {
+                maxHeight: sheetMaxHeight,
+                marginBottom: keyboardPad,
+              },
+              sheetStyle,
+            ]}>
+            <View
               style={[
-                styles.sheetTranslate,
+                styles.sheetSurface,
                 {
+                  paddingBottom: keyboardPad > 0 ? 12 : bottomInset,
                   maxHeight: sheetMaxHeight,
-                  marginBottom: keyboardPad,
                 },
-                sheetStyle,
-              ]}>
-              <View
-                style={[
-                  styles.sheetSurface,
-                  {
-                    paddingBottom: keyboardPad > 0 ? 12 : bottomInset,
-                    maxHeight: sheetMaxHeight,
-                  },
-                ]}
-                collapsable={false}>
-                <View style={styles.handleHitArea} accessibilityRole="adjustable">
+              ]}
+              collapsable={false}>
+              <GestureDetector gesture={panGesture}>
+                <View
+                  style={styles.handleHitArea}
+                  accessibilityRole="adjustable"
+                  collapsable={false}>
                   <View style={styles.handle} />
                 </View>
-                <KeyboardAvoidingView
-                  behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                  keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-                  style={styles.keyboardAvoid}>
-                  {children}
-                </KeyboardAvoidingView>
-              </View>
-            </Animated.View>
-          </GestureDetector>
+              </GestureDetector>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+                style={styles.keyboardAvoid}>
+                {children}
+              </KeyboardAvoidingView>
+            </View>
+          </Animated.View>
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </Modal>
@@ -256,6 +260,9 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     backgroundColor: palette.black,
+  },
+  dismissArea: {
+    flex: 1,
   },
   closeButton: {
     position: 'absolute',
@@ -279,6 +286,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: SHEET_TOP_RADIUS,
     borderTopRightRadius: SHEET_TOP_RADIUS,
     overflow: 'hidden',
+    elevation: 8,
   },
   handleHitArea: {
     alignItems: 'center',
@@ -296,5 +304,6 @@ const styles = StyleSheet.create({
     width: '100%',
     flexShrink: 1,
     backgroundColor: 'transparent',
+    pointerEvents: 'box-none',
   },
 });

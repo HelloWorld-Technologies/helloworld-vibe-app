@@ -1,6 +1,10 @@
-import { http } from '@/api/http';
-import type { ApiLocality, LocalitiesResponse, NeighborhoodCard } from '@/types/locality';
-import type { PropertyListing } from '@/types/property';
+import { http } from "@/api/http";
+import type {
+  ApiLocality,
+  LocalitiesResponse,
+  NeighborhoodCard,
+} from "@/types/locality";
+import type { PropertyListing } from "@/types/property";
 
 export async function fetchLocalities(params: {
   city: string;
@@ -10,7 +14,7 @@ export async function fetchLocalities(params: {
   count?: number;
 }): Promise<LocalitiesResponse> {
   try {
-    const { data } = await http.get<LocalitiesResponse>('hello/localities', {
+    const { data } = await http.get<LocalitiesResponse>("hello/localities", {
       params: {
         city: params.city.trim().toLowerCase(),
         ...(params.isPopular ? { is_popular: true } : {}),
@@ -21,7 +25,8 @@ export async function fetchLocalities(params: {
     });
     return data;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load localities';
+    const message =
+      error instanceof Error ? error.message : "Failed to load localities";
     return { success: false, message };
   }
 }
@@ -31,13 +36,22 @@ export async function fetchPopularLocalities(
   city: string,
   count?: number,
 ): Promise<LocalitiesResponse> {
-  const limit = { ...(count != null ? { count } : { pageSize: 20 }) };
+  const limit =
+    count != null
+      ? { count, page: 1, pageSize: count }
+      : { pageSize: 10 };
+
   const popular = await fetchLocalities({ city, isPopular: true, ...limit });
-  if (popular.success && (popular.data?.length ?? 0) > 0) {
-    return popular;
+  const popularData = (popular.data ?? []).slice(0, count ?? popular.data?.length);
+  if (popular.success && popularData.length > 0) {
+    return { ...popular, data: popularData };
   }
 
-  return fetchLocalities({ city, ...limit });
+  const all = await fetchLocalities({ city, ...limit });
+  return {
+    ...all,
+    data: (all.data ?? []).slice(0, count ?? all.data?.length),
+  };
 }
 
 export function mapLocalityToNeighborhoodCard(
@@ -47,37 +61,41 @@ export function mapLocalityToNeighborhoodCard(
   const name =
     locality.display_name?.trim() ||
     locality.locality_name?.trim() ||
-    'Locality';
+    "Locality";
   const nameKey = name.toLowerCase();
   const photo =
     locality.photo?.trim() ||
     locality.cover_image?.trim() ||
     locality.images?.[0]?.trim() ||
-    '';
+    "";
   const imageUri =
-    !photo || photo === 'null' || photo === 'undefined' || photo.includes('coming-soon')
+    !photo ||
+    photo === "null" ||
+    photo === "undefined" ||
+    photo.includes("coming-soon")
       ? null
       : photo;
 
   const matching = properties.filter((property) => {
-    const localityName = property.locality?.toLowerCase() ?? '';
-    const location = property.location?.toLowerCase() ?? '';
+    const localityName = property.locality?.toLowerCase() ?? "";
+    const location = property.location?.toLowerCase() ?? "";
     return localityName === nameKey || location.includes(nameKey);
   });
 
   const rents = matching
     .map((property) => property.startingRent)
-    .filter((rent) => typeof rent === 'number' && rent > 0);
+    .filter((rent) => typeof rent === "number" && rent > 0);
 
   const startingRent =
-    typeof locality.starting_rent === 'number' && locality.starting_rent > 0
+    typeof locality.starting_rent === "number" && locality.starting_rent > 0
       ? locality.starting_rent
       : rents.length > 0
         ? Math.min(...rents)
         : undefined;
 
   const propertyCount =
-    typeof locality.no_of_properties === 'number' && locality.no_of_properties > 0
+    typeof locality.no_of_properties === "number" &&
+    locality.no_of_properties > 0
       ? locality.no_of_properties
       : matching.length > 0
         ? matching.length
@@ -94,10 +112,10 @@ export function mapLocalityToNeighborhoodCard(
 
 export function formatNeighborhoodMeta(item: NeighborhoodCard) {
   const propertyCount = item.propertyCount ?? 0;
-  if (propertyCount <= 0) return 'View properties';
+  if (propertyCount <= 0) return "View properties";
 
-  const countLabel = `${propertyCount} ${propertyCount === 1 ? 'Property' : 'Properties'}`;
+  const countLabel = `${propertyCount} ${propertyCount === 1 ? "Property" : "Properties"}`;
   if (item.startingRent == null || item.startingRent <= 0) return countLabel;
 
-  return `Starting ₹${item.startingRent.toLocaleString('en-IN')} | ${countLabel}`;
+  return `Starting ₹${item.startingRent.toLocaleString("en-IN")} | ${countLabel}`;
 }

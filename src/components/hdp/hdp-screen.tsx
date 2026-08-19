@@ -42,6 +42,7 @@ import {
 import palette from '@/constants/palette';
 import { useSimilarProperties } from '@/hooks/use-similar-properties';
 import { usePropertyDetail } from '@/queries/use-property-detail';
+import { usePropertyVisitStats } from '@/queries/use-property-visits';
 import { queryKeys } from '@/queries/keys';
 import { useVibesList } from '@/queries/use-vibes';
 import { useWishlist } from '@/providers/wishlist-provider';
@@ -58,8 +59,11 @@ import { extractNearByFromDetail, mapNearByToDayCards } from '@/utils/hdp-nearby
 import { extractHdpFaqs } from '@/utils/hdp-faqs';
 import { extractMomentsFromHdp } from '@/utils/hdp-moments';
 import {
+  formatHdpReviewDate,
   mapGoogleDataToReviewSummary,
   mapGoogleReviewsToResidentReviews,
+  mapPropertyVisitReviews,
+  mapPropertyVisitStatsToReviewSummary,
 } from '@/utils/hdp-reviews';
 import { isMapsUrl } from '@/utils/maps';
 import { buildPropertyMapUrl } from '@/utils/visit-slots';
@@ -187,6 +191,7 @@ export function HdpScreen() {
     isError,
     refetch: refetchPropertyDetail,
   } = usePropertyDetail(propertyId, debouncedVibeIds);
+  const { data: visitStats, refetch: refetchVisitStats } = usePropertyVisitStats(propertyId);
   const isLoading = isResolvingId || isDetailLoading;
   const { isWishlisted, toggleWishlist } = useWishlist();
   const selectedCity = useSelectedCity();
@@ -223,12 +228,13 @@ export function HdpScreen() {
         propertyId
           ? queryClient.invalidateQueries({ queryKey: queryKeys.propertyCategories(propertyId) })
           : Promise.resolve(),
+        refetchVisitStats(),
         queryClient.invalidateQueries({ queryKey: ['srp-properties'] }),
       ]);
     } finally {
       setRefreshing(false);
     }
-  }, [paramSlug, propertyId, queryClient, refetchPropertyDetail, slugLookup]);
+  }, [paramSlug, propertyId, queryClient, refetchPropertyDetail, refetchVisitStats, slugLookup]);
 
   useEffect(() => {
     if (isLoading || !propertyId) {
@@ -324,14 +330,25 @@ export function HdpScreen() {
 
   const property = data?.success ? (data.data as Record<string, any>) : null;
   const googleData = data?.googleData ?? property?.googleData ?? null;
-  const reviewSummary = useMemo(
+  const googleReviewSummary = useMemo(
     () => mapGoogleDataToReviewSummary(googleData),
     [googleData],
   );
-  const residentReviews = useMemo(
+  const visitReviewSummary = useMemo(
+    () => mapPropertyVisitStatsToReviewSummary(visitStats),
+    [visitStats],
+  );
+  const reviewSummary = googleReviewSummary ?? visitReviewSummary;
+  const googleResidentReviews = useMemo(
     () => mapGoogleReviewsToResidentReviews(googleData),
     [googleData],
   );
+  const visitResidentReviews = useMemo(
+    () => mapPropertyVisitReviews(visitStats?.reviews),
+    [visitStats?.reviews],
+  );
+  const residentReviews =
+    visitResidentReviews.length > 0 ? visitResidentReviews : googleResidentReviews;
   const hasReviews = reviewSummary != null || residentReviews.length > 0;
   const parsedGoogleRating = Number(googleData?.google_rating ?? property?.google_rating);
   const googleRating =
@@ -417,12 +434,17 @@ export function HdpScreen() {
     () => mapPropertyVibesToInterests(data?.propertyVibes),
     [data?.propertyVibes],
   );
-  const visitsToday = property?.visits_today ?? property?.visit_count ?? 7;
+  const visitsScheduled = visitStats?.totalVisits ?? property?.visits_today ?? property?.visit_count ?? 0;
   const reviewCount =
+    visitStats?.totalReviews ??
     reviewSummary?.reviewCount ??
     property?.review_count ??
     property?.reviews_count ??
     0;
+  const topChoiceDate = formatHdpReviewDate(visitStats?.topChoiceDate);
+  const ratingValue =
+    visitStats?.rating ??
+    (Number.isFinite(Number(googleRating)) && Number(googleRating) > 0 ? Number(googleRating) : null);
   const dayFromHereCards = useMemo(
     () => mapNearByToDayCards(extractNearByFromDetail(data, property)),
     [data, property],
@@ -580,9 +602,11 @@ export function HdpScreen() {
               <HdpRatingCard
                 propertyName={displayName}
                 locality={locality}
-                rating={Number(googleRating) || 4.8}
-                visitsToday={visitsToday}
+                rating={ratingValue}
+                visitsScheduled={visitsScheduled}
                 reviewCount={reviewCount}
+                trending={visitStats?.isTrending === true}
+                topChoiceDate={topChoiceDate}
               />
 
               {residentInterests.length > 0 ? (

@@ -103,9 +103,21 @@ function ReviewCard({ review, width }: { review: HdpReview; width: number }) {
     <View style={[styles.reviewCard, { width }]}>
       <View style={styles.reviewHeader}>
         <ReviewAvatar name={review.name} avatarUri={review.avatarUri} />
-        <Typography variant="text" size="sm" weight="bold" color={palette.gray[900]} style={styles.reviewName}>
-          {review.name}
-        </Typography>
+        <View style={styles.reviewIdentity}>
+          <Typography
+            variant="text"
+            size="sm"
+            weight="bold"
+            color={palette.gray[900]}
+            numberOfLines={1}>
+            {review.name}
+          </Typography>
+          {review.dateLabel ? (
+            <Typography variant="text" size="xs" color={palette.gray[500]}>
+              {review.dateLabel}
+            </Typography>
+          ) : null}
+        </View>
         <View style={styles.reviewRatingBadge}>
           <Typography variant="text" size="xs" weight="bold" color={palette.blue[700]}>
             {review.rating}★
@@ -350,8 +362,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reviewName: {
+  reviewIdentity: {
     flex: 1,
+    minWidth: 0,
+    gap: 2,
   },
   reviewRatingBadge: {
     backgroundColor: palette.blue[50],

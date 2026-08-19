@@ -67,22 +67,27 @@ export function VisitDateCardsRow({
   const dateCardStyle = variant === 'compact' ? styles.dateCardCompact : styles.dateCard;
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[styles.dateRow, contentContainerStyle]}>
-      {dates.map((date, index) => (
-        <VisitDateCard
-          key={date.id}
-          date={date}
-          index={index}
-          selected={date.id === selectedId}
-          onSelect={onSelect}
-          style={dateCardStyle}
-          animateOnMount={animateOnMount}
-        />
-      ))}
-    </ScrollView>
+    <View style={styles.dateRowShell}>
+      <ScrollView
+        horizontal
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="always"
+        showsHorizontalScrollIndicator={false}
+        style={styles.horizontalScroll}
+        contentContainerStyle={[styles.dateRow, contentContainerStyle]}>
+        {dates.map((date, index) => (
+          <VisitDateCard
+            key={date.id}
+            date={date}
+            index={index}
+            selected={date.id === selectedId}
+            onSelect={onSelect}
+            style={dateCardStyle}
+            animateOnMount={animateOnMount}
+          />
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -151,10 +156,16 @@ export function VisitTimeSlotsRow({
   animationKey,
 }: VisitTimeSlotsRowProps) {
   return (
-    <Animated.View key={animationKey} entering={animationKey ? FadeIn.duration(200) : undefined}>
+    <Animated.View
+      key={animationKey}
+      entering={animationKey ? FadeIn.duration(200) : undefined}
+      style={styles.timeRowShell}>
       <ScrollView
         horizontal
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="always"
         showsHorizontalScrollIndicator={false}
+        style={styles.horizontalScroll}
         contentContainerStyle={[styles.timeRow, contentContainerStyle]}>
         {slots.map((slot, index) => (
           <VisitTimeSlotPill
@@ -248,7 +259,19 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
   },
+  horizontalScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  dateRowShell: {
+    flexGrow: 0,
+  },
+  timeRowShell: {
+    flexGrow: 0,
+    maxHeight: 64,
+  },
   dateRow: {
+    flexGrow: 0,
     gap: 8,
     // Extra room so the selection bounce + border aren't clipped by ScrollView.
     paddingVertical: 8,
@@ -288,6 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.blue[50],
   },
   timeRow: {
+    flexGrow: 0,
     gap: 8,
     paddingVertical: 6,
     paddingHorizontal: 2,
