@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { fontStyleForWeight } from '@/constants/fonts';
+import { Fonts, fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 
@@ -146,7 +146,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    ...fontStyleForWeight('regular'),
+    letterSpacing: 0,
+    // Satoshi Variable + iOS name autofill stretches placeholders — use static face.
+    fontFamily: Platform.OS === 'ios' ? Fonts.regular : undefined,
+    ...(Platform.OS === 'ios'
+      ? { fontWeight: '400' as const }
+      : fontStyleForWeight('regular')),
     color: palette.textPrimary,
     padding: 0,
     margin: 0,

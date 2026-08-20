@@ -24,6 +24,7 @@ if (Platform.OS === 'ios' && UIManager.setLayoutAnimationEnabledExperimental) {
 }
 
 const MEDIA_HEIGHT = 220;
+const MAX_CAROUSEL_IMAGES = 4;
 
 type PropertyCardImageSlide = {
   id: string;
@@ -31,10 +32,12 @@ type PropertyCardImageSlide = {
 };
 
 function toCarouselSlides(propertyId: string | number, images: PropertyListing['images']): PropertyCardImageSlide[] {
-  return resolvePropertyImages(images).map((source, index) => ({
-    id: `${propertyId}-${index}`,
-    source,
-  }));
+  return resolvePropertyImages(images)
+    .slice(0, MAX_CAROUSEL_IMAGES)
+    .map((source, index) => ({
+      id: `${propertyId}-${index}`,
+      source,
+    }));
 }
 
 function resolvePropertyImages(images: PropertyListing['images']) {

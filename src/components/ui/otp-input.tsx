@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  InteractionManager,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+} from 'react-native';
 
 import { fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
@@ -13,6 +19,9 @@ type OtpInputProps = {
   autoFocus?: boolean;
 };
 
+/**
+ * Single real TextInput — same pattern as the login phone field.
+ */
 export function OtpInput({ value, onChange, autoFocus = false }: OtpInputProps) {
   const inputRef = useRef<TextInput>(null);
   const [focused, setFocused] = useState(false);
@@ -20,50 +29,48 @@ export function OtpInput({ value, onChange, autoFocus = false }: OtpInputProps) 
   useEffect(() => {
     if (!autoFocus) return;
 
+    const task = InteractionManager.runAfterInteractions(() => {
+      inputRef.current?.focus();
+    });
     const timer = setTimeout(() => {
       inputRef.current?.focus();
-    }, 350);
+    }, 600);
 
-    return () => clearTimeout(timer);
+    return () => {
+      task.cancel();
+      clearTimeout(timer);
+    };
   }, [autoFocus]);
 
-  function handleChange(text: string) {
-    onChange(text.replace(/\D/g, '').slice(0, OTP_LENGTH));
+  function focusInput() {
+    inputRef.current?.focus();
   }
 
   return (
     <Pressable
+      onPress={focusInput}
       style={[styles.box, focused && styles.boxFocused]}
-      onPress={() => inputRef.current?.focus()}
       accessibilityRole="none"
-      accessibilityLabel="One-time password input">
-      <View style={styles.slots} pointerEvents="none">
-        {Array.from({ length: OTP_LENGTH }, (_, index) => {
-          const digit = value[index];
-          const isEmpty = !digit;
-
-          return (
-            <Text
-              key={index}
-              style={[styles.digit, isEmpty && styles.digitPlaceholder]}>
-              {digit ?? '0'}
-            </Text>
-          );
-        })}
-      </View>
-
+      accessibilityLabel="One-time password">
       <TextInput
         ref={inputRef}
         value={value}
-        onChangeText={handleChange}
+        onChangeText={(text) => onChange(text.replace(/\D/g, '').slice(0, OTP_LENGTH))}
+        onPressIn={focusInput}
         keyboardType="number-pad"
         textContentType="oneTimeCode"
         autoComplete="sms-otp"
         autoFocus={autoFocus}
         maxLength={OTP_LENGTH}
-        caretHidden
-        selectionColor="transparent"
-        style={styles.hiddenInput}
+        autoCorrect={false}
+        spellCheck={false}
+        blurOnSubmit={false}
+        underlineColorAndroid="transparent"
+        showSoftInputOnFocus
+        placeholder="000000"
+        placeholderTextColor={palette.gray[400]}
+        selectionColor={palette.lime[300]}
+        style={styles.input}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
       />
@@ -76,15 +83,13 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     alignSelf: 'center',
-    minHeight: 56,
+    height: 48,
     borderWidth: 1,
     borderColor: palette.borderDefault,
     borderRadius: Radius.md,
     backgroundColor: palette.white,
     justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    position: 'relative',
   },
   boxFocused: {
     borderColor: palette.lime[400],
@@ -94,27 +99,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  slots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  input: {
     width: '100%',
-  },
-  digit: {
-    flex: 1,
+    height: 48,
+    padding: 0,
+    margin: 0,
     textAlign: 'center',
-    fontSize: 28,
-    lineHeight: 36,
-    ...fontStyleForWeight('medium'),
+    fontSize: 20,
+    letterSpacing: 12,
     color: palette.textPrimary,
-  },
-  digitPlaceholder: {
-    color: palette.gray[400],
-  },
-  hiddenInput: {
-    ...StyleSheet.absoluteFill,
-    opacity: 0.02,
-    fontSize: 16,
-    color: 'transparent',
+    ...fontStyleForWeight('medium'),
+    ...(Platform.OS === 'android'
+      ? { includeFontPadding: false, textAlignVertical: 'center' as const }
+      : null),
   },
 });

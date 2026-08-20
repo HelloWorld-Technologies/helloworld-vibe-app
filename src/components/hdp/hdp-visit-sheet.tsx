@@ -619,7 +619,6 @@ export function HdpVisitSheet({
           nestedScrollEnabled
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="always"
-          automaticallyAdjustKeyboardInsets
           keyboardDismissMode="on-drag"
           contentContainerStyle={[
             styles.content,

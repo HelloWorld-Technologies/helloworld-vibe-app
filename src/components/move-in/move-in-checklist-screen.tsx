@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, useKeyboardState } from '@/utils/keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getMoveInChecklist, updateMoveInChecklist } from '@/api/booking';

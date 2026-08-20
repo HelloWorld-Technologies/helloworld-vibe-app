@@ -61,7 +61,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "postinstall": "node ./scripts/link-hw-assets.js && node ./scripts/sync-hw-assets.js && node ./scripts/compress-assets.js",
+    "postinstall": "node ./scripts/link-hw-assets.js && node ./scripts/sync-hw-assets.js && node ./scripts/compress-assets.js && node ./scripts/patch-expo-router-linking.js",
     "link:assets": "node ./scripts/link-hw-assets.js",
     "sync:assets": "node ./scripts/sync-hw-assets.js && node ./scripts/compress-assets.js",
     "compress:assets": "node ./scripts/compress-assets.js --include-images",

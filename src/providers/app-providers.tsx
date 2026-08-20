@@ -1,12 +1,12 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { PropertyActionsProvider } from '@/providers/property-actions-provider';
 import { WishlistProvider } from '@/providers/wishlist-provider';
 import { queryClient } from '@/queries/query-client';
 import { useSelectedCity } from '@/stores/auth-store';
+import { KeyboardProvider } from '@/utils/keyboard-controller';
 
 type AppProvidersProps = {
   children: ReactNode;

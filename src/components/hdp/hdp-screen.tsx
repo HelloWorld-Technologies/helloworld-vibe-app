@@ -435,6 +435,7 @@ export function HdpScreen() {
     [data?.propertyVibes],
   );
   const visitsScheduled = visitStats?.totalVisits ?? property?.visits_today ?? property?.visit_count ?? 0;
+  const showRatingCard = (visitStats?.totalVisits ?? 0) >= 5;
   const reviewCount =
     visitStats?.totalReviews ??
     reviewSummary?.reviewCount ??
@@ -599,15 +600,17 @@ export function HdpScreen() {
                 onFavoritePress={handleFavoritePress}
               />
 
-              <HdpRatingCard
-                propertyName={displayName}
-                locality={locality}
-                rating={ratingValue}
-                visitsScheduled={visitsScheduled}
-                reviewCount={reviewCount}
-                trending={visitStats?.isTrending === true}
-                topChoiceDate={topChoiceDate}
-              />
+              {showRatingCard ? (
+                <HdpRatingCard
+                  propertyName={displayName}
+                  locality={locality}
+                  rating={ratingValue}
+                  visitsScheduled={visitsScheduled}
+                  reviewCount={reviewCount}
+                  trending={visitStats?.isTrending === true}
+                  topChoiceDate={topChoiceDate}
+                />
+              ) : null}
 
               {residentInterests.length > 0 ? (
                 <HdpVibeMatchCard

@@ -227,7 +227,6 @@ export function RaiseRequestSheet({ visible, onClose, onSubmit }: RaiseRequestSh
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
-        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}>
         {step === 'category' ? (
           <>
@@ -450,8 +449,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryTile: {
-    width: '23%',
-    minWidth: 78,
+    width: '31.5%',
     height: 84,
     borderRadius: Radius.sm,
     alignItems: 'center',

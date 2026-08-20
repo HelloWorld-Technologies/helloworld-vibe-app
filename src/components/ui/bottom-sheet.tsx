@@ -2,7 +2,6 @@ import { HwSymbol } from '@/components/ui/hw-symbol';
 import { type ReactNode, useEffect, useState } from 'react';
 import {
   Keyboard,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -235,12 +234,12 @@ export function BottomSheet({
                   <View style={styles.handle} />
                 </View>
               </GestureDetector>
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-                style={styles.keyboardAvoid}>
-                {children}
-              </KeyboardAvoidingView>
+              {/*
+                Sheet already lifts via marginBottom = keyboard height.
+                Extra KeyboardAvoidingView padding on iOS doubles the offset
+                and leaves a large blank band above the keyboard.
+              */}
+              <View style={styles.sheetBody}>{children}</View>
             </View>
           </Animated.View>
         </GestureHandlerRootView>
@@ -300,10 +299,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: palette.gray[300],
   },
-  keyboardAvoid: {
+  sheetBody: {
     width: '100%',
     flexShrink: 1,
     backgroundColor: 'transparent',
-    pointerEvents: 'box-none',
   },
 });

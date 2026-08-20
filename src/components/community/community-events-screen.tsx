@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { HwSymbol } from '@/components/ui/hw-symbol';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -34,12 +34,14 @@ type CommunityEventsTabPageProps = {
   tab: CommunityEventsTab;
   onRequestPress: () => void;
   onEventPress: (event: { id: number; registrationId?: number }) => void;
+  onEmpty?: () => void;
 };
 
 function CommunityEventsTabPage({
   tab,
   onRequestPress,
   onEventPress,
+  onEmpty,
 }: CommunityEventsTabPageProps) {
   const {
     data,
@@ -59,6 +61,10 @@ function CommunityEventsTabPage({
   const hasEvents = events.length > 0;
   const showEmpty = !isLoading && !hasEvents;
   const showPromo = tab === 'upcoming' && hasEvents;
+
+  useEffect(() => {
+    if (showEmpty) onEmpty?.();
+  }, [onEmpty, showEmpty]);
 
   function renderFooter() {
     return (
@@ -142,6 +148,13 @@ export function CommunityEventsScreen() {
   const router = useRouter();
   const [tab, setTab] = useState<CommunityEventsTab>('upcoming');
   const [requestVisible, setRequestVisible] = useState(false);
+  const didAutoSwitchToPast = useRef(false);
+
+  const handleUpcomingEmpty = useCallback(() => {
+    if (didAutoSwitchToPast.current) return;
+    didAutoSwitchToPast.current = true;
+    setTab('past');
+  }, []);
 
   return (
     <View style={styles.root}>
@@ -155,6 +168,7 @@ export function CommunityEventsScreen() {
         {(tabId) => (
           <CommunityEventsTabPage
             tab={tabId}
+            onEmpty={tabId === 'upcoming' ? handleUpcomingEmpty : undefined}
             onRequestPress={() => setRequestVisible(true)}
             onEventPress={({ id, registrationId }) =>
               router.push({

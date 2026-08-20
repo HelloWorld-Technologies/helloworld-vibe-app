@@ -13,7 +13,7 @@
       "icon": "./assets/images/icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "org.HelloWorldTechnologiesIndiaPvtLtd.react.native.HelloWorld",
-      "buildNumber": "151",
+      "buildNumber": "169",
       "googleServicesFile": "./GoogleService-Info.plist",
       "appleTeamId": "FY57RG66TM",
       "associatedDomains": [
@@ -36,7 +36,7 @@
       },
       "package": "com.thehelloworld",
       "allowBackup": false,
-      "versionCode": 282,
+      "versionCode": 284,
       "googleServicesFile": "./google-services.json",
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
@@ -113,11 +113,6 @@
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
-    },
-    "notification": {
-      "icon": "./assets/images/android-icon-monochrome.png",
-      "color": "#0BA5EC",
-      "iosDisplayInForeground": true
     },
     "plugins": [
       "expo-dev-client",

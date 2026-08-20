@@ -282,7 +282,6 @@ export function TenantDashboardScreen() {
 
         <DashboardReferralCard
           unlockedAmount={creditInfo?.balanceCredits ?? creditInfo?.totalCredits ?? 0}
-          friendsJoined={creditInfo?.friendsJoined ?? 0}
           referralCode={creditInfo?.referralCode}
           onViewRewards={() => router.push('/profile/referral')}
           onCopied={() => setCopySnackbarVisible(true)}

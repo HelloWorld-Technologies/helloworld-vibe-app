@@ -10,7 +10,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView } from '@/utils/keyboard-controller';
 
 import { getTicketConversations, postTicketComment, reopenSupportTicket } from '@/api/tickets';
 import { ChatThreadSkeleton } from '@/components/skeleton';

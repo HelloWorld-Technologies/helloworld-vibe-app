@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   ringPercent: {
-    fontSize: 15,
+    fontSize: 17,
     lineHeight: 18,
     letterSpacing: -0.2
   },

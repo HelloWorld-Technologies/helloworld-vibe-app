@@ -4,16 +4,16 @@ import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Platform,
   Pressable,
+  RefreshControl,
   StyleSheet,
   useWindowDimensions,
   View,
 } from 'react-native';
-import Animated, {
-  runOnJS,
-  useAnimatedScrollHandler,
-  useSharedValue,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScrollRevealHeader } from '@/components/navigation/scroll-reveal-header';
@@ -90,6 +90,7 @@ export function SrpScreen() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [failedHeroUri, setFailedHeroUri] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const scrollY = useSharedValue(0);
   const filters = useSrpFiltersStore((state) => state.filters);
   const setFilters = useSrpFiltersStore((state) => state.setFilters);
@@ -100,19 +101,46 @@ export function SrpScreen() {
     [apiVibes],
   );
 
-  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } = usePropertyList(
-    city,
-    locality ?? '',
-    filters,
-    sort,
-    debouncedVibeIds,
-  );
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+    refetch,
+  } = usePropertyList(city, locality ?? '', filters, sort, debouncedVibeIds);
 
   const loadMore = useCallback(() => {
     if (activeTab !== 'properties') return;
-    if (!hasNextPage || isFetchingNextPage) return;
+    if (!hasNextPage || isFetchingNextPage || refreshing) return;
     void fetchNextPage();
-  }, [activeTab, fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [activeTab, fetchNextPage, hasNextPage, isFetchingNextPage, refreshing]);
+
+  const showListSkeleton = isLoading || vibesPending;
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
+  const refreshControl = useMemo(
+    () => (
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={() => void handleRefresh()}
+        tintColor={palette.lime[700]}
+        colors={[palette.lime[700]]}
+        {...(Platform.OS === 'android'
+          ? { progressViewOffset: insets.top + 56 }
+          : null)}
+      />
+    ),
+    [handleRefresh, insets.top, refreshing],
+  );
 
   const firstPage = data?.pages[0];
   const localityInfo = firstPage?.localityInfo ?? null;
@@ -149,18 +177,19 @@ export function SrpScreen() {
   const scrollBottomPadding =
     activeTab === 'properties' ? BOTTOM_BAR_HEIGHT + insets.bottom : 120 + insets.bottom;
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+      scrollY.value = contentOffset.y;
 
-      const { layoutMeasurement, contentOffset, contentSize } = event;
       const distanceFromEnd =
         contentSize.height - layoutMeasurement.height - contentOffset.y;
       if (distanceFromEnd < INFINITE_SCROLL_THRESHOLD) {
-        runOnJS(loadMore)();
+        loadMore();
       }
     },
-  });
+    [loadMore, scrollY],
+  );
 
   function handlePressFilters() {
     setFiltersOpen(true);
@@ -169,11 +198,14 @@ export function SrpScreen() {
   return (
     <View style={styles.root}>
       <Animated.ScrollView
-        bounces={false}
         showsVerticalScrollIndicator={false}
-        onScroll={scrollHandler}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: scrollBottomPadding }}>
+        bounces
+        alwaysBounceVertical
+        nestedScrollEnabled
+        refreshControl={refreshControl}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: scrollBottomPadding }}>
         <View style={[styles.hero, { height: HERO_HEIGHT }]}>
           <Image
             source={
@@ -238,45 +270,14 @@ export function SrpScreen() {
                 </Typography>
               </Pressable>
 
-              {isLoading || vibesPending ? <SrpListSkeleton /> : null}
-
-              <View style={[styles.propertyList, isTablet ? styles.propertyListTablet : null]}>
-                {properties.map((property) => (
-                  <PropertyCard
-                    key={property.id}
-                    property={property}
-                    style={isTablet ? { width: cardWidth } : undefined}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/hdp',
-                        params: {
-                          id: property.id,
-                          name: property.name,
-                          image:
-                            typeof property.images[0] === 'object' &&
-                            property.images[0] &&
-                            'uri' in property.images[0]
-                              ? property.images[0].uri
-                              : undefined,
-                        },
-                      })
-                    }
-                  />
-                ))}
-              </View>
-
-              {nearByProperties.length > 0 ? (
-                <View style={styles.nearbySection}>
-                  <Typography variant="text" size="xl" weight="bold">
-                    Nearby Properties
-                  </Typography>
-                  <Typography variant="text" size="sm" color={palette.textSecondary}>
-                    Properties near {locality}
-                  </Typography>
+              {showListSkeleton ? (
+                <SrpListSkeleton />
+              ) : (
+                <>
                   <View style={[styles.propertyList, isTablet ? styles.propertyListTablet : null]}>
-                    {nearByProperties.map((property) => (
+                    {properties.map((property) => (
                       <PropertyCard
-                        key={`nearby-${property.id}`}
+                        key={property.id}
                         property={property}
                         style={isTablet ? { width: cardWidth } : undefined}
                         onPress={() =>
@@ -297,14 +298,50 @@ export function SrpScreen() {
                       />
                     ))}
                   </View>
-                </View>
-              ) : null}
 
-              {isFetchingNextPage ? (
-                <View style={styles.pageFooter}>
-                  <ActivityIndicator color={palette.lime[700]} />
-                </View>
-              ) : null}
+                  {nearByProperties.length > 0 ? (
+                    <View style={styles.nearbySection}>
+                      <Typography variant="text" size="xl" weight="bold">
+                        Nearby Properties
+                      </Typography>
+                      <Typography variant="text" size="sm" color={palette.textSecondary}>
+                        Properties near {locality}
+                      </Typography>
+                      <View
+                        style={[styles.propertyList, isTablet ? styles.propertyListTablet : null]}>
+                        {nearByProperties.map((property) => (
+                          <PropertyCard
+                            key={`nearby-${property.id}`}
+                            property={property}
+                            style={isTablet ? { width: cardWidth } : undefined}
+                            onPress={() =>
+                              router.push({
+                                pathname: '/hdp',
+                                params: {
+                                  id: property.id,
+                                  name: property.name,
+                                  image:
+                                    typeof property.images[0] === 'object' &&
+                                    property.images[0] &&
+                                    'uri' in property.images[0]
+                                      ? property.images[0].uri
+                                      : undefined,
+                                },
+                              })
+                            }
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {isFetchingNextPage ? (
+                    <View style={styles.pageFooter}>
+                      <ActivityIndicator color={palette.lime[700]} />
+                    </View>
+                  ) : null}
+                </>
+              )}
             </View>
           ) : (
             <CityDetailsTab

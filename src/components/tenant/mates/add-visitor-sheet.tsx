@@ -89,8 +89,7 @@ export function AddMateSheet({ visible, inType, bookingId, onClose, onSuccess }:
     <BottomSheet visible={visible} onClose={handleClose}>
       <ScrollView
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets>
+        keyboardShouldPersistTaps="handled">
         <Typography variant="text" size="lg" weight="bold" style={styles.title}>
           Add {mateLabel}
         </Typography>
@@ -100,12 +99,17 @@ export function AddMateSheet({ visible, inType, bookingId, onClose, onSuccess }:
           placeholder="Enter full name"
           value={form.name}
           onChangeText={(name) => setForm((current) => ({ ...current, name }))}
+          textContentType="name"
+          autoComplete="name"
+          autoCorrect={false}
           error={errors.name}
         />
         <TextField
           label="Mobile Number"
           placeholder="Enter 10 digit mobile number"
           keyboardType="number-pad"
+          textContentType="telephoneNumber"
+          autoComplete="tel"
           maxLength={10}
           value={form.mobile}
           onChangeText={(mobile) => setForm((current) => ({ ...current, mobile }))}
@@ -115,7 +119,10 @@ export function AddMateSheet({ visible, inType, bookingId, onClose, onSuccess }:
           label="Email"
           placeholder="Enter valid email"
           keyboardType="email-address"
+          textContentType="emailAddress"
+          autoComplete="email"
           autoCapitalize="none"
+          autoCorrect={false}
           value={form.email}
           onChangeText={(email) => setForm((current) => ({ ...current, email }))}
           error={errors.email}

@@ -10,6 +10,8 @@ import type { HdpDayCard } from '@/types/hdp-nearby';
 
 const CARD_WIDTH = 220;
 const CARD_GAP = 16;
+/** Temporarily hide until map deep-link UX is ready. */
+const SHOW_ON_MAPS = false;
 
 type HdpDayFromHereSectionProps = {
   propertyName: string;
@@ -118,7 +120,7 @@ export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFro
         <Typography variant="text" size="xl" weight="bold">
           A Day from here
         </Typography>
-        {mapUrl ? (
+        {SHOW_ON_MAPS && mapUrl ? (
           <Pressable
             onPress={handleShowOnMaps}
             style={styles.mapLink}

@@ -1,4 +1,5 @@
 import {
+  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -8,8 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-
-import { fontStyleForWeight } from '@/constants/fonts';
+import { Fonts, fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 
@@ -87,9 +87,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    minHeight: 52,
+    height: 52,
     paddingHorizontal: 20,
-    paddingVertical: 14,
     borderRadius: Radius.full,
     borderWidth: 1,
     borderColor: palette.grey,
@@ -100,10 +99,27 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    alignSelf: 'stretch',
     fontSize: 14,
-    lineHeight: 20,
-    ...fontStyleForWeight('regular'),
+    letterSpacing: 0,
+    // Satoshi Variable stretches placeholders on real iOS devices.
+    fontFamily: Platform.OS === 'ios' ? Fonts.regular : undefined,
+    ...(Platform.OS === 'ios'
+      ? { fontWeight: '400' as const }
+      : fontStyleForWeight('regular')),
     color: palette.textPrimary,
     padding: 0,
+    margin: 0,
+    // lineHeight on iOS TextInput top-aligns and clips custom fonts.
+    ...Platform.select({
+      ios: {
+        height: '100%' as const,
+      },
+      android: {
+        textAlignVertical: 'center' as const,
+        includeFontPadding: false,
+      },
+      default: {},
+    }),
   },
 });

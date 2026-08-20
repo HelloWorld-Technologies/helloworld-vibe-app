@@ -5,7 +5,10 @@ export function redirectSystemPath({ path }: { path: string; initial: boolean })
   try {
     const rewritten = rewritePropertyDeepLink(path);
     if (rewritten) {
-      void savePendingDeepLink(rewritten);
+      // Defer storage so linking bootstrap is not racing React's first mount.
+      setTimeout(() => {
+        void savePendingDeepLink(rewritten);
+      }, 0);
       return rewritten;
     }
     return path;

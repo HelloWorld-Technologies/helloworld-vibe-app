@@ -15,7 +15,6 @@ import { priceFormatter } from '@/utils/tenant-format';
 
 type DashboardReferralCardProps = {
   unlockedAmount?: number;
-  friendsJoined?: number;
   referralCode?: string;
   onViewRewards?: () => void;
   onCopied?: () => void;
@@ -23,7 +22,6 @@ type DashboardReferralCardProps = {
 
 export function DashboardReferralCard({
   unlockedAmount = 0,
-  friendsJoined = 0,
   referralCode,
   onViewRewards,
   onCopied,
@@ -61,9 +59,6 @@ export function DashboardReferralCard({
             </Typography>
             <Typography variant="display" size="xs" weight="bold" color={palette.gray[900]}>
               {priceFormatter(unlockedAmount)} Unlocked
-            </Typography>
-            <Typography variant="text" size="sm" color={palette.gray[600]}>
-              {friendsJoined} Friends Joined through You
             </Typography>
 
             {referralCode ? (

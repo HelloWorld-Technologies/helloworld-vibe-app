@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useKeyboardState } from 'react-native-keyboard-controller';
+import { useKeyboardState } from '@/utils/keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {

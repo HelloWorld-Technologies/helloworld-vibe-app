@@ -1,15 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { HwSymbol } from '@/components/ui/hw-symbol';
+
 import { getKbCategories } from '@/api/tickets';
 import { CreateTicketBanner } from '@/components/support/create-ticket-banner';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { CategoryListSkeleton } from '@/components/skeleton';
+import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import type { TicketCategory } from '@/types/ticket';
+import { getSupportCategoryIcon } from '@/utils/support-category-icons';
 
 export function TicketCategoriesScreen() {
   const router = useRouter();
@@ -36,6 +38,11 @@ export function TicketCategoriesScreen() {
     });
   }
 
+  const visibleCategories =
+    categories?.filter(
+      (category) => category.isVisibleInHC && category.visibility === 'ALL_USERS',
+    ) ?? [];
+
   return (
     <ProfileStackScreen title="Create New Ticket" centerTitle style={styles.screen}>
       <ScrollView
@@ -47,39 +54,29 @@ export function TicketCategoriesScreen() {
         {categories === null ? (
           <CategoryListSkeleton style={styles.loader} />
         ) : (
-          <View style={styles.list}>
-            {categories.map((category, index) => {
-              if (!category.isVisibleInHC || category.visibility !== 'ALL_USERS') {
-                return null;
-              }
-
-              const preview = (category.child ?? [])
-                .filter((child) => child.isVisibleInHC !== false)
-                .slice(0, 4)
-                .map((child) => child.name)
-                .join(', ');
-
-              return (
-                <Pressable
-                  key={`${category.name}-${index}`}
-                  style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-                  onPress={() => openSubcategories(category)}
-                  accessibilityRole="button">
-                  <View style={styles.cardCircle} />
-                  <View style={styles.cardContent}>
-                    <Typography variant="text" size="md" weight="bold">
-                      {category.name}
-                    </Typography>
-                    {preview ? (
-                      <Typography variant="label" size="xs" color={palette.gray[500]} numberOfLines={2}>
-                        {preview} etc.
-                      </Typography>
-                    ) : null}
-                  </View>
-                  <HwSymbol name="chevron.right" size={16} tintColor={palette.gray[500]} />
-                </Pressable>
-              );
-            })}
+          <View style={styles.grid}>
+            {visibleCategories.map((category, index) => (
+              <Pressable
+                key={`${category.name}-${index}`}
+                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                onPress={() => openSubcategories(category)}
+                accessibilityRole="button">
+                <HwSymbol
+                  name={getSupportCategoryIcon(category.name) as never}
+                  size={24}
+                  tintColor={palette.gray[700]}
+                />
+                <Typography
+                  variant="label"
+                  size="xs"
+                  weight="medium"
+                  color={palette.gray[700]}
+                  style={styles.cardLabel}
+                  numberOfLines={2}>
+                  {category.name}
+                </Typography>
+              </Pressable>
+            ))}
 
             <Pressable
               style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -90,16 +87,20 @@ export function TicketCategoriesScreen() {
                 })
               }
               accessibilityRole="button">
-              <View style={styles.cardCircle} />
-              <View style={styles.cardContent}>
-                <Typography variant="text" size="md" weight="bold">
-                  Move out
-                </Typography>
-                <Typography variant="label" size="xs" color={palette.gray[500]}>
-                  You can request for moveout from here
-                </Typography>
-              </View>
-              <HwSymbol name="chevron.right" size={16} tintColor={palette.gray[500]} />
+              <HwSymbol
+                name={getSupportCategoryIcon('Move out') as never}
+                size={24}
+                tintColor={palette.gray[700]}
+              />
+              <Typography
+                variant="label"
+                size="xs"
+                weight="medium"
+                color={palette.gray[700]}
+                style={styles.cardLabel}
+                numberOfLines={2}>
+                Move out
+              </Typography>
             </Pressable>
 
             {error ? (
@@ -126,39 +127,33 @@ const styles = StyleSheet.create({
   loader: {
     marginTop: 24,
   },
-  list: {
-    gap: 12,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: Radius.md,
+    width: '31.5%',
+    height: 84,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: palette.gray[200],
-    backgroundColor: palette.gray[50],
-    overflow: 'hidden',
+    backgroundColor: palette.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 10,
   },
   cardPressed: {
     opacity: 0.92,
+    backgroundColor: palette.blue[50],
   },
-  cardCircle: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 20,
-    borderColor: palette.yellow[200],
-    opacity: 0.15,
-    top: -50,
-    right: -60,
-  },
-  cardContent: {
-    flex: 1,
-    gap: 4,
+  cardLabel: {
+    textAlign: 'center',
   },
   error: {
+    width: '100%',
     textAlign: 'center',
     marginTop: 8,
   },

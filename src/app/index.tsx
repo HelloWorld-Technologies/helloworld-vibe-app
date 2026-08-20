@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { usePathname, useRouter } from 'expo-router';
+import { usePathname, useRootNavigationState, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -23,11 +23,13 @@ import { getDefaultTabRoute } from '@/utils/tenant-routing';
 export default function SplashScreen() {
   const router = useRouter();
   const pathname = usePathname();
+  const rootNavigationState = useRootNavigationState();
   const hydrated = useAuthHydrated();
   const isAuthenticated = useAuthStore((state) => Boolean(state.token));
+  const navigationReady = Boolean(rootNavigationState?.key);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !navigationReady) return;
     if (pathname.startsWith('/hdp') && isAuthenticated) return;
 
     let cancelled = false;
@@ -60,7 +62,7 @@ export default function SplashScreen() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [hydrated, isAuthenticated, pathname, router]);
+  }, [hydrated, isAuthenticated, navigationReady, pathname, router]);
 
   return (
     <LinearGradient

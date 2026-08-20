@@ -3,12 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   BackHandler,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -20,6 +20,10 @@ import palette from '@/constants/palette'
 import { Radius } from '@/constants/theme'
 import { useSendOtpMutation } from '@/queries/use-auth'
 import { getAppVersionLabel } from '@/utils/app-version'
+import {
+  KeyboardAvoidingView,
+  useKeyboardState
+} from '@/utils/keyboard-controller'
 
 const PHONE_ACCESSORY_ID = 'login-phone-accessory'
 
@@ -31,41 +35,50 @@ function digitsFromParam(value?: string | string[]) {
 export function LoginScreen () {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
   const inputRef = useRef<TextInput>(null)
+  const frameHeightRef = useRef(windowHeight)
   const { mobile: mobileParam } = useLocalSearchParams<{ mobile?: string | string[] }>()
 
   const [phone, setPhone] = useState(() => digitsFromParam(mobileParam))
   const [error, setError] = useState('')
-  const [keyboardVisible, setKeyboardVisible] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const keyboardVisible = useKeyboardState(state => state.isVisible)
+  const keyboardHeight = useKeyboardState(state => state.height)
   const sendOtp = useSendOtpMutation()
+
+  useEffect(() => {
+    if (!keyboardVisible) {
+      frameHeightRef.current = windowHeight
+    }
+  }, [keyboardVisible, windowHeight])
+
+  // Prefer full keyboard lift on Android. If adjustResize already shrank the
+  // window, subtract that so we don't double-pad — but never under-pad.
+  const resizedBy = Math.max(0, frameHeightRef.current - windowHeight)
+  const androidKeyboardPad =
+    Platform.OS === 'android' && keyboardHeight > 0
+      ? Math.max(keyboardHeight - resizedBy, 0)
+      : 0
 
   useFocusEffect(
     useCallback(() => {
+      // Re-enable when this screen is shown again (e.g. back from OTP).
+      setIsNavigating(false)
+
       const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
         return router.canGoBack()
       })
-      return () => subscription.remove()
+      return () => {
+        setIsNavigating(false)
+        subscription.remove()
+      }
     }, [router])
   )
 
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
-    const hideEvent =
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide'
-    const showSub = Keyboard.addListener(showEvent, () =>
-      setKeyboardVisible(true)
-    )
-    const hideSub = Keyboard.addListener(hideEvent, () =>
-      setKeyboardVisible(false)
-    )
-    return () => {
-      showSub.remove()
-      hideSub.remove()
-    }
-  }, [])
-
   async function onLogin () {
+    if (sendOtp.isPending || isNavigating) return
+
     const digits = phone.replace(/\D/g, '')
     if (digits.length !== 10) {
       setError('Please enter a valid 10-digit mobile number')
@@ -75,9 +88,11 @@ export function LoginScreen () {
     setError('')
     try {
       await sendOtp.mutateAsync(digits)
+      setIsNavigating(true)
       Keyboard.dismiss()
       router.push({ pathname: '/otp', params: { mobile: digits } })
     } catch (err) {
+      setIsNavigating(false)
       setError(err instanceof Error ? err.message : 'Failed to send OTP')
     }
   }
@@ -85,9 +100,12 @@ export function LoginScreen () {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
-        style={styles.page}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={insets.top}
+        style={[
+          styles.page,
+          androidKeyboardPad > 0 ? { paddingBottom: androidKeyboardPad } : null
+        ]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
       >
         <View
           style={[
@@ -148,7 +166,8 @@ export function LoginScreen () {
           <Button
             label='Login'
             onPress={onLogin}
-            loading={sendOtp.isPending}
+            loading={sendOtp.isPending || isNavigating}
+            disabled={sendOtp.isPending || isNavigating}
             style={styles.button}
           />
 
@@ -184,18 +203,22 @@ const styles = StyleSheet.create({
     backgroundColor: palette.white
   },
   page: {
-    flex: 1
+    flex: 1,
+    overflow: 'hidden'
   },
   bentoArea: {
     flex: 1,
+    flexBasis: 0,
+    flexShrink: 1,
     paddingTop: 8,
     minHeight: 0
   },
   bentoAreaCompact: {
-    flex: 0,
-    paddingTop: 8
+    paddingTop: 4
   },
   sheet: {
+    flexGrow: 0,
+    flexShrink: 0,
     backgroundColor: palette.white,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
@@ -204,7 +227,7 @@ const styles = StyleSheet.create({
     gap: 12
   },
   sheetCompact: {
-    paddingTop: 16,
+    paddingTop: 12,
     gap: 10
   },
   title: {

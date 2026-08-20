@@ -13,6 +13,32 @@ type LoginBentoProps = {
   compact?: boolean
 }
 
+function LiveBetterCard ({ compact = false }: { compact?: boolean }) {
+  return (
+    <LinearGradient
+      colors={[
+        'rgba(83,197,94,0.89)',
+        'rgba(17,168,218,0.89)',
+        'rgba(144,61,192,0.89)'
+      ]}
+      start={{ x: 0, y: 1 }}
+      end={{ x: 1, y: 0 }}
+      style={compact ? styles.compactLiveBetter : styles.liveBetter}
+    >
+      <Image
+        source={ImageAssets.loginLiveBetterText}
+        style={compact ? styles.compactLiveBetterText : styles.liveBetterText}
+        contentFit='contain'
+      />
+      <Image
+        source={ImageAssets.loginHelloWorldWordmark}
+        style={compact ? styles.compactWordmark : styles.wordmark}
+        contentFit='contain'
+      />
+    </LinearGradient>
+  )
+}
+
 export function LoginBento ({ compact = false }: LoginBentoProps) {
   const { width, height } = useWindowDimensions()
   const isTablet = Math.min(width, height) >= 600
@@ -20,36 +46,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
   if (compact) {
     return (
       <View style={styles.compactRoot}>
-        <View style={styles.compactLeft}>
-          <Image
-            source={ImageAssets.loginBento1}
-            style={styles.compactHero}
-            contentFit='cover'
-          />
-          <LinearGradient
-            colors={['#32ACDD', '#7474CF']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.compactCities}
-          >
-            <Typography
-              variant={isTablet ? 'display' : 'text'}
-              size='sm'
-              weight='bold'
-              color={palette.white}
-            >
-              16+
-            </Typography>
-            <Typography
-              variant='text'
-              size={isTablet ? 'md' : 'xs'}
-              weight='medium'
-              color={palette.white}
-            >
-              Cities
-            </Typography>
-          </LinearGradient>
-        </View>
+        <LiveBetterCard compact />
         <View style={styles.compactRight}>
           <Image
             source={ImageAssets.loginBento2}
@@ -68,8 +65,8 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
               style={StyleSheet.absoluteFill}
             />
             <Typography
-              variant={isTablet ? 'display' : 'text'}
-              size='sm'
+              variant='text'
+              size={isTablet ? 'md' : 'sm'}
               weight='bold'
               color={palette.white}
             >
@@ -77,7 +74,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
             </Typography>
             <Typography
               variant='text'
-              size={isTablet ? 'md' : 'xs'}
+              size='xs'
               weight='medium'
               color={palette.white}
             >
@@ -105,18 +102,22 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
             style={styles.citiesTile}
           >
             <Typography
-              variant='display'
-              size={isTablet ? 'lg' : 'md'}
+              variant='text'
+              size={isTablet ? 'xl' : 'lg'}
               weight='bold'
               color={palette.white}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
             >
               16+
             </Typography>
             <Typography
               variant='text'
-              size={isTablet ? 'md' : 'xs'}
+              size='xs'
               weight='medium'
               color={palette.white}
+              numberOfLines={1}
             >
               Cities
             </Typography>
@@ -127,27 +128,7 @@ export function LoginBento ({ compact = false }: LoginBentoProps) {
             contentFit='cover'
           />
         </View>
-        <LinearGradient
-          colors={[
-            'rgba(83,197,94,0.89)',
-            'rgba(17,168,218,0.89)',
-            'rgba(144,61,192,0.89)'
-          ]}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.liveBetter}
-        >
-          <Image
-            source={ImageAssets.loginLiveBetterText}
-            style={styles.liveBetterText}
-            contentFit='contain'
-          />
-          <Image
-            source={ImageAssets.loginHelloWorldWordmark}
-            style={styles.wordmark}
-            contentFit='contain'
-          />
-        </LinearGradient>
+        <LiveBetterCard />
       </View>
 
       <View style={styles.right}>
@@ -200,42 +181,60 @@ const styles = StyleSheet.create({
     minHeight: 0
   },
   compactRoot: {
+    flex: 1,
+    flexBasis: 0,
+    flexShrink: 1,
     flexDirection: 'row',
     gap: GAP,
-    width: '100%'
-  },
-  compactLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: GAP
-  },
-  compactHero: {
-    flex: 1,
-    height: 102,
-    borderRadius: RADIUS
-  },
-  compactCities: {
-    width: 72,
-    height: 72,
-    borderRadius: RADIUS,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  compactRight: {
-    width: 100,
-    gap: GAP
-  },
-  compactDining: {
     width: '100%',
-    height: 72,
-    borderRadius: RADIUS
+    minHeight: 0,
+    overflow: 'hidden'
   },
-  compactColiving: {
-    height: 72,
-    borderRadius: RADIUS,
+  compactLiveBetter: {
+    flex: 1,
+    flexBasis: 0,
+    minHeight: 0,
+    borderTopRightRadius: RADIUS,
+    borderBottomRightRadius: RADIUS,
+    borderBottomLeftRadius: RADIUS,
+    paddingHorizontal: '6%',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden'
+  },
+  compactLiveBetterText: {
+    width: '78%',
+    maxHeight: '38%',
+    aspectRatio: 201 / 86
+  },
+  compactWordmark: {
+    width: '84%',
+    maxHeight: '48%',
+    aspectRatio: 217 / 124,
+    marginTop: '2%'
+  },
+  compactRight: {
+    width: 100,
+    gap: GAP,
+    minHeight: 0,
+    flexShrink: 1
+  },
+  compactDining: {
+    width: '100%',
+    flex: 1,
+    flexBasis: 0,
+    minHeight: 0,
+    borderRadius: RADIUS
+  },
+  compactColiving: {
+    flex: 1,
+    flexBasis: 0,
+    minHeight: 0,
+    borderRadius: RADIUS,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    paddingHorizontal: 4
   },
   left: {
     flex: 244,
@@ -260,9 +259,12 @@ const styles = StyleSheet.create({
     width: '36%',
     maxWidth: 120,
     borderRadius: RADIUS,
-    padding: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    overflow: 'hidden',
+    minHeight: 0
   },
   bedroom: {
     flex: 1,

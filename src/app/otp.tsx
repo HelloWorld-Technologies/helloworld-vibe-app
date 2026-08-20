@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  InteractionManager,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -20,6 +20,10 @@ import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
 import { useSendOtpMutation, useVerifyOtpMutation } from '@/queries/use-auth';
 import { useTenantStore } from '@/stores/tenant-store';
+import {
+  KeyboardAvoidingView,
+  useKeyboardState,
+} from '@/utils/keyboard-controller';
 import { consumePendingDeepLink } from '@/utils/pending-deep-link';
 import { hrefFromHdpPath } from '@/utils/property-deep-link';
 import { getDefaultTabRoute } from '@/utils/tenant-routing';
@@ -33,8 +37,36 @@ export default function OtpScreen() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(RESEND_COOLDOWN_SECONDS);
+  const [otpReady, setOtpReady] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const keyboardVisible = useKeyboardState((state) => state.isVisible);
+  const keyboardHeight = useKeyboardState((state) => state.height);
   const verifyOtp = useVerifyOtpMutation();
   const sendOtp = useSendOtpMutation();
+  const isVerifying = verifyOtp.isPending || isNavigating;
+
+  // Keep footer bottom-aligned; lift the whole column above the IME on Android.
+  // Use full keyboard height — edge-to-edge often leaves the root under the
+  // keyboard even when window dimensions change.
+  const androidKeyboardPad =
+    Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight : 0;
+
+  // Login dismisses the keyboard before navigating here — wait until this
+  // screen is focused, then mount the OTP field so autofocus can open it.
+  useFocusEffect(
+    useCallback(() => {
+      setOtpReady(false);
+      const task = InteractionManager.runAfterInteractions(() => {
+        setOtpReady(true);
+      });
+      const timer = setTimeout(() => setOtpReady(true), 500);
+      return () => {
+        task.cancel();
+        clearTimeout(timer);
+        setOtpReady(false);
+      };
+    }, []),
+  );
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
@@ -47,6 +79,8 @@ export default function OtpScreen() {
   }, [secondsLeft]);
 
   async function onVerify() {
+    if (isVerifying) return;
+
     if (otp.length !== 6) {
       setError('Please enter the 6-digit OTP');
       return;
@@ -57,11 +91,13 @@ export default function OtpScreen() {
 
     try {
       await verifyOtp.mutateAsync({ mobile, otp });
+      setIsNavigating(true);
       await useTenantStore.getState().fetchProfile();
       const isTenant = Boolean(useTenantStore.getState().profile?.bookingId);
       const pending = await consumePendingDeepLink();
       router.replace(pending ? hrefFromHdpPath(pending) : getDefaultTabRoute(isTenant));
     } catch (err) {
+      setIsNavigating(false);
       setError(err instanceof Error ? err.message : 'Please enter correct OTP');
     }
   }
@@ -91,21 +127,29 @@ export default function OtpScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={insets.top}>
+        style={[
+          styles.flex,
+          androidKeyboardPad > 0 ? { paddingBottom: androidKeyboardPad } : null,
+        ]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}>
         <ScrollView
+          style={styles.flex}
           bounces={false}
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.scroll,
+            keyboardVisible ? styles.scrollCompact : null,
+          ]}
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="none"
           showsVerticalScrollIndicator={false}>
           <Image
             source={ImageAssets.otpIllustration}
-            style={styles.illustration}
+            style={[styles.illustration, keyboardVisible ? styles.illustrationCompact : null]}
             contentFit="contain"
           />
 
-          <View style={styles.content}>
+          <View style={[styles.content, keyboardVisible ? styles.contentCompact : null]}>
             <Typography variant="display" size="xs" weight="bold" style={styles.title}>
               Verify Your Phone Number
             </Typography>
@@ -130,7 +174,11 @@ export default function OtpScreen() {
               </Pressable>
             </View>
 
-            <OtpInput value={otp} onChange={setOtp} autoFocus />
+            {otpReady ? (
+              <OtpInput value={otp} onChange={setOtp} autoFocus />
+            ) : (
+              <View style={styles.otpPlaceholder} />
+            )}
 
             {error ? (
               <Typography variant="label" color={palette.error} style={styles.error}>
@@ -162,22 +210,21 @@ export default function OtpScreen() {
                   </Typography>
                 </Pressable>
               )}
-              {/* <View style={styles.resendDivider} />
-              <Pressable style={styles.whatsappRow} accessibilityRole="button">
-                <HwIcon name="whatsapp" size={20} />
-                <Typography variant="text" size="sm" weight="medium" color={palette.helloLime}>
-                  Resend via Whatsapp
-                </Typography>
-              </Pressable> */}
             </View>
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View
+          style={[
+            styles.footer,
+            {
+              paddingBottom: keyboardVisible ?Platform.OS === 'ios' ? 10 : 60 : Math.max(insets.bottom, 16) + 8,
+            },
+          ]}>
           <Button
             label="Continue"
-            loading={verifyOtp.isPending}
-            disabled={verifyOtp.isPending}
+            loading={isVerifying}
+            disabled={isVerifying}
             onPress={onVerify}
             style={styles.continueButton}
           />
@@ -201,15 +248,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 16,
   },
+  scrollCompact: {
+    justifyContent: 'flex-start',
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
   illustration: {
     width: '100%',
     height: 220,
     alignSelf: 'center',
   },
+  illustrationCompact: {
+    height: 120,
+  },
   content: {
     marginTop: 20,
     gap: 16,
     alignItems: 'stretch',
+  },
+  contentCompact: {
+    marginTop: 8,
+    gap: 10,
   },
   title: {
     textAlign: 'center',
@@ -231,6 +290,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
+  otpPlaceholder: {
+    height: 48,
+  },
   error: {
     textAlign: 'center',
     marginTop: -8,
@@ -246,20 +308,11 @@ const styles = StyleSheet.create({
     gap: 12,
     flexWrap: 'wrap',
   },
-  resendDivider: {
-    width: 1,
-    height: 14,
-    backgroundColor: palette.gray[300],
-  },
-  whatsappRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   footer: {
+    flexGrow: 0,
+    flexShrink: 0,
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 24,
+    paddingTop: 8,
     backgroundColor: palette.white,
   },
   continueButton: {

@@ -121,7 +121,6 @@ export function CommunityRequestSheet({
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}>
           <Typography variant="text" size="lg" weight="medium">
             What&apos;s the Event
