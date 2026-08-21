@@ -11,11 +11,17 @@ type MoveInProgressCardProps = {
   doneCount: number;
   total: number;
   moveInDate: string;
+  movedIn?: boolean;
 };
 
-export function MoveInProgressCard({ doneCount, total, moveInDate }: MoveInProgressCardProps) {
+export function MoveInProgressCard({
+  doneCount,
+  total,
+  moveInDate,
+  movedIn = false,
+}: MoveInProgressCardProps) {
   const progress = total > 0 ? doneCount / total : 0;
-  const message = buildProgressMessage(doneCount, total, moveInDate);
+  const message = buildProgressMessage(doneCount, total, moveInDate, movedIn);
   const deadlineMatch = message.match(/on (.+?)(?: to avoid|\.|$)/);
   const deadline = deadlineMatch?.[1] ?? moveInDate;
 

@@ -128,17 +128,45 @@ export function formatMoveInDeadline(isoDate: string) {
   return `${day}${suffix} ${monthYear}`;
 }
 
-export function buildMoveInPendingMessage(pendingCount: number) {
+export function buildMoveInPendingMessage(pendingCount: number, movedIn = false) {
   const label = pendingCount === 1 ? 'step' : 'steps';
+  if (movedIn) {
+    return `Just ${pendingCount} quick ${label} left to finish your onboarding.`;
+  }
   return `Just ${pendingCount} quick ${label} left before you can collect your keys and move in.`;
 }
 
-export function buildProgressMessage(doneCount: number, total: number, moveInDate: string) {
+export function buildMoveInPendingTitle(movedIn = false) {
+  return movedIn ? 'Pending tasks' : 'Move-in pending';
+}
+
+export function buildMoveInStepsHeaderTitle(movedIn = false, hasPending = true) {
+  if (movedIn && hasPending) {
+    return 'Complete Remaining Steps';
+  }
+  return 'Your Move-in Steps';
+}
+
+export function buildProgressMessage(
+  doneCount: number,
+  total: number,
+  moveInDate: string,
+  movedIn = false,
+) {
   const remaining = Math.max(total - doneCount, 0);
   const deadline = formatMoveInDeadline(moveInDate);
 
   if (remaining === 0) {
-    return `You're all set for your move-in on ${deadline}.`;
+    return movedIn
+      ? `You're all set — onboarding is complete.`
+      : `You're all set for your move-in on ${deadline}.`;
+  }
+
+  if (movedIn) {
+    if (doneCount >= total - 2) {
+      return `Almost there! Just a few more steps to finish your onboarding.`;
+    }
+    return `You've moved in! Complete the remaining ${remaining} steps to finish onboarding.`;
   }
 
   if (doneCount >= total - 2) {

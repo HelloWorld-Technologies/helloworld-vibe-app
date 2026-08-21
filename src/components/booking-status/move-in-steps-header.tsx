@@ -9,9 +9,10 @@ import { Radius } from '@/constants/theme';
 
 type MoveInStepsHeaderProps = {
   onBack: () => void;
+  title?: string;
 };
 
-export function MoveInStepsHeader({ onBack }: MoveInStepsHeaderProps) {
+export function MoveInStepsHeader({ onBack, title = 'Your Move-in Steps' }: MoveInStepsHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -28,7 +29,7 @@ export function MoveInStepsHeader({ onBack }: MoveInStepsHeaderProps) {
             <HwSymbol name="chevron.left" size={16} weight="semibold" tintColor={palette.gray[900]} />
           </Pressable>
           <Typography variant="text" size="lg" weight="medium">
-            Your Move-in Steps
+            {title}
           </Typography>
         </View>
 

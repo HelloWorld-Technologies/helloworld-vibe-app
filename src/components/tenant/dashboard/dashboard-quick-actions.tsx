@@ -30,10 +30,14 @@ function QuickActionTile({
     <>
       <DashboardIcon
         name={icon}
-        size={isTablet ? 40 : 36}
+        size={isTablet ? 40 : 32}
         color={variant === 'sos' ? palette.red[600] : palette.blue[800]}
       />
-      <Typography variant="label" size="xs" style={styles.label}>
+      <Typography
+        variant="label"
+        size="xs"
+        numberOfLines={2}
+        style={styles.label}>
         {label}
       </Typography>
     </>
@@ -44,7 +48,8 @@ function QuickActionTile({
       <Pressable
         style={[styles.item, isTablet ? styles.itemTablet : null]}
         onPress={onPress}
-        accessibilityRole="button">
+        accessibilityRole="button"
+        accessibilityLabel={label}>
         <LinearGradient
           colors={[...DASHBOARD_SOS_GRADIENT.colors]}
           start={DASHBOARD_SOS_GRADIENT.start}
@@ -60,7 +65,8 @@ function QuickActionTile({
     <Pressable
       style={[styles.item, isTablet ? styles.itemTablet : null]}
       onPress={onPress}
-      accessibilityRole="button">
+      accessibilityRole="button"
+      accessibilityLabel={label}>
       <View style={[styles.tile, styles.tileDefault, isTablet ? styles.tileTablet : null]}>
         {content}
       </View>
@@ -90,32 +96,33 @@ export function DashboardQuickActions({ onActionPress }: DashboardQuickActionsPr
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'stretch',
     gap: 8,
   },
   rowTablet: {
     gap: 16,
   },
   item: {
-    width: 80,
-    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'stretch',
   },
   itemTablet: {
     flex: 1,
-    width: undefined,
   },
   tile: {
-    width: 80,
-    height: 80,
+    width: '100%',
+    minHeight: 80,
     borderRadius: Radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     paddingHorizontal: 4,
+    paddingVertical: 8,
   },
   tileTablet: {
-    width: '100%',
-    height: 96,
+    minHeight: 96,
+    gap: 8,
   },
   tileDefault: {
     backgroundColor: palette.blue[50],
@@ -123,5 +130,6 @@ const styles = StyleSheet.create({
   label: {
     textAlign: 'center',
     color: palette.gray[700],
+    width: '100%',
   },
 });

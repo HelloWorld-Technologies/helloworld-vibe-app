@@ -25,7 +25,7 @@ import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
 import { useUserVibes } from '@/queries/use-vibes';
 import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
 import type { MoveInStep } from '@/types/booking-status';
-import { buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
+import { buildMoveInSteps, buildMoveInStepsHeaderTitle, partitionMoveInSteps } from '@/utils/move-in-steps';
 import {
   getMoveInPendingAmount,
   shouldShowMoveInPendingPaymentCard,
@@ -69,6 +69,7 @@ export function MoveInStepsScreen() {
       )
     : [];
   const { completed, pending, total, doneCount } = partitionMoveInSteps(steps);
+  const movedIn = Boolean(status?.moved_in);
   const moveInDate = status?.move_in_date ?? profile?.propertyInfo?.moveInDate ?? '';
   const showMoveInPendingPayment = shouldShowMoveInPendingPaymentCard(
     profile,
@@ -80,6 +81,7 @@ export function MoveInStepsScreen() {
     ? pending.filter((step) => step.id !== 'advance-charges')
     : pending;
   const isRefreshing = isRefetching || isManualRefreshing;
+  const headerTitle = buildMoveInStepsHeaderTitle(movedIn, visiblePending.length > 0);
 
   function handleMoveInPayment() {
     startMoveInPayment();
@@ -108,7 +110,7 @@ export function MoveInStepsScreen() {
 
   return (
     <View style={styles.root}>
-      <MoveInStepsHeader onBack={handleBack} />
+      <MoveInStepsHeader onBack={handleBack} title={headerTitle} />
 
       {isLoading ? (
         <StepsListSkeleton style={styles.stepsLoader} />
@@ -142,7 +144,12 @@ export function MoveInStepsScreen() {
           ) : null}
 
           {moveInDate ? (
-            <MoveInProgressCard doneCount={doneCount} total={total} moveInDate={moveInDate} />
+            <MoveInProgressCard
+              doneCount={doneCount}
+              total={total}
+              moveInDate={moveInDate}
+              movedIn={movedIn}
+            />
           ) : null}
 
           {visiblePending.length > 0 ? (

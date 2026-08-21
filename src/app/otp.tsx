@@ -24,6 +24,7 @@ import {
   KeyboardAvoidingView,
   useKeyboardState,
 } from '@/utils/keyboard-controller';
+import { resetRootRoute } from '@/utils/navigation-reset';
 import { consumePendingDeepLink } from '@/utils/pending-deep-link';
 import { hrefFromHdpPath } from '@/utils/property-deep-link';
 import { getDefaultTabRoute } from '@/utils/tenant-routing';
@@ -95,7 +96,8 @@ export default function OtpScreen() {
       await useTenantStore.getState().fetchProfile();
       const isTenant = Boolean(useTenantStore.getState().profile?.bookingId);
       const pending = await consumePendingDeepLink();
-      router.replace(pending ? hrefFromHdpPath(pending) : getDefaultTabRoute(isTenant));
+      // Clear login/otp from the stack so hardware back cannot return to auth.
+      resetRootRoute(pending ? hrefFromHdpPath(pending) : getDefaultTabRoute(isTenant));
     } catch (err) {
       setIsNavigating(false);
       setError(err instanceof Error ? err.message : 'Please enter correct OTP');

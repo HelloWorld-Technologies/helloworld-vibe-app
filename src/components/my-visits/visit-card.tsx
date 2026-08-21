@@ -126,7 +126,8 @@ export function VisitCard({
       ]
     : status === 'visited'
       ? [
-          { label: 'Rate Visit', variant: 'soft', onPress: () => onRateVisit?.() },
+          // TODO: re-enable Rate Visit when rating API is integrated
+          // { label: 'Rate Visit', variant: 'soft', onPress: () => onRateVisit?.() },
           { label: 'Book Now', variant: 'accent', onPress: () => onBookNow?.() },
         ]
       : [

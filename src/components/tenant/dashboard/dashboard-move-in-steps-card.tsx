@@ -13,7 +13,7 @@ import { useMoveInPaymentDetails } from '@/queries/use-move-in-payment-details';
 import { useUserVibes } from '@/queries/use-vibes';
 import { useTenantProfile, useTenantStore } from '@/stores/tenant-store';
 import { isBookingCancelled } from '@/utils/booking-details-format';
-import { buildMoveInPendingMessage, buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
+import { buildMoveInPendingMessage, buildMoveInPendingTitle, buildMoveInSteps, partitionMoveInSteps } from '@/utils/move-in-steps';
 
 export function useMoveInDashboardCard() {
   const profile = useTenantProfile();
@@ -24,7 +24,7 @@ export function useMoveInDashboardCard() {
   useUserVibes();
 
   if (!profile?.bookingId || !status || isBookingCancelled(profile)) {
-    return { visible: false, pendingCount: 0 };
+    return { visible: false, pendingCount: 0, movedIn: false };
   }
 
   const { pending } = partitionMoveInSteps(
@@ -36,12 +36,16 @@ export function useMoveInDashboardCard() {
       moveInPayments?.finalAmount ?? null,
     ),
   );
-  return { visible: pending.length > 0, pendingCount: pending.length };
+  return {
+    visible: pending.length > 0,
+    pendingCount: pending.length,
+    movedIn: Boolean(status.moved_in),
+  };
 }
 
 export function DashboardMoveInStepsCard() {
   const router = useRouter();
-  const { visible, pendingCount } = useMoveInDashboardCard();
+  const { visible, pendingCount, movedIn } = useMoveInDashboardCard();
 
   if (!visible) {
     return null;
@@ -56,10 +60,10 @@ export function DashboardMoveInStepsCard() {
       <View style={styles.topRow}>
         <View style={styles.copy}>
           <Typography variant="text" size="lg" weight="medium" color="#171717">
-            Move-in pending
+            {buildMoveInPendingTitle(movedIn)}
           </Typography>
           <Typography variant="text" size="xs" color={palette.gray[500]} style={styles.subtext}>
-            {buildMoveInPendingMessage(pendingCount)}
+            {buildMoveInPendingMessage(pendingCount, movedIn)}
           </Typography>
         </View>
         <Image source={DashboardImages.moveInKeys} style={styles.illustration} contentFit="contain" />
