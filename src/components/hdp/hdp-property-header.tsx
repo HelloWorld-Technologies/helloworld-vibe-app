@@ -1,9 +1,11 @@
-import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { WishlistHeartButton } from '@/components/wishlist/wishlist-heart-button';
 import { Typography } from '@/components/ui/typography';
+import { HdpIcons } from '@/constants/assets';
 import palette from '@/constants/palette';
+
+const MapPinIcon = HdpIcons.mapPin;
 
 type HdpPropertyHeaderProps = {
   name: string;
@@ -15,6 +17,22 @@ type HdpPropertyHeaderProps = {
   onFavoritePress?: () => void;
   onLocationPress?: () => void;
 };
+
+const LOCATION_UNDERLINE_DOT_SIZE = 2;
+const LOCATION_UNDERLINE_DOT_COUNT = 48;
+
+function LocationDottedUnderline({ color }: { color: string }) {
+  return (
+    <View style={styles.locationUnderline}>
+      {Array.from({ length: LOCATION_UNDERLINE_DOT_COUNT }, (_, index) => (
+        <View
+          key={index}
+          style={[styles.locationUnderlineDot, { backgroundColor: color }]}
+        />
+      ))}
+    </View>
+  );
+}
 
 export function HdpPropertyHeader({
   name,
@@ -50,12 +68,17 @@ export function HdpPropertyHeader({
 
       <Pressable
         onPress={onLocationPress}
-        style={styles.locationRow}
+        style={styles.locationPressable}
         accessibilityRole="button">
-        <HwSymbol name="mappin" size={11} tintColor={palette.lime[600]} />
-        <Typography variant="text" size="xs" weight="medium" color={palette.lime[600]} style={styles.location}>
-          {location}
-        </Typography>
+        <View style={styles.locationContent}>
+          <View style={styles.locationRow}>
+            <MapPinIcon width={13} height={14} />
+            <Typography variant="text" size="xs" weight="medium" color={palette.lime[600]} style={styles.location}>
+              {location}
+            </Typography>
+          </View>
+          <LocationDottedUnderline color={palette.lime[600]} />
+        </View>
       </Pressable>
 
       <View style={styles.pricingRow}>
@@ -104,17 +127,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
+  locationPressable: {
+    alignSelf: 'flex-start',
+  },
+  locationContent: {
+    alignSelf: 'flex-start',
+    gap: 2,
+  },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    alignSelf: 'flex-start',
-    borderBottomWidth: 1,
-    borderBottomColor: palette.lime[600],
-    paddingBottom: 1,
   },
   location: {
     flexShrink: 1,
+  },
+  locationUnderline: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignSelf: 'stretch',
+    overflow: 'hidden',
+  },
+  locationUnderlineDot: {
+    width: LOCATION_UNDERLINE_DOT_SIZE,
+    height: LOCATION_UNDERLINE_DOT_SIZE,
+    borderRadius: LOCATION_UNDERLINE_DOT_SIZE / 2,
   },
   pricingRow: {
     flexDirection: 'row',

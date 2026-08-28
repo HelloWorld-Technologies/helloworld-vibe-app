@@ -7,13 +7,21 @@ function titleCase(value: string) {
   return value
     .split(/[\s_-]+/)
     .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .map((part) => {
+      if (part.length > 1 && part === part.toUpperCase()) return part;
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    })
     .join(' ');
 }
 
 export function mapWishlistCardToListing(card: WishlistPropertyCard): PropertyListing {
-  const location =
-    card.locality || card.address?.line2 || card.address?.locality || card.city || 'Coliving PG';
+  const rawLocality =
+    card.locality ||
+    card.address?.locality ||
+    card.address?.line2?.split(',').pop()?.trim() ||
+    undefined;
+  const locality = rawLocality ? titleCase(rawLocality) : undefined;
+  const location = locality || (card.city ? titleCase(card.city) : 'Coliving PG');
 
   const roomTypes =
     card.room_types?.map(titleCase) ??
@@ -38,11 +46,7 @@ export function mapWishlistCardToListing(card: WishlistPropertyCard): PropertyLi
     slugName: card.name,
     location,
     city: card.city || card.address?.city || undefined,
-    locality:
-      card.locality ||
-      card.address?.locality ||
-      card.address?.line2?.split(',').pop()?.trim() ||
-      undefined,
+    locality,
     rating: Number(card.rating ?? card.google_rating) || 4.5,
     vibeMatchPercent: undefined,
     startingRent: card.min_rent ?? 0,

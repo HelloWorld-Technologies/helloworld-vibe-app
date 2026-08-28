@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPropertyManagerByBookingId } from '@/api/user';
 import { resolveSmartMeterBookingId } from '@/api/smart-meter';
 import { DashboardIcon } from '@/components/dashboard/dashboard-icon';
+import { HwIcon } from '@/components/hw-icon';
 import { DashboardBookingCancelledCard } from '@/components/tenant/dashboard/dashboard-booking-cancelled-card';
 import { DashboardEventsSection } from '@/components/tenant/dashboard/dashboard-events-section';
 import { DashboardMoveInPendingPaymentCard } from '@/components/tenant/dashboard/dashboard-move-in-pending-payment-card';
@@ -216,10 +217,11 @@ export function TenantDashboardScreen() {
               <View style={styles.notificationDot} />
             </Pressable> */}
             <Pressable
-              style={styles.iconButton}
+              style={styles.profileButton}
               onPress={() => router.push('/menu')}
-              accessibilityRole="button">
-              <DashboardIcon name="profile" size={20} color={palette.gray[800]} />
+              accessibilityRole="button"
+              accessibilityLabel="Open profile menu">
+              <HwIcon name="profile" size={36} />
             </Pressable>
           </View>
         </View>
@@ -342,6 +344,12 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: Radius.full,
     backgroundColor: palette.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileButton: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },

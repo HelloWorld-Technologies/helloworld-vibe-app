@@ -24,6 +24,7 @@ export type HwCarouselProps<T> = {
   showPagination?: boolean;
   paginationDotColor?: string;
   paginationActiveDotColor?: string;
+  paginationStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
   onSnapToItem?: (index: number) => void;
   enabled?: boolean;
@@ -42,6 +43,7 @@ export function HwCarousel<T extends object>({
   showPagination = true,
   paginationDotColor,
   paginationActiveDotColor,
+  paginationStyle,
   style,
   onSnapToItem,
   enabled = true,
@@ -91,6 +93,7 @@ export function HwCarousel<T extends object>({
           onPress={handlePaginationPress}
           dotColor={paginationDotColor}
           activeDotColor={paginationActiveDotColor}
+          containerStyle={paginationStyle}
         />
       ) : null}
     </View>

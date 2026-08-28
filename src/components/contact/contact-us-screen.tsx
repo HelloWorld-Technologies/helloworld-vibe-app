@@ -155,7 +155,7 @@ export function ContactUsScreen({ embedded = false }: { embedded?: boolean }) {
       locations={[0, 0.45]}
       style={styles.gradient}>
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-        <View style={[styles.header, embedded && styles.headerEmbedded]}>
+        <View style={styles.header}>
           {!embedded ? (
             <Pressable
               onPress={() => router.back()}
@@ -170,7 +170,7 @@ export function ContactUsScreen({ embedded = false }: { embedded?: boolean }) {
               />
             </Pressable>
           ) : null}
-          <Text style={[styles.headerTitle, embedded && styles.headerTitleEmbedded]}>
+          <Text style={styles.headerTitle}>
             Contact us
           </Text>
           {!embedded ? <View style={styles.backPlaceholder} /> : null}
@@ -328,9 +328,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 8,
   },
-  headerEmbedded: {
-    justifyContent: 'center',
-  },
   backButton: {
     width: 40,
     height: 40,
@@ -356,10 +353,6 @@ const styles = StyleSheet.create({
     ...fontStyleForWeight('bold'),
     color: palette.black,
     flex: 1,
-  },
-  headerTitleEmbedded: {
-    flex: 0,
-    textAlign: 'center',
   },
   scroll: {
     paddingHorizontal: 24,

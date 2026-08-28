@@ -9,15 +9,19 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { HomepageIcons } from '@/constants/assets';
 import { Fonts, fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 
-const SHADOW_OFFSET = { x: 4, y: 5 };
+const SearchIcon = HomepageIcons.search;
+
+const SHADOW_OFFSET = { x: 1 , y: 5 };
 
 type SearchInputProps = TextInputProps & {
   containerStyle?: StyleProp<ViewStyle>;
   onPress?: () => void;
+  shadowColor?: string;
   showShadow?: boolean;
 };
 
@@ -26,6 +30,7 @@ export function SearchInput({
   style,
   onPress,
   editable,
+  shadowColor = palette.lime[400],
   showShadow = true,
   ...props
 }: SearchInputProps) {
@@ -40,13 +45,13 @@ export function SearchInput({
         pointerEvents={isPressable ? 'none' : 'auto'}
         {...props}
       />
-      {/* <SymbolView name="magnifyingglass" size={20} tintColor={palette.grey} /> */}
+      <SearchIcon width={16} height={16} color={palette.black} />
     </View>
   );
 
   return (
     <View style={[styles.wrapper, !showShadow && styles.wrapperFlat, containerStyle]}>
-      {showShadow ? <View style={styles.shadow} /> : null}
+      {showShadow ? <View style={[styles.shadow, { backgroundColor: shadowColor }]} /> : null}
       {isPressable ? (
         <Pressable
           onPress={onPress}
@@ -79,7 +84,6 @@ const styles = StyleSheet.create({
     right: -SHADOW_OFFSET.x,
     bottom: -SHADOW_OFFSET.y,
     borderRadius: Radius.full,
-    backgroundColor: palette.lime[400],
   },
   field: {
     position: 'relative',

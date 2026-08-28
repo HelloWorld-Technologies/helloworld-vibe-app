@@ -1,17 +1,26 @@
-import { Image } from 'expo-image';
-import { useMemo, useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { CarouselPagination } from '@/components/ui/carousel/carousel-pagination';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
-import { ImageAssets } from '@/constants/assets';
+import { HdpIcons, ImageAssets } from '@/constants/assets';
+import { Fonts, fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import type { HdpDayCard } from '@/types/hdp-nearby';
+import { Image } from 'expo-image';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
+
+const MapPinIcon = HdpIcons.mapPin;
+const SECTION_ACCENT = palette.lime[700];
 
 const CARD_WIDTH = 220;
 const CARD_GAP = 16;
-/** Temporarily hide until map deep-link UX is ready. */
-const SHOW_ON_MAPS = false;
+const SLIDE_WIDTH = CARD_WIDTH + CARD_GAP;
+const TIMELINE_HEIGHT = 24;
+const TIMELINE_DOT_CORE = 14;
+const TIMELINE_DOT_WHITE_SPREAD = 2.5;
+const TIMELINE_DOT_SIZE = TIMELINE_DOT_CORE + TIMELINE_DOT_WHITE_SPREAD * 2;
 
 type HdpDayFromHereSectionProps = {
   propertyName: string;
@@ -19,10 +28,19 @@ type HdpDayFromHereSectionProps = {
   cards: HdpDayCard[];
 };
 
+function TimelineDot() {
+  return (
+    <View style={styles.timelineDotWhite}>
+      <View style={styles.timelineDotCore} />
+    </View>
+  );
+}
+
 function resolveCardImageSource(imageUri?: string | number) {
-  if (typeof imageUri === 'number') return imageUri;
   if (typeof imageUri === 'string' && imageUri.trim().length > 0) {
-    return { uri: imageUri.trim() };
+    const uri = imageUri.trim();
+    if (uri.includes('coming-soon')) return ImageAssets.comingSoon;
+    return { uri };
   }
   return ImageAssets.comingSoon;
 }
@@ -43,6 +61,9 @@ function DayCard({
     typeof imageUri === 'string' && failedUri === imageUri
       ? ImageAssets.comingSoon
       : resolveCardImageSource(imageUri);
+  const isComingSoon =
+    imageSource === ImageAssets.comingSoon ||
+    (typeof imageUri === 'string' && imageUri.includes('coming-soon'));
 
   return (
     <View style={styles.card}>
@@ -52,29 +73,39 @@ function DayCard({
         </Typography>
       </View>
 
-      <Image
-        key={String(imageUri ?? 'coming-soon')}
-        source={imageSource}
-        style={styles.cardImage}
-        contentFit="cover"
-        onError={() => {
-          if (typeof imageUri === 'string') setFailedUri(imageUri);
-        }}
-      />
+      <View style={[styles.cardImageWrap, isComingSoon && styles.cardImageComingSoon]}>
+        <Image
+          key={String(imageUri ?? 'coming-soon')}
+          source={imageSource}
+          style={styles.cardImage}
+          contentFit={isComingSoon ? 'contain' : 'cover'}
+          cachePolicy="memory-disk"
+          onError={() => {
+            if (typeof imageUri === 'string' && !imageUri.includes('coming-soon')) {
+              setFailedUri(imageUri);
+            }
+          }}
+        />
+      </View>
 
-      <Typography variant="text" size="md" weight="bold" style={styles.placeName}>
+      <Typography variant="text" size="md" weight="medium" style={styles.placeName}>
         {active?.placeName ?? card.placeName}
       </Typography>
-      <Typography variant="text" size="sm" weight="medium" color={palette.blue[500]}>
+      <Typography
+        variant="text"
+        size="xs"
+        weight="medium"
+        color={palette.blue[800]}
+        style={styles.walkTime}>
         {active?.walkTime ?? card.walkTime}
       </Typography>
 
       {card.options.length > 1 ? (
         <Pressable onPress={onPressLink} accessibilityRole="button" style={styles.cardLink}>
-          <Typography variant="text" size="sm" weight="bold" color={palette.lime[600]}>
+          <Typography variant="text" size="sm" weight="bold" color={SECTION_ACCENT}>
             {card.linkLabel}
           </Typography>
-          <HwSymbol name="chevron.right" size={12} weight="semibold" tintColor={palette.lime[600]} />
+          <HwSymbol name="chevron.right" size={12} weight="semibold" tintColor={SECTION_ACCENT} />
         </Pressable>
       ) : null}
     </View>
@@ -82,8 +113,20 @@ function DayCard({
 }
 
 export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFromHereSectionProps) {
+  const scrollRef = useRef<Animated.ScrollView>(null);
+  const progress = useSharedValue(0);
   const [selectedByCard, setSelectedByCard] = useState<Record<string, number>>({});
   const [pickerCard, setPickerCard] = useState<HdpDayCard | null>(null);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      progress.value = event.contentOffset.x / SLIDE_WIDTH;
+    },
+  });
+
+  const handlePaginationPress = useCallback((index: number) => {
+    scrollRef.current?.scrollTo({ x: index * SLIDE_WIDTH, animated: true });
+  }, []);
 
   const subtitle = useMemo(
     () => `What living at ${propertyName} actually looks like.`,
@@ -120,14 +163,14 @@ export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFro
         <Typography variant="text" size="xl" weight="bold">
           A Day from here
         </Typography>
-        {SHOW_ON_MAPS && mapUrl ? (
+        {mapUrl ? (
           <Pressable
             onPress={handleShowOnMaps}
             style={styles.mapLink}
             accessibilityRole="link"
             accessibilityLabel="Show on Maps">
-            <HwSymbol name="mappin.and.ellipse" size={14} weight="medium" tintColor={palette.lime[600]} />
-            <Typography variant="text" size="sm" weight="bold" color={palette.lime[600]}>
+            <MapPinIcon width={13} height={14} />
+            <Typography variant="text" size="sm" weight="bold" color={SECTION_ACCENT}>
               Show on Maps
             </Typography>
           </Pressable>
@@ -138,16 +181,29 @@ export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFro
         {subtitle}
       </Typography>
 
-      <ScrollView
+      <Animated.ScrollView
+        ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
+        contentContainerStyle={styles.scrollContent}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
+        snapToInterval={SLIDE_WIDTH}
+        snapToAlignment="start"
+        disableIntervalMomentum>
         {cards.map((card, index) => (
           <View key={card.id} style={styles.column}>
             <View style={styles.timelineCell}>
-              {index > 0 ? <View style={styles.timelineLineLeft} /> : null}
-              <View style={styles.timelineDot} />
-              {index < cards.length - 1 ? <View style={styles.timelineLineRight} /> : null}
+              <TimelineDot />
+              {index < cards.length - 1 ? (
+                <View
+                  style={[
+                    styles.timelineLine,
+                    { width: CARD_WIDTH + CARD_GAP - TIMELINE_DOT_SIZE / 2 },
+                  ]}
+                />
+              ) : null}
             </View>
 
             <DayCard
@@ -157,7 +213,16 @@ export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFro
             />
           </View>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
+
+      {cards.length > 1 ? (
+        <CarouselPagination
+          progress={progress}
+          data={cards}
+          onPress={handlePaginationPress}
+          containerStyle={styles.pagination}
+        />
+      ) : null}
 
       <Modal
         transparent
@@ -198,10 +263,10 @@ export function HdpDayFromHereSection({ propertyName, mapUrl, cards }: HdpDayFro
                     </Typography>
                     <Typography
                       variant="text"
-                      size="sm"
+                      size="xs"
                       weight="medium"
-                      color={palette.blue[600]}
-                      style={styles.pickerDistance}>
+                      color={palette.blue[800]}
+                      style={[styles.walkTime, styles.pickerDistance]}>
                       {option.walkTime}
                     </Typography>
                   </Pressable>
@@ -240,63 +305,83 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   scrollContent: {
-    paddingTop: 4,
+    paddingTop: 8,
     paddingBottom: 4,
     gap: CARD_GAP,
+  },
+  pagination: {
+    marginTop: 8,
   },
   column: {
     width: CARD_WIDTH,
     gap: 10,
+    overflow: 'visible',
   },
   timelineCell: {
-    height: 12,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
+    height: TIMELINE_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'visible',
   },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: palette.blue[700],
-    borderWidth: 2,
-    borderColor: palette.white,
+  timelineDotWhite: {
+    width: TIMELINE_DOT_SIZE,
+    height: TIMELINE_DOT_SIZE,
+    borderRadius: TIMELINE_DOT_SIZE / 2,
+    backgroundColor: palette.white,
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 1,
   },
-  timelineLineLeft: {
-    position: 'absolute',
-    left: -CARD_GAP,
-    width: CARD_GAP,
-    top: 5,
-    height: 2,
-    backgroundColor: palette.blue[700],
+  timelineDotCore: {
+    width: TIMELINE_DOT_CORE,
+    height: TIMELINE_DOT_CORE,
+    borderRadius: TIMELINE_DOT_CORE / 2,
+    backgroundColor: palette.blue[800],
   },
-  timelineLineRight: {
+  timelineLine: {
     position: 'absolute',
-    left: 5,
-    right: -CARD_GAP,
-    top: 5,
+    left: TIMELINE_DOT_SIZE / 2,
+    top: TIMELINE_HEIGHT / 2 - 1,
     height: 2,
-    backgroundColor: palette.blue[700],
+    backgroundColor: palette.blue[800],
+    zIndex: 0,
   },
   card: {
     width: CARD_WIDTH,
-    borderWidth: 1,
-    borderColor: palette.blue[200],
+    borderWidth: 0.5,
+    borderColor: palette.blue[300],
     borderRadius: Radius.md,
-    padding: 12,
+    padding: 8,
     gap: 8,
-    backgroundColor: palette.white,
+    backgroundColor: palette.blue[50],
   },
   cardHeader: {
     minHeight: 20,
   },
-  cardImage: {
+  cardTitle: Platform.select({
+    ios: { fontFamily: Fonts.bold, fontWeight: 'normal' as const },
+    default: fontStyleForWeight('bold'),
+  }),
+  cardImageWrap: {
     width: '100%',
     height: 120,
     borderRadius: Radius.sm,
+    overflow: 'hidden',
+    backgroundColor: palette.gray[100],
+  },
+  cardImageComingSoon: {
+    backgroundColor: palette.white,
+    padding: 10,
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
   },
   placeName: {
     color: palette.gray[900],
+  },
+  walkTime: {
+    lineHeight: 15,
   },
   cardLink: {
     flexDirection: 'row',

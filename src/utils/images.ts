@@ -28,6 +28,21 @@ function usesStagingMedia() {
   );
 }
 
+/**
+ * Swap media folder `original` → `{page}/mobile` without touching hostnames
+ * like `hw-production-original-image`.
+ */
+function toMobileVariantPath(path: string, page: "srp" | "hdp") {
+  const replacement = `${page}/mobile`;
+  if (path.includes("/original/")) {
+    return path.replace("/original/", `/${replacement}/`);
+  }
+  if (path.startsWith("original/")) {
+    return path.replace("original/", `${replacement}/`);
+  }
+  return path;
+}
+
 export function formatPropertyImageUrl(
   url?: string,
   page: "srp" | "hdp" = "srp",
@@ -37,15 +52,56 @@ export function formatPropertyImageUrl(
   }
 
   if (url.includes("http")) {
-    return encodeImageUrl(url);
+    // Keep absolute hosts (CDN or S3). Only swap path segment original → mobile.
+    return encodeImageUrl(toMobileVariantPath(url, page));
   }
 
-  if (usesStagingMedia()) {
-    return encodeImageUrl(`${STAGING_MEDIA_BASE_URL}${url}`);
+  // Production property media lives on the CDN with resized paths. Staging
+  // media bucket often lacks these keys, so prefer CDN for `property/` paths.
+  // App cards/gallery use the mobile variant (same as SRP/HDP cards).
+  if (url.startsWith("property/") || !usesStagingMedia()) {
+    return encodeImageUrl(
+      `${config.S3_IMAGE_BUCKET_BASE_URL}${toMobileVariantPath(url, page)}`,
+    );
   }
 
-  const resizedPath = url.replace("original", `${page}/desktop`);
-  return encodeImageUrl(`${config.S3_IMAGE_BUCKET_BASE_URL}${resizedPath}`);
+  return encodeImageUrl(
+    `${STAGING_MEDIA_BASE_URL}${toMobileVariantPath(url, page)}`,
+  );
+}
+
+/**
+ * Format locality cover / photo from `hello/localities`.
+ * Absolute API URLs (e.g. hw-production-original-image) are used as-is.
+ * Relative keys use `images.thehelloworld.com` + `srp/mobile` like SRP cards.
+ * Returns null when missing, coming-soon, or local asset paths so callers
+ * can show the bundled coming-soon placeholder (never category / hero art).
+ */
+export function formatLocalityImageUrl(url?: string | null): string | null {
+  const value = String(url ?? "").trim();
+  if (!value || value === "null" || value === "undefined" || value === "none") {
+    return null;
+  }
+  if (value.includes("coming-soon")) return null;
+  if (value.startsWith("/assets/") || value.startsWith("assets/")) return null;
+  if (value.startsWith("data:")) return value;
+
+  // API often returns a full S3 URL that already works — do not rewrite the host.
+  if (value.includes("http")) {
+    return encodeImageUrl(value);
+  }
+
+  const formatted = encodeImageUrl(
+    `${config.S3_IMAGE_BUCKET_BASE_URL}${toMobileVariantPath(value, "srp")}`,
+  );
+  if (
+    !formatted ||
+    formatted.includes("coming-soon") ||
+    formatted === FALLBACK_IMAGE
+  ) {
+    return null;
+  }
+  return formatted;
 }
 
 export function getPropertyImageKeys(
@@ -53,18 +109,27 @@ export function getPropertyImageKeys(
 ): string[] {
   if (!property) return [];
 
-  const candidates = [property.property_image, property.images, property.image];
+  const keys: string[] = [];
+  const seen = new Set<string>();
 
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      return candidate.filter(
-        (item): item is string => typeof item === "string" && item.length > 0,
-      );
-    }
-    if (typeof candidate === "string" && candidate.length > 0) {
-      return [candidate];
-    }
+  function push(value: unknown) {
+    if (typeof value !== "string") return;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "null" || trimmed === "undefined") return;
+    if (seen.has(trimmed)) return;
+    seen.add(trimmed);
+    keys.push(trimmed);
   }
 
-  return [];
+  // Prefer cover `image`, then gallery lists (some payloads have empty property_image).
+  push(property.image);
+  push(property.hdp_image);
+  push(property.srp_image);
+
+  for (const candidate of [property.property_image, property.images]) {
+    if (!Array.isArray(candidate)) continue;
+    for (const item of candidate) push(item);
+  }
+
+  return keys;
 }

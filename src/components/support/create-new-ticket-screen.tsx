@@ -8,8 +8,6 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Animated from 'react-native-reanimated';
-import { HwSymbol } from '@/components/ui/hw-symbol';
 import { getCategoryDescription, postCreateTicket } from '@/api/tickets';
 import { ProfileStackScreen } from '@/components/profile/profile-stack-screen';
 import { CreateTicketSkeleton } from '@/components/skeleton';
@@ -23,8 +21,8 @@ import { TicketCreatedView } from '@/components/support/ticket-created-view';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import {
+  AccordionChevron,
   AnimatedAccordionContent,
-  useAnimatedChevronRotation,
 } from '@/components/ui/animated-accordion';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -44,8 +42,6 @@ function FaqAccordionItem({
   isOpen: boolean;
   onToggle: () => void;
 }) {
-  const chevronStyle = useAnimatedChevronRotation(isOpen);
-
   return (
     <View style={styles.faqItem}>
       <Pressable
@@ -56,9 +52,7 @@ function FaqAccordionItem({
         <Typography variant="text" size="sm" weight="medium" style={styles.faqTitle}>
           {title}
         </Typography>
-        <Animated.View style={chevronStyle}>
-          <HwSymbol name="chevron.down" size={14} tintColor={palette.gray[600]} />
-        </Animated.View>
+        <AccordionChevron expanded={isOpen} />
       </Pressable>
       <AnimatedAccordionContent expanded={isOpen}>
         <Typography variant="text" size="sm" color={palette.gray[600]} style={styles.faqAnswer}>

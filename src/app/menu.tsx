@@ -2,13 +2,13 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { MenuSectionCard } from '@/components/menu/menu-section-card';
 import { ProfileSummary } from '@/components/menu/profile-summary';
 import { Typography } from '@/components/ui/typography';
 import { buildTenantMenuSections, MENU_SECTIONS } from '@/constants/menu';
+import { TypeScale, fontStyleForWeight } from '@/constants/fonts';
 import palette from '@/constants/palette';
 import { BACK_CHEVRON_SYMBOL } from '@/constants/symbols';
 import { useBookingStatus } from '@/queries/use-booking-status';
@@ -127,24 +127,13 @@ export default function MenuScreen() {
     [handleLogout, isTenant, openExternalUrl, router],
   );
 
-  const sectionCards = useMemo(() => {
-    let itemIndexOffset = 0;
-
-    return sections.map((section, sectionIndex) => {
-      const card = (
-        <MenuSectionCard
-          key={section.id}
-          section={section}
-          sectionIndex={sectionIndex}
-          itemIndexOffset={itemIndexOffset}
-          onItemPress={handleItemPress}
-        />
-      );
-
-      itemIndexOffset += section.items.length;
-      return card;
-    });
-  }, [handleItemPress, sections]);
+  const sectionCards = useMemo(
+    () =>
+      sections.map((section) => (
+        <MenuSectionCard key={section.id} section={section} onItemPress={handleItemPress} />
+      )),
+    [handleItemPress, sections],
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -161,23 +150,20 @@ export default function MenuScreen() {
             tintColor={palette.gray[800]}
           />
         </Pressable>
-        <Typography variant="text" size="lg" weight="bold" style={styles.headerTitle}>
+        <Typography variant="text" size="lg" weight="bold">
           Profile
         </Typography>
-        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
         bounces={false}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}>
-        <Animated.View entering={FadeInDown.duration(220)}>
-          <ProfileSummary
-            mobile={mobile}
-            name={isTenant ? tenantProfile?.userInfo?.name : undefined}
-            propertyLabel={isTenant ? propertyLabel : undefined}
-          />
-        </Animated.View>
+        <ProfileSummary
+          mobile={mobile}
+          name={isTenant ? tenantProfile?.userInfo?.name : undefined}
+          propertyLabel={isTenant ? propertyLabel : undefined}
+        />
 
         {__DEV__ && !isTenant ? (
           <Pressable
@@ -212,9 +198,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 8,
   },
-  headerSpacer: {
-    width: 40,
-  },
   backButton: {
     width: 40,
     height: 40,
@@ -230,11 +213,6 @@ const styles = StyleSheet.create({
   },
   backButtonPressed: {
     opacity: 0.85,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: palette.black,
   },
   scroll: {
     paddingHorizontal: 20,
@@ -253,8 +231,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     textAlign: 'center',
-    fontSize: 12,
-    lineHeight: 18,
+    ...TypeScale.text.sm,
+    ...fontStyleForWeight('medium'),
     color: palette.gray[500],
     marginTop: 8,
   },

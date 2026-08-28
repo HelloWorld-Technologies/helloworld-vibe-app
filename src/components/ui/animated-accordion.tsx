@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { useEffect, type ReactNode } from 'react';
+import { StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -7,6 +7,50 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+
+import { UiIcons } from '@/constants/assets';
+import palette from '@/constants/palette';
+import { Radius } from '@/constants/theme';
+
+/** Shared card layout for stacked accordion items (FAQ, policies, etc.). */
+export const accordionStyles = StyleSheet.create({
+  list: {
+    gap: 8,
+  },
+  item: {
+    backgroundColor: palette.white,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: palette.gray[200],
+    overflow: 'hidden',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  headerTitle: {
+    flex: 1,
+    color: palette.gray[900],
+  },
+  bodyContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    lineHeight: 22,
+  },
+  measure: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    opacity: 0,
+    zIndex: -1,
+  },
+});
+
+const ChevronDownIcon = UiIcons.chevronDown;
 
 const EXPAND_MS = 280;
 const CHEVRON_MS = 220;
@@ -22,7 +66,6 @@ export function AnimatedAccordionContent({
   children,
   style,
 }: AnimatedAccordionContentProps) {
-  const [measuredHeight, setMeasuredHeight] = useState(0);
   const expandProgress = useSharedValue(expanded ? 1 : 0);
   const contentHeight = useSharedValue(0);
 
@@ -39,41 +82,26 @@ export function AnimatedAccordionContent({
     overflow: 'hidden' as const,
   }));
 
-  function handleLayout(height: number) {
-    const nextHeight = Math.ceil(height);
-    if (nextHeight <= 0) return;
-    contentHeight.value = nextHeight;
-    if (measuredHeight === 0) {
-      expandProgress.value = expanded ? 1 : 0;
+  function handleMeasure(event: LayoutChangeEvent) {
+    const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+    if (nextHeight > 0) {
+      contentHeight.value = nextHeight;
     }
-    if (nextHeight !== measuredHeight) {
-      setMeasuredHeight(nextHeight);
-    }
-  }
-
-  if (!expanded && measuredHeight === 0) {
-    return null;
-  }
-
-  if (expanded && measuredHeight === 0) {
-    return (
-      <View
-        collapsable={false}
-        style={style}
-        onLayout={(event) => handleLayout(event.nativeEvent.layout.height)}>
-        {children}
-      </View>
-    );
   }
 
   return (
-    <Animated.View style={[animatedStyle, style]}>
+    <View>
       <View
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
         collapsable={false}
-        onLayout={(event) => handleLayout(event.nativeEvent.layout.height)}>
+        pointerEvents="none"
+        style={[style, accordionStyles.measure]}
+        onLayout={handleMeasure}>
         {children}
       </View>
-    </Animated.View>
+      <Animated.View style={[animatedStyle, style]}>{children}</Animated.View>
+    </View>
   );
 }
 
@@ -94,4 +122,26 @@ export function useAnimatedChevronRotation(
   return useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
+}
+
+type AccordionChevronProps = {
+  expanded: boolean;
+  color?: string;
+  collapsedDeg?: number;
+  expandedDeg?: number;
+};
+
+export function AccordionChevron({
+  expanded,
+  color = '#323232',
+  collapsedDeg = 0,
+  expandedDeg = 180,
+}: AccordionChevronProps) {
+  const chevronStyle = useAnimatedChevronRotation(expanded, collapsedDeg, expandedDeg);
+
+  return (
+    <Animated.View style={chevronStyle}>
+      <ChevronDownIcon width={14} height={7} color={color} />
+    </Animated.View>
+  );
 }

@@ -4,7 +4,6 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { PropertyCard } from '@/components/property/property-card';
 import { HwCarousel } from '@/components/ui/carousel';
 import { Typography } from '@/components/ui/typography';
-import palette from '@/constants/palette';
 import { useIsTablet } from '@/hooks/use-is-tablet';
 import type { PropertyListing } from '@/types/property';
 
@@ -52,9 +51,6 @@ export function HdpSimilarPropertiesSection({ listings }: HdpSimilarPropertiesSe
         <Typography variant="text" size="xl" weight="bold">
           More Places you&apos;ll Like
         </Typography>
-        <Typography variant="text" size="sm" color={palette.gray[600]}>
-          {listings.length} similar {listings.length === 1 ? 'property' : 'properties'} nearby
-        </Typography>
       </View>
 
       <HwCarousel
@@ -62,7 +58,8 @@ export function HdpSimilarPropertiesSection({ listings }: HdpSimilarPropertiesSe
         width={slideWidth}
         windowWidth={carouselWindowWidth}
         height={PROPERTY_CAROUSEL_HEIGHT}
-        showPagination={false}
+        showPagination={listings.length > 1}
+        paginationStyle={styles.pagination}
         renderItem={({ item }) => (
           <PropertyCard
             property={item}
@@ -82,5 +79,8 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: 4,
+  },
+  pagination: {
+    marginTop: 8,
   },
 });

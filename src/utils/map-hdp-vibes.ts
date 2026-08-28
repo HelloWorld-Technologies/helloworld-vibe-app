@@ -2,7 +2,7 @@ import { emojiForVibeCode } from '@/constants/vibes';
 
 export type HdpVibeBadgeApi = {
   vibeId?: number | string;
-  matchPercent?: number | string;
+  vibeScore?: number | string;
 };
 
 export type HdpPropertyVibeApi = {
@@ -43,7 +43,7 @@ export function mapVibeBadgesToSelectedMatches(
     const vibeId = Number(badge.vibeId);
     if (!Number.isFinite(vibeId) || vibeId <= 0) continue;
 
-    const score = parseVibeMatchScore(badge.matchPercent) ?? 0;
+    const score = parseVibeMatchScore(badge.vibeScore) ?? 0;
     const meta = labelById?.get(vibeId);
 
     matches.push({

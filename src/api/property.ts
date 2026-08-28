@@ -194,7 +194,10 @@ function titleCase(value: string) {
   return value
     .split(/[\s_-]+/)
     .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .map((part) => {
+      if (part.length > 1 && part === part.toUpperCase()) return part;
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    })
     .join(' ');
 }
 
@@ -225,17 +228,14 @@ export function mapApiPropertyToListing(property: ApiProperty) {
     ?.split(',')
     .pop()
     ?.trim();
-  const locality =
+  const rawLocality =
     property.locality ||
     property.address?.locality ||
     localityFromLine2 ||
     undefined;
+  const locality = rawLocality ? titleCase(rawLocality) : undefined;
   const city = property.city || property.address?.city || undefined;
-  const location =
-    property.address?.line2 ||
-    property.address?.locality ||
-    property.locality ||
-    'Coliving PG';
+  const location = locality || 'Coliving PG';
 
   return {
     id: String(property.id),

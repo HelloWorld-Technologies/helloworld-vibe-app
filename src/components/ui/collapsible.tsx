@@ -1,13 +1,11 @@
-import { HwSymbol } from '@/components/ui/hw-symbol';
 import { PropsWithChildren, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import Animated from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
+  AccordionChevron,
   AnimatedAccordionContent,
-  useAnimatedChevronRotation,
 } from '@/components/ui/animated-accordion';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -15,7 +13,6 @@ import { useTheme } from '@/hooks/use-theme';
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useTheme();
-  const chevronStyle = useAnimatedChevronRotation(isOpen, 90, -90);
 
   return (
     <ThemedView>
@@ -23,14 +20,7 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
         style={({ pressed }) => [styles.heading, pressed && styles.pressedHeading]}
         onPress={() => setIsOpen((value) => !value)}>
         <ThemedView type="backgroundElement" style={styles.button}>
-          <Animated.View style={chevronStyle}>
-            <HwSymbol
-              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-              size={14}
-              weight="bold"
-              tintColor={theme.text}
-            />
-          </Animated.View>
+          <AccordionChevron expanded={isOpen} color={theme.text} />
         </ThemedView>
 
         <ThemedText type="small">{title}</ThemedText>

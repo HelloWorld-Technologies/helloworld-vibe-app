@@ -116,12 +116,32 @@ export const SrpAmenityIcons = {
   fullyFurnished: require('../../assets/bundled/srp/amenities/fully-furnished.svg').default,
 } as const;
 
+export const SrpIcons = {
+  bed: require('../../assets/bundled/srp/bed.svg').default,
+  filter: require('../../assets/bundled/srp/filter.svg').default,
+} as const;
+
+export const HdpIcons = {
+  mapPin: require('../../assets/bundled/hdp/map-pin.svg').default,
+} as const;
+
+export const UiIcons = {
+  chevronDown: require('../../assets/bundled/ui/chevron-down.svg').default,
+} as const;
+
 export const PaymentLottieAssets = {
   pending: require('../../assets/bundled/payments/payment-pending.json'),
 } as const;
 
 export const HomepageIcons = {
   profile: require('../../assets/bundled/profile/profile.svg').default,
+  search: require('../../assets/bundled/homepage/search.svg').default,
+  chevronDown: require('../../assets/bundled/homepage/chevron-down.svg').default,
+} as const;
+
+/** Profile menu header avatar (lime circle + person silhouette). */
+export const ProfileMenuAssets = {
+  avatar: require('../../assets/bundled/profile/profile-avatar.svg').default,
 } as const;
 
 export const login = {

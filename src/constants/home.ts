@@ -44,9 +44,50 @@ export const FEATURED_PROPERTY = {
   image: 'loginBento4' as const,
 } as const;
 
-export const FEED_ITEMS = [
-  { id: '1', caption: 'Hi guys,', image: 'loginBentoBedroomSmall' as const },
-  { id: '2', caption: 'Room tour', image: 'loginBento1' as const },
+/** Same CDN videos as helloworld-vibe homepage “Straight from the Feed!”. */
+const INSTA_MEDIA_BASE = 'https://images.thehelloworld.com/insta-media/';
+
+function instaMediaUrl(filename: string): string {
+  return `${INSTA_MEDIA_BASE}${encodeURIComponent(filename).replace(/%2F/gi, '/')}`;
+}
+
+/** Static Explore feed — matches website homepage (no API). */
+export const HOME_FEED_MOMENTS = [
+  {
+    id: 'feed-01-unspoken-rules',
+    label: 'Unspoken Rules',
+    imageUri: '',
+    mediaType: 'video' as const,
+    mediaUrl: instaMediaUrl('01_Unspoken Rules.mp4'),
+  },
+  {
+    id: 'feed-02-tpl-kolkata',
+    label: 'TPL Kolkata',
+    imageUri: '',
+    mediaType: 'video' as const,
+    mediaUrl: instaMediaUrl('02_TPL_Kolkata.mp4'),
+  },
+  {
+    id: 'feed-03-independence-day',
+    label: 'Independence Day',
+    imageUri: '',
+    mediaType: 'video' as const,
+    mediaUrl: instaMediaUrl('03_Independence Day_HW.mp4'),
+  },
+  {
+    id: 'feed-04-we-rated-each-other',
+    label: 'We rated each other',
+    imageUri: '',
+    mediaType: 'video' as const,
+    mediaUrl: instaMediaUrl('04_We rated each other.mp4'),
+  },
+  {
+    id: 'feed-05-tenants-open-mic',
+    label: 'Tenants Open Mic',
+    imageUri: '',
+    mediaType: 'video' as const,
+    mediaUrl: instaMediaUrl('05_Tenants Open Mic.mp4'),
+  },
 ] as const;
 
 export {

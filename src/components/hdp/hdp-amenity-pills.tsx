@@ -37,7 +37,7 @@ export function HdpAmenityPills({ items, onViewAll }: HdpAmenityPillsProps) {
       ))}
       {hasMore ? (
         <Pressable onPress={handleViewAll} style={[styles.pill, styles.viewAll]}>
-          <Typography variant="text" size="sm" weight="medium" color={palette.lime[800]}>
+          <Typography variant="text" size="sm" weight="bold" color={palette.gray[800]}>
             {expanded ? 'Show Less' : 'View All'}
           </Typography>
         </Pressable>
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   viewAll: {
-    backgroundColor: palette.lime[50],
-    borderColor: palette.lime[300],
+    backgroundColor: palette.lime[300],
+    borderWidth: 0,
   },
 });

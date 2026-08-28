@@ -4,12 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Typography } from '@/components/ui/typography';
+import { SrpIcons } from '@/constants/assets';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 
 /** Matches helloworld-vibe `srpSortingOptions`. */
 export const SORT_OPTIONS = ['popularity', 'price-asc', 'price-desc'] as const;
 export type SortOption = (typeof SORT_OPTIONS)[number];
+
+const FilterIcon = SrpIcons.filter;
 
 const SORT_LABELS: Record<SortOption, string> = {
   popularity: 'Popularity',
@@ -39,7 +42,7 @@ export function SrpFilterSortBar({
         style={({ pressed }) => [styles.filtersButton, pressed && styles.buttonPressed]}
         accessibilityRole="button"
         accessibilityLabel="Filters">
-        <HwSymbol name="line.3.horizontal.decrease" size={18} tintColor={palette.gray[800]} />
+        <FilterIcon width={20} height={20} color={palette.gray[700]} />
         <Typography variant="text" size="md" weight="bold" color={palette.gray[800]}>
           Filters
         </Typography>

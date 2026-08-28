@@ -1,5 +1,4 @@
 import { LinearGradient } from 'expo-linear-gradient'
-import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useEffect, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import Animated, {
@@ -17,6 +16,7 @@ import Svg, {
 } from 'react-native-svg'
 
 import { GradientText } from '@/components/ui/gradient-text'
+import { AccordionChevron } from '@/components/ui/animated-accordion'
 import { Typography } from '@/components/ui/typography'
 import palette from '@/constants/palette'
 import { Radius } from '@/constants/theme'
@@ -274,24 +274,12 @@ export function HdpVibeMatchCard ({
   // extraCount = 31
 }: HdpVibeMatchCardProps) {
   const [showPropertyVibes, setShowPropertyVibes] = useState(true)
-  const chevronProgress = useSharedValue(1)
   const resolvedSelectedCount = selectedVibeCount ?? vibeMatches.length
   const score =
     matchPercent != null && Number.isFinite(matchPercent) && matchPercent > 0
       ? Math.round(matchPercent)
       : undefined
   const visibleMatches = vibeMatches.filter(item => item.percent > 0)
-
-  useEffect(() => {
-    chevronProgress.value = withTiming(showPropertyVibes ? 1 : 0, {
-      duration: 280,
-      easing: Easing.out(Easing.cubic),
-    })
-  }, [chevronProgress, showPropertyVibes])
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${interpolate(chevronProgress.value, [0, 1], [0, 180])}deg` }],
-  }))
 
   return (
     <LinearGradient
@@ -304,13 +292,13 @@ export function HdpVibeMatchCard ({
         <View style={styles.headerCopy}>
           <Typography
             variant='text'
-            size='md'
-            weight='bold'
+            size='xl'
+            weight='medium'
             color={palette.gray[900]}
           >
             How well this home matches your vibe
           </Typography>
-          <Typography variant='text' size='xs' color={palette.gray[600]}>
+          <Typography variant='text' size='sm' color={palette.gray[600]}>
             {resolvedSelectedCount > 0
               ? `Based on the ${resolvedSelectedCount} vibe${resolvedSelectedCount === 1 ? '' : 's'} you selected`
               : 'Pick vibes on search to see your match score here'}
@@ -378,14 +366,7 @@ export function HdpVibeMatchCard ({
           >
             {showPropertyVibes ? 'Show Less' : 'Show More'}
           </Typography>
-          <Animated.View style={chevronStyle}>
-            <HwSymbol
-              name='chevron.down'
-              size={12}
-              weight='semibold'
-              tintColor={palette.blue[600]}
-            />
-          </Animated.View>
+          <AccordionChevron expanded={showPropertyVibes} color={palette.blue[600]} />
         </Pressable>
       </View>
     </LinearGradient>

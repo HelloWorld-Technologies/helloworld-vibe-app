@@ -253,8 +253,17 @@ export function SrpScreen() {
                 vibes={vibeOptions}
                 selectedIds={selectedVibes}
                 onChange={setSelectedVibes}
+                maxSelection={5}
                 variant="onLight"
-                hint="Pick your interests, We'll match you with the right home!"
+                hint={
+                  <Typography
+                    variant="text"
+                    size="sm"
+                    weight="medium"
+                    color={palette.textSecondary}>
+                    Pick up to 5 interests for better matches
+                  </Typography>
+                }
               />
 
               <Pressable
@@ -279,6 +288,7 @@ export function SrpScreen() {
                       <PropertyCard
                         key={property.id}
                         property={property}
+                        actionIconColor={palette.lime[900]}
                         style={isTablet ? { width: cardWidth } : undefined}
                         onPress={() =>
                           router.push({
@@ -313,6 +323,7 @@ export function SrpScreen() {
                           <PropertyCard
                             key={`nearby-${property.id}`}
                             property={property}
+                            actionIconColor={palette.lime[900]}
                             style={isTablet ? { width: cardWidth } : undefined}
                             onPress={() =>
                               router.push({
@@ -358,6 +369,8 @@ export function SrpScreen() {
         title={headerTitle}
         scrollY={scrollY}
         threshold={HEADER_REVEAL_THRESHOLD}
+        compact
+        iconTintColor={palette.black}
         onBack={() => {
           if (router.canGoBack()) {
             router.back();
@@ -365,11 +378,9 @@ export function SrpScreen() {
             router.replace(getExploreHomeRoute(isTenant));
           }
         }}
-        inlineSearch={{
-          value: locality ?? '',
-          placeholder: 'Search locality or property',
-          onPress: () => router.push('/search'),
-        }}
+        onRightPress={() => router.push('/search')}
+        rightIcon="magnifyingglass"
+        rightAccessibilityLabel="Search locality or property"
       />
 
       {activeTab === 'properties' ? (

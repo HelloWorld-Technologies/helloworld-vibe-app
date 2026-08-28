@@ -1,11 +1,10 @@
-import { HwSymbol } from '@/components/ui/hw-symbol';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { Pressable, View } from 'react-native';
 
 import {
+  AccordionChevron,
+  accordionStyles,
   AnimatedAccordionContent,
-  useAnimatedChevronRotation,
 } from '@/components/ui/animated-accordion';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
@@ -25,26 +24,26 @@ function FaqAccordionItem({
   isOpen: boolean;
   onToggle: () => void;
 }) {
-  const chevronStyle = useAnimatedChevronRotation(isOpen);
-
   return (
-    <View style={styles.item}>
+    <View style={accordionStyles.item}>
       <Pressable
         onPress={onToggle}
-        style={styles.questionRow}
+        style={accordionStyles.headerRow}
         accessibilityRole="button"
         accessibilityState={{ expanded: isOpen }}>
-        <Typography variant="text" size="sm" weight="medium" style={styles.question}>
+        <Typography variant="text" size="sm" weight="medium" style={accordionStyles.headerTitle}>
           {question}
         </Typography>
-        <Animated.View style={chevronStyle}>
-          <HwSymbol name="chevron.down" size={14} tintColor={palette.gray[600]} />
-        </Animated.View>
+        <AccordionChevron expanded={isOpen} />
       </Pressable>
 
       {answer ? (
         <AnimatedAccordionContent expanded={isOpen}>
-          <Typography variant="text" size="sm" color={palette.textSecondary} style={styles.answer}>
+          <Typography
+            variant="text"
+            size="sm"
+            color={palette.gray[600]}
+            style={accordionStyles.bodyContent}>
             {answer}
           </Typography>
         </AnimatedAccordionContent>
@@ -59,7 +58,7 @@ export function HdpFaqList({ items }: HdpFaqListProps) {
   if (items.length === 0) return null;
 
   return (
-    <View style={styles.list}>
+    <View style={accordionStyles.list}>
       {items.map((item, index) => (
         <FaqAccordionItem
           key={item.question}
@@ -72,28 +71,3 @@ export function HdpFaqList({ items }: HdpFaqListProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  list: {
-    gap: 8,
-  },
-  item: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.gray[200],
-    paddingBottom: 12,
-  },
-  questionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 8,
-  },
-  question: {
-    flex: 1,
-  },
-  answer: {
-    paddingBottom: 8,
-    lineHeight: 22,
-  },
-});

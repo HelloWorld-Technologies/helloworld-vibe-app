@@ -29,7 +29,14 @@ type ScrollRevealHeaderProps = {
   onRightPress?: () => void;
   rightIcon?: 'magnifyingglass' | 'share';
   rightAccessibilityLabel?: string;
+  /** Smaller circular icon buttons (36px) for hero overlays like SRP/locality. */
+  compact?: boolean;
+  /** When set, back and right icons use this color (no lime accent on hero). */
+  iconTintColor?: string;
 };
+
+const DEFAULT_ICON_BUTTON_SIZE = 44;
+const COMPACT_ICON_BUTTON_SIZE = 36;
 
 function HeaderInlineSearch({
   value,
@@ -72,10 +79,16 @@ export function ScrollRevealHeader({
   onRightPress,
   rightIcon = 'magnifyingglass',
   rightAccessibilityLabel = 'Search',
+  compact = false,
+  iconTintColor,
 }: ScrollRevealHeaderProps) {
   const insets = useSafeAreaInsets();
   const fadeStart = Math.max(threshold - 32, 0);
   const showRightAction = !inlineSearch && onRightPress;
+  const iconButtonSize = compact ? COMPACT_ICON_BUTTON_SIZE : DEFAULT_ICON_BUTTON_SIZE;
+  const iconButtonRadius = iconButtonSize / 2;
+  const backIconSize = compact ? 14 : 17;
+  const rightIconSize = rightIcon === 'magnifyingglass' ? (compact ? 16 : 18) : compact ? 15 : 17;
 
   const barStyle = useAnimatedStyle(() => {
     const progress = interpolate(scrollY.value, [fadeStart, threshold], [0, 1], Extrapolation.CLAMP);
@@ -113,7 +126,7 @@ export function ScrollRevealHeader({
 
     return {
       backgroundColor: palette.white,
-      borderRadius: 22,
+      borderRadius: iconButtonRadius,
       borderColor: `rgba(213, 215, 218, ${progress * 0.65})`,
       borderWidth: interpolate(progress, [0, 1], [0, StyleSheet.hairlineWidth]),
       shadowOpacity: interpolate(progress, [0, 1], [0.14, 0.04]),
@@ -138,22 +151,36 @@ export function ScrollRevealHeader({
     };
   });
 
-  const rightIconSize = rightIcon === 'magnifyingglass' ? 18 : 17;
   const resolvedRightIcon = rightIcon === 'share' ? SHARE_SYMBOL : rightIcon;
+  const iconButtonShellStyleStatic = {
+    width: iconButtonSize,
+    height: iconButtonSize,
+    borderRadius: iconButtonRadius,
+  };
+  const iconButtonStyleStatic = iconButtonShellStyleStatic;
 
   return (
     <Animated.View
       style={[styles.bar, { paddingTop: insets.top + 8, paddingBottom: 12 }, barStyle]}
       pointerEvents="box-none">
       <View style={styles.row} pointerEvents="box-none">
-        <Animated.View style={[styles.iconButtonShell, iconButtonShellStyle]}>
+        <Animated.View style={[styles.iconButtonShell, iconButtonShellStyleStatic, iconButtonShellStyle]}>
           <Pressable
             onPress={onBack}
-            style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
+            style={({ pressed }) => [
+              styles.iconButton,
+              iconButtonStyleStatic,
+              pressed && styles.iconButtonPressed,
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Go back"
             hitSlop={8}>
-            <HwSymbol name="chevron.left" size={17} weight="semibold" tintColor={palette.gray[900]} />
+            <HwSymbol
+              name="chevron.left"
+              size={backIconSize}
+              weight="semibold"
+              tintColor={iconTintColor ?? palette.gray[900]}
+            />
           </Pressable>
         </Animated.View>
 
@@ -179,10 +206,14 @@ export function ScrollRevealHeader({
         )}
 
         {showRightAction ? (
-          <Animated.View style={[styles.iconButtonShell, iconButtonShellStyle]}>
+          <Animated.View style={[styles.iconButtonShell, iconButtonShellStyleStatic, iconButtonShellStyle]}>
             <Pressable
               onPress={onRightPress}
-              style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
+              style={({ pressed }) => [
+                styles.iconButton,
+                iconButtonStyleStatic,
+                pressed && styles.iconButtonPressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel={rightAccessibilityLabel}
               hitSlop={8}>
@@ -192,7 +223,7 @@ export function ScrollRevealHeader({
                     name={resolvedRightIcon}
                     size={rightIconSize}
                     weight="semibold"
-                    tintColor={palette.helloLime}
+                    tintColor={iconTintColor ?? palette.helloLime}
                   />
                 </Animated.View>
                 <Animated.View style={[styles.rightIconLayer, rightIconDefaultStyle]}>
@@ -200,14 +231,14 @@ export function ScrollRevealHeader({
                     name={resolvedRightIcon}
                     size={rightIconSize}
                     weight="semibold"
-                    tintColor={palette.gray[900]}
+                    tintColor={iconTintColor ?? palette.gray[900]}
                   />
                 </Animated.View>
               </View>
             </Pressable>
           </Animated.View>
         ) : !inlineSearch ? (
-          <View style={styles.rightSpacer} />
+          <View style={{ width: iconButtonSize }} />
         ) : null}
       </View>
     </Animated.View>
@@ -247,26 +278,17 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   iconButtonShell: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
     overflow: 'hidden',
     shadowColor: '#101828',
     shadowOffset: { width: 0, height: 4 },
   },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconButtonPressed: {
     opacity: 0.88,
     transform: [{ scale: 0.97 }],
-  },
-  rightSpacer: {
-    width: 44,
   },
   inlineSearchWrap: {
     flex: 1,

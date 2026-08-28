@@ -121,6 +121,7 @@ function main() {
     ['Profile-App- before Onboarding/Tenancy Poilicy.svg', 'tenancy-policy.svg'],
     ['Profile-App- before Onboarding/Logout.svg', 'logout.svg'],
     ['Homepage- App/Profile.svg', 'profile.svg'],
+    ['Profile-App- before Onboarding/Profile Avatar.svg', 'profile-avatar.svg'],
   ];
 
   for (const [relativeSource, destName] of profileCopies) {
@@ -181,6 +182,16 @@ function main() {
     }
   }
   console.log(`[sync-hw-assets] Synced tab bar assets to ${tabBarTarget}`);
+
+  const homepageTarget = path.join(__dirname, '..', 'assets', 'bundled', 'homepage');
+  const homepageCopies = [['Homepage- App/Search.svg', 'search.svg']];
+  for (const [relativeSource, destName] of homepageCopies) {
+    const src = path.join(profileSource, relativeSource);
+    if (fs.existsSync(src)) {
+      copyTabBarSvg(src, path.join(homepageTarget, destName));
+    }
+  }
+  console.log(`[sync-hw-assets] Synced homepage assets to ${homepageTarget}`);
 
   const tenantTabBarCopies = [
     ['Dashboard- App/Bottom Nav/Dashboard.svg', 'dashboard.svg'],

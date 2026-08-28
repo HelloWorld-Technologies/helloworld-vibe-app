@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Pagination } from 'react-native-reanimated-carousel';
 import type { SharedValue } from 'react-native-reanimated';
 
@@ -14,6 +14,7 @@ type CarouselPaginationProps<T extends object> = {
   onPress: (index: number) => void;
   dotColor?: string;
   activeDotColor?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
 export function CarouselPagination<T extends object>({
@@ -22,6 +23,7 @@ export function CarouselPagination<T extends object>({
   onPress,
   dotColor = palette.gray[300],
   activeDotColor = palette.gray[800],
+  containerStyle,
 }: CarouselPaginationProps<T>) {
   // Pagination.Custom reads width/height/borderRadius/backgroundColor from these
   // objects directly — style arrays are not supported and break the active pill + radius.
@@ -31,7 +33,7 @@ export function CarouselPagination<T extends object>({
       data={data}
       horizontal
       size={DOT_SIZE}
-      containerStyle={styles.container}
+      containerStyle={StyleSheet.flatten([styles.container, containerStyle])}
       dotStyle={{
         width: DOT_SIZE,
         height: DOT_SIZE,

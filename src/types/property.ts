@@ -120,7 +120,7 @@ export type PropertyDetailResponse = {
   /** Per-selected-vibe match cards. */
   vibeBadges?: {
     vibeId?: number | string;
-    matchPercent?: number | string;
+    vibeScore?: number | string;
   }[];
   /** Resident interests at the property. */
   propertyVibes?: {

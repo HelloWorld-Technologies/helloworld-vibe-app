@@ -5,6 +5,7 @@ import type {
   NeighborhoodCard,
 } from "@/types/locality";
 import type { PropertyListing } from "@/types/property";
+import { formatLocalityImageUrl } from "@/utils/images";
 
 export async function fetchLocalities(params: {
   city: string;
@@ -54,6 +55,19 @@ export async function fetchPopularLocalities(
   };
 }
 
+function listingImageUri(property: PropertyListing): string | null {
+  const first = property.images[0];
+  if (
+    typeof first === "object" &&
+    first != null &&
+    "uri" in first &&
+    typeof first.uri === "string"
+  ) {
+    return formatLocalityImageUrl(first.uri);
+  }
+  return null;
+}
+
 export function mapLocalityToNeighborhoodCard(
   locality: ApiLocality,
   properties: readonly PropertyListing[] = [],
@@ -63,24 +77,23 @@ export function mapLocalityToNeighborhoodCard(
     locality.locality_name?.trim() ||
     "Locality";
   const nameKey = name.toLowerCase();
-  const photo =
-    locality.photo?.trim() ||
-    locality.cover_image?.trim() ||
-    locality.images?.[0]?.trim() ||
-    "";
-  const imageUri =
-    !photo ||
-    photo === "null" ||
-    photo === "undefined" ||
-    photo.includes("coming-soon")
-      ? null
-      : photo;
 
   const matching = properties.filter((property) => {
     const localityName = property.locality?.toLowerCase() ?? "";
     const location = property.location?.toLowerCase() ?? "";
     return localityName === nameKey || location.includes(nameKey);
   });
+
+  // Prefer locality cover photo from hello/localities, then a property photo.
+  // Missing images stay null so LocalityCardImage shows bundled coming-soon
+  // (never category / hero artwork).
+  const imageUri =
+    formatLocalityImageUrl(locality.photo) ||
+    formatLocalityImageUrl(locality.cover_image) ||
+    formatLocalityImageUrl(locality.landmark_image) ||
+    formatLocalityImageUrl(locality.images?.[0]) ||
+    matching.map(listingImageUri).find(Boolean) ||
+    null;
 
   const rents = matching
     .map((property) => property.startingRent)

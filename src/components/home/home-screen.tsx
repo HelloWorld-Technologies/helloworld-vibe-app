@@ -4,14 +4,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-    type NativeScrollEvent,
-    type NativeSyntheticEvent,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    useWindowDimensions,
-    View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -21,35 +21,40 @@ import { HdpMomentsStoryViewer } from '@/components/hdp/hdp-moments-story-viewer
 import { HwIcon } from '@/components/hw-icon';
 import { NeighborhoodLocalityCard } from '@/components/locality/neighborhood-locality-card';
 import { PropertyCard } from '@/components/property/property-card';
-import { HomeFeedSkeleton, HomePropertiesSkeleton } from '@/components/skeleton';
+import { HomePropertiesSkeleton } from '@/components/skeleton';
 import { HwCarousel, HwParallaxCarousel } from '@/components/ui/carousel';
 import { EmptyState } from '@/components/ui/empty-state';
 import { GradientText } from '@/components/ui/gradient-text';
+import { HwVideoPlayer } from '@/components/ui/hw-video-player';
 import { SearchInput } from '@/components/ui/search-input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Typography } from '@/components/ui/typography';
 import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
-import { HOME_BACKGROUND_GRADIENT, HOME_NEIGHBORHOOD_COUNT } from '@/constants/home';
+import {
+  HOME_BACKGROUND_GRADIENT,
+  HOME_FEED_MOMENTS,
+  HOME_NEIGHBORHOOD_COUNT,
+} from '@/constants/home';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useIsTablet } from '@/hooks/use-is-tablet';
 import { useTabBarInset } from '@/hooks/use-tab-bar-inset';
-import { useMomentsFeed } from '@/queries/use-moments-feed';
 import { usePopularLocalities } from '@/queries/use-popular-localities';
 import { useSrpProperties } from '@/queries/use-srp-properties';
 import { useVibesList } from '@/queries/use-vibes';
 import {
-    useAuthStore,
-    useSelectedCity,
-    useSelectedLocality,
+  useAuthStore,
+  useSelectedCity,
+  useSelectedLocality,
 } from '@/stores/auth-store';
 import {
-    toVibeApiIds,
-    useSelectedVibeIds,
-    useSelectedVibesStore,
+  toVibeApiIds,
+  useSelectedVibeIds,
+  useSelectedVibesStore,
 } from '@/stores/selected-vibes-store';
+import type { HdpMomentItem } from '@/types/hdp-moments';
 import type { PropertyListing } from '@/types/property';
 
 function SectionTitle({
@@ -120,7 +125,6 @@ export function HomeScreen() {
   );
   const { data: localitiesResponse, isLoading: isLoadingLocalities } =
     usePopularLocalities(city, HOME_NEIGHBORHOOD_COUNT);
-  const { data: feedData, isLoading: isLoadingFeed } = useMomentsFeed();
   const { data: apiVibes = [] } = useVibesList();
   const properties = srpData?.listings ?? [];
   const neighborhoods = useMemo(
@@ -130,7 +134,7 @@ export function HomeScreen() {
         .map((item) => mapLocalityToNeighborhoodCard(item, properties)),
     [localitiesResponse?.data, properties],
   );
-  const feedMoments = (feedData?.moments ?? []).slice(0, 8);
+  const feedMoments: HdpMomentItem[] = [...HOME_FEED_MOMENTS];
   const vibeOptions = useMemo(
     () => (apiVibes.length > 0 ? mapVibesToListItems(apiVibes) : [...VIBE_OPTIONS]),
     [apiVibes],
@@ -214,7 +218,7 @@ export function HomeScreen() {
               variant="display"
               size="sm"
               weight="bold"
-              color={palette.lime[200]}
+              color={palette.white}
               style={styles.heroItalic}>
               Vibe!
             </Typography>
@@ -223,6 +227,7 @@ export function HomeScreen() {
           <SearchInput
             editable={false}
             onPress={() => router.push('/search')}
+            shadowColor={palette.lime[600]}
             containerStyle={styles.searchInputMargin}
           />
 
@@ -323,59 +328,71 @@ export function HomeScreen() {
               )}
             </View>
 
-            {isLoadingFeed || feedMoments.length > 0 ? (
-              <View style={styles.section}>
-                <SectionTitle prefix="Straight from the " highlight="Feed!" />
-                {isLoadingFeed ? (
-                  <HomeFeedSkeleton />
-                ) : (
-                  <HwCarousel
-                    data={feedMoments}
-                    width={feedSlideWidth}
-                    height={FEED_CARD_HEIGHT + 12}
-                    style={styles.carouselWrap}
-                    renderItem={({ item, index }) => (
-                      <Pressable
-                        onPress={() => {
-                          setFeedStoryIndex(index);
-                          setFeedStoryOpen(true);
-                        }}
-                        style={[styles.feedCard, { width: FEED_CARD_WIDTH }]}
-                        accessibilityRole="button"
-                        accessibilityLabel={item.label || 'Watch moment'}>
-                        <View style={styles.feedCardInner}>
+            <View style={styles.feedSection}>
+              <SectionTitle prefix="Straight from the " highlight="Feed!" />
+              <HwCarousel
+                data={feedMoments}
+                width={feedSlideWidth}
+                height={FEED_CARD_HEIGHT}
+                style={styles.carouselWrap}
+                paginationStyle={styles.feedPagination}
+                renderItem={({ item, index }) => {
+                  const videoPreviewUri =
+                    item.mediaType === 'video' && item.mediaUrl && !item.imageUri
+                      ? item.mediaUrl
+                      : null;
+
+                  return (
+                    <Pressable
+                      onPress={() => {
+                        setFeedStoryIndex(index);
+                        setFeedStoryOpen(true);
+                      }}
+                      style={[styles.feedCard, { width: FEED_CARD_WIDTH }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={item.label || 'Watch moment'}>
+                      <View style={styles.feedCardInner}>
+                        {videoPreviewUri ? (
+                          <HwVideoPlayer
+                            uri={videoPreviewUri}
+                            playing={false}
+                            muted
+                            contentFit="cover"
+                            style={styles.feedImage}
+                          />
+                        ) : (
                           <Image
                             source={{ uri: item.imageUri }}
                             style={styles.feedImage}
                             contentFit="cover"
                           />
-                          <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.55)']}
-                            style={styles.feedOverlay}>
-                            {item.label ? (
-                              <Typography
-                                variant="text"
-                                size="md"
-                                weight="bold"
-                                color={palette.white}
-                                numberOfLines={2}
-                                style={styles.feedCaption}>
-                                {item.label}
-                              </Typography>
-                            ) : null}
-                          </LinearGradient>
-                          {item.mediaType === 'video' ? (
-                            <View style={styles.videoBadge} pointerEvents="none">
-                              <HwSymbol name="video.fill" size={14} tintColor={palette.white} />
-                            </View>
+                        )}
+                        <LinearGradient
+                          colors={['transparent', 'rgba(0,0,0,0.55)']}
+                          style={styles.feedOverlay}>
+                          {item.label ? (
+                            <Typography
+                              variant="text"
+                              size="md"
+                              weight="bold"
+                              color={palette.white}
+                              numberOfLines={2}
+                              style={styles.feedCaption}>
+                              {item.label}
+                            </Typography>
                           ) : null}
-                        </View>
-                      </Pressable>
-                    )}
-                  />
-                )}
-              </View>
-            ) : null}
+                        </LinearGradient>
+                        {item.mediaType === 'video' ? (
+                          <View style={styles.videoBadge} pointerEvents="none">
+                            <HwSymbol name="video.fill" size={14} tintColor={palette.white} />
+                          </View>
+                        ) : null}
+                      </View>
+                    </Pressable>
+                  );
+                }}
+              />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -392,18 +409,18 @@ export function HomeScreen() {
             style={styles.locationRow}
             accessibilityRole="button"
             accessibilityLabel="Change city">
-            <Typography variant="text" size="xs" color={palette.gray[300]}>
+            <Typography variant="text" size="xs" weight="bold" color={palette.white}>
               You are in
             </Typography>
             <View style={styles.cityRow}>
               <Typography variant="text" size="sm" weight="bold" color={palette.lime[300]}>
                 {city}
               </Typography>
-              <HwSymbol
-                name="chevron.down"
-                size={12}
-                weight="semibold"
-                tintColor={palette.lime[300]}
+              <HwIcon
+                name="chevronDown"
+                width={14}
+                height={8}
+                color={palette.white}
               />
             </View>
           </Pressable>
@@ -413,7 +430,7 @@ export function HomeScreen() {
             style={styles.profileButton}
             accessibilityRole="button"
             accessibilityLabel="Open profile menu">
-            <HwIcon name="profile" size={20} color={palette.white} />
+            <HwIcon name="profile" size={36} />
           </Pressable>
         </View>
       </View>
@@ -498,10 +515,8 @@ const styles = StyleSheet.create({
     gap: SPACE.xs / 2,
   },
   profileButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -541,13 +556,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACE.lg,
     paddingBottom: SPACE.md,
     gap: SPACE.xl,
-    flex: 1,
     overflow: 'visible',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
   },
   section: {
     gap: SPACE.sm,
+  },
+  feedSection: {
+    gap: SPACE.xs,
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -556,11 +573,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sectionHighlight: Platform.select({
-    // ios: { fontStyle: 'italic' as const },
     default: {},
   }),
   carouselWrap: {
     marginHorizontal: -4,
+  },
+  feedPagination: {
+    marginTop: 8,
   },
   neighborhoodSkeletonRow: {
     flexDirection: 'row',
@@ -576,7 +595,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 14,
     elevation: 6,
-    alignSelf: 'flex-start',
   },
   feedCardInner: {
     flex: 1,

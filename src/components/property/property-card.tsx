@@ -65,6 +65,8 @@ type PropertyCardProps = {
   onFavoritePress?: () => void;
   onSharePress?: () => void;
   isFavorite?: boolean;
+  /** Share + wishlist heart color when inactive (default gray). */
+  actionIconColor?: string;
   /** Skip inner image carousel — used on HDP similar properties to avoid nested carousels. */
   compactMedia?: boolean;
 };
@@ -103,6 +105,7 @@ export function PropertyCard({
   onFavoritePress,
   onSharePress,
   isFavorite,
+  actionIconColor = palette.gray[800],
   compactMedia = false,
 }: PropertyCardProps) {
   const wishlist = useOptionalWishlist();
@@ -348,7 +351,7 @@ export function PropertyCard({
           <View style={styles.iconActions}>
             <WishlistHeartButton
               isFavorite={favorited}
-              inactiveColor={palette.gray[800]}
+              inactiveColor={actionIconColor}
               stopPropagation
               onPress={handleFavoritePress}
             />
@@ -360,7 +363,7 @@ export function PropertyCard({
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Share property">
-              <HwSymbol name={SHARE_SYMBOL} size={20} tintColor={palette.gray[800]} />
+              <HwSymbol name={SHARE_SYMBOL} size={20} tintColor={actionIconColor} />
             </Pressable>
           </View>
         </View>
@@ -537,7 +540,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     lineHeight: 28,
-    ...fontStyleForWeight('bold'),
+    ...fontStyleForWeight('medium'),
     color: palette.black,
   },
   ratingPill: {
@@ -550,7 +553,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     ...fontStyleForWeight('bold'),
-    color: palette.blue[800],
+    color: palette.blue[600],
   },
   subtitleRow: {
     flexDirection: 'row',
@@ -562,7 +565,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     ...fontStyleForWeight('medium'),
-    color: palette.gray[600],
+    color: palette.gray[700],
   },
   iconActions: {
     flexDirection: 'row',
@@ -574,7 +577,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     alignSelf: 'flex-start',
-    backgroundColor: palette.gray[100],
+    backgroundColor: '#E9EAEB',
     borderRadius: Radius.full,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -585,7 +588,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     ...fontStyleForWeight('medium'),
-    color: palette.gray[700],
+    color: palette.black,
   },
   rentBlock: {
     gap: 2,
@@ -595,7 +598,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     ...fontStyleForWeight('medium'),
-    color: palette.gray[500],
+    color: palette.gray[700],
   },
   rentValue: {
     fontSize: 24,

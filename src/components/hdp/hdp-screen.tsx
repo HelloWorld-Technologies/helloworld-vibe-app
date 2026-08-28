@@ -447,7 +447,7 @@ export function HdpScreen() {
     visitStats?.rating ??
     (Number.isFinite(Number(googleRating)) && Number(googleRating) > 0 ? Number(googleRating) : null);
   const dayFromHereCards = useMemo(
-    () => mapNearByToDayCards(extractNearByFromDetail(data, property)),
+    () => mapNearByToDayCards(extractNearByFromDetail(data, property), 'hdp'),
     [data, property],
   );
   const hasNearby = dayFromHereCards.length > 0;
@@ -662,8 +662,13 @@ export function HdpScreen() {
                     </Typography>
                     {description.length > 220 ? (
                       <Pressable onPress={() => setShowFullDescription((value) => !value)}>
-                        <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
-                          {showFullDescription ? 'Show less' : 'Read more'}
+                        <Typography
+                          variant="text"
+                          size="sm"
+                          weight="medium"
+                          color={palette.blue[600]}
+                          style={styles.readMoreLink}>
+                          {showFullDescription ? 'Show less' : 'Read More'}
                         </Typography>
                       </Pressable>
                     ) : null}
@@ -823,5 +828,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: 4,
+  },
+  readMoreLink: {
+    textDecorationLine: 'underline',
   },
 });

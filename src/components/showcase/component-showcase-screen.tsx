@@ -6,6 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { HwIcon } from '@/components/hw-icon';
+import { AccordionChevron } from '@/components/ui/animated-accordion';
 import { LocalityCardImage } from '@/components/locality/locality-card-image';
 import { PropertyCard } from '@/components/property/property-card';
 import { TabBarIcon } from '@/components/tab-bar-icon';
@@ -48,13 +49,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
         <Typography variant="text" size="lg" weight="bold" style={styles.sectionTitle}>
           {title}
         </Typography>
-        <HwSymbol
-          name="chevron.down"
-          size={16}
-          weight="semibold"
-          tintColor={palette.gray[600]}
-          style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
-        />
+        <AccordionChevron expanded={isOpen} />
       </Pressable>
       {isOpen ? (
         <Animated.View entering={FadeIn.duration(200)} style={styles.sectionBody}>

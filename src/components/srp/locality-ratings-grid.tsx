@@ -4,8 +4,11 @@ import { StyleSheet, View } from 'react-native';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
-import { Radius } from '@/constants/theme';
 import type { LocalityRatings } from '@/types/locality';
+
+/** Figma locality ratings card — 16px radius, dual linear gradients. */
+const LOCALITY_RATINGS_RADIUS = 16;
+const LOCALITY_RATINGS_GRADIENT_SOFT_BLUE = '#D5ECF9';
 
 const RATING_ITEMS = [
   { id: 'transit', keys: ['transit', 'transport'] as const, emoji: '🚍', label: 'Transit' },
@@ -41,11 +44,19 @@ export function LocalityRatingsGrid({ ratings }: { ratings?: LocalityRatings | n
   if (items.length === 0) return null;
 
   return (
-    <LinearGradient
-      colors={[palette.blue[50], palette.purpleScale[50]]}
-      start={{ x: 0, y: 0.5 }}
-      end={{ x: 1, y: 0.5 }}
-      style={styles.grid}>
+    <View style={styles.grid}>
+      <LinearGradient
+        colors={[palette.white, LOCALITY_RATINGS_GRADIENT_SOFT_BLUE]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        colors={[palette.vibeMatchCardGradientStart, palette.vibeMatchCardGradientEnd]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={StyleSheet.absoluteFill}
+      />
       {items.map((item) => (
         <View key={item.id} style={styles.item}>
           <View style={styles.scoreRow}>
@@ -71,7 +82,7 @@ export function LocalityRatingsGrid({ ratings }: { ratings?: LocalityRatings | n
           </View>
         </View>
       ))}
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -79,7 +90,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    borderRadius: Radius.md,
+    borderRadius: LOCALITY_RATINGS_RADIUS,
     paddingHorizontal: 12,
     paddingVertical: 14,
     overflow: 'hidden',

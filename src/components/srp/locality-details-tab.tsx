@@ -1,16 +1,15 @@
-import { Image } from 'expo-image';
 import { useMemo, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RequestCallbackSheet } from '@/components/callback/request-callback-sheet';
+import { HdpDayFromHereSection } from '@/components/hdp/hdp-day-from-here-section';
 import { NeighborhoodLocalityCard } from '@/components/locality/neighborhood-locality-card';
 import { Button } from '@/components/ui/button';
 import { HwCarousel } from '@/components/ui/carousel';
 import { Typography } from '@/components/ui/typography';
-import { ImageAssets, SrpAmenityIcons } from '@/constants/assets';
+import { SrpAmenityIcons } from '@/constants/assets';
 import palette from '@/constants/palette';
-import { Radius } from '@/constants/theme';
 import { useIsTablet } from '@/hooks/use-is-tablet';
 import { usePopularLocalities } from '@/queries/use-popular-localities';
 import { useAuthStore } from '@/stores/auth-store';
@@ -27,33 +26,6 @@ const AMENITY_ICON_SIZE = 48;
 const AMENITY_ITEM_GAP = 16;
 const AMENITY_COLUMNS_PHONE = 3;
 const AMENITY_COLUMNS_TABLET = 5;
-
-const DAY_CARDS = [
-  {
-    id: 'morning',
-    title: '☀️ Morning',
-    place: 'Blue Tokai Coffee',
-    distance: '3 min walk',
-    link: 'View Cafes Nearby',
-    image: ImageAssets.loginBento1,
-  },
-  {
-    id: 'workout',
-    title: '💪 Workout',
-    place: 'Cult Fit Indiranagar',
-    distance: '5 min walk',
-    link: 'View Gyms Nearby',
-    image: ImageAssets.loginBento2,
-  },
-] as const;
-
-function dayCardImage(imageUri?: string | number) {
-  if (typeof imageUri === 'number') return imageUri;
-  if (typeof imageUri === 'string' && imageUri.trim().length > 0) {
-    return { uri: imageUri.trim() };
-  }
-  return ImageAssets.comingSoon;
-}
 
 const AMENITIES = [
   { id: 'cctv', label: 'CCTV Camera', Icon: SrpAmenityIcons.cctv },
@@ -95,19 +67,6 @@ export function CityDetailsTab({
       .map((item) => mapLocalityToNeighborhoodCard(item))
       .filter((item) => item.name.trim().toLowerCase() !== current);
   }, [localitiesResponse?.data, locality, localityInfo?.display_name]);
-  const dayCards =
-    nearbyCards.length > 0
-      ? nearbyCards.map((card) => ({
-          id: card.id,
-          title: `${card.emoji} ${card.category}`,
-          place: card.placeName,
-          distance: card.walkTime,
-          link: card.linkLabel,
-          image: dayCardImage(card.imageUri),
-        }))
-      : localityInfo
-        ? []
-        : DAY_CARDS;
 
   const contentWidth = screenWidth - SHEET_PAD * 2;
   const localityCardWidth = Math.min(260, Math.max(200, contentWidth * 0.72));
@@ -123,55 +82,12 @@ export function CityDetailsTab({
 
   return (
     <View style={styles.container}>
-      {dayCards.length > 0 ? (
-        <>
-          <View style={styles.sectionHeader}>
-            <Typography variant="text" size="xl" weight="bold">
-              A Day from here
-            </Typography>
-            {mapsUrl ? (
-              <Pressable onPress={() => void Linking.openURL(mapsUrl)} accessibilityRole="link">
-                <Typography variant="text" size="sm" weight="medium" color={palette.helloLime}>
-                  📍 Show on Maps
-                </Typography>
-              </Pressable>
-            ) : null}
-          </View>
-          <Typography variant="text" size="sm" color={palette.textSecondary}>
-            What living at {placeLabel} actually looks like.
-          </Typography>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow}>
-            {dayCards.map((card) => {
-              const nearbyUrl = googleMapsSearchUrl(`${card.place}, ${placeLabel}, ${city}`);
-              return (
-              <View key={card.id} style={styles.dayCard}>
-                <Typography variant="text" size="sm" weight="bold">
-                  {card.title}
-                </Typography>
-                <Image source={card.image} style={styles.dayImage} contentFit="cover" />
-                <Typography variant="text" size="md" weight="medium">
-                  {card.place}
-                </Typography>
-                <Typography variant="text" size="xs" color={palette.textSecondary}>
-                  {card.distance}
-                </Typography>
-                {nearbyUrl ? (
-                  <Pressable onPress={() => void Linking.openURL(nearbyUrl)} accessibilityRole="link">
-                    <Typography variant="text" size="xs" weight="bold" color={palette.helloLime}>
-                      {card.link} ›
-                    </Typography>
-                  </Pressable>
-                ) : (
-                  <Typography variant="text" size="xs" weight="bold" color={palette.helloLime}>
-                    {card.link} ›
-                  </Typography>
-                )}
-              </View>
-              );
-            })}
-          </ScrollView>
-        </>
+      {nearbyCards.length > 0 ? (
+        <HdpDayFromHereSection
+          propertyName={placeLabel}
+          mapUrl={mapsUrl}
+          cards={nearbyCards}
+        />
       ) : null}
 
       <Typography variant="text" size="xl" weight="bold" style={styles.sectionTitle}>
@@ -200,7 +116,7 @@ export function CityDetailsTab({
       <Typography
         variant="text"
         size="sm"
-        color={palette.textSecondary}
+        color={palette.black}
         numberOfLines={descriptionExpanded ? undefined : 4}>
         {description ||
           `${placeLabel} sits close to daily essentials, transit links, and social spots across ${city}. It is a practical base if you want a balanced coliving experience with easy commutes and a lively neighborhood feel.`}
@@ -208,10 +124,15 @@ export function CityDetailsTab({
       <Pressable
         onPress={() => setDescriptionExpanded((open) => !open)}
         accessibilityRole="button"
-        accessibilityLabel={descriptionExpanded ? 'Show less about this locality' : 'Show more about this locality'}
+        accessibilityLabel={descriptionExpanded ? 'Show less about this locality' : 'Read more about this locality'}
         hitSlop={8}>
-        <Typography variant="text" size="sm" weight="medium" color={palette.blue[600]}>
-          {descriptionExpanded ? 'Show less' : 'Show more'}
+        <Typography
+          variant="text"
+          size="sm"
+          weight="medium"
+          color={palette.blue[600]}
+          style={styles.readMoreLink}>
+          {descriptionExpanded ? 'Show less' : 'Read More'}
         </Typography>
       </Pressable>
 
@@ -279,31 +200,8 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingBottom: 24,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   sectionTitle: {
     marginTop: 8,
-  },
-  dayRow: {
-    gap: 12,
-    paddingVertical: 4,
-  },
-  dayCard: {
-    width: 220,
-    borderWidth: 1,
-    borderColor: palette.blue[300],
-    borderRadius: Radius.md,
-    padding: 12,
-    gap: 8,
-    backgroundColor: palette.white,
-  },
-  dayImage: {
-    width: '100%',
-    height: 88,
-    borderRadius: Radius.sm,
   },
   amenitiesGrid: {
     flexDirection: 'row',
@@ -327,6 +225,9 @@ const styles = StyleSheet.create({
   },
   amenityLabel: {
     textAlign: 'center',
+  },
+  readMoreLink: {
+    textDecorationLine: 'underline',
   },
   localityCarousel: {
     marginHorizontal: -4,
