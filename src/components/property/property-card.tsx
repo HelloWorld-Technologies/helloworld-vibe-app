@@ -1,4 +1,4 @@
-import { Image, type ImageSource } from 'expo-image';
+import { type ImageSource } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRef, useState } from 'react';
 import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -6,6 +6,7 @@ import type { ICarouselInstance } from 'react-native-reanimated-carousel';
 
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import { HwCarousel } from '@/components/ui/carousel';
+import { RemoteImageWithSkeleton } from '@/components/ui/remote-image-with-skeleton';
 import { Button } from '@/components/ui/button';
 import { WishlistHeartButton } from '@/components/wishlist/wishlist-heart-button';
 import { fontStyleForWeight } from '@/constants/fonts';
@@ -225,7 +226,7 @@ export function PropertyCard({
             style={styles.mediaSection}
             onLayout={(event) => setCarouselWidth(event.nativeEvent.layout.width)}>
             {imageCount === 1 || compactMedia ? (
-              <Image
+              <RemoteImageWithSkeleton
                 source={resolveSlideSource(0, cardImages[0]?.source ?? { uri: COMING_SOON_IMAGE_URI })}
                 style={styles.heroImage}
                 contentFit="cover"
@@ -245,7 +246,7 @@ export function PropertyCard({
                 onSnapToItem={handleImageIndexChange}
                 style={styles.carousel}
                 renderItem={({ item, index }) => (
-                  <Image
+                  <RemoteImageWithSkeleton
                     source={
                       loadedIndexes.has(index)
                         ? resolveSlideSource(index, item.source)
@@ -263,7 +264,7 @@ export function PropertyCard({
                 )}
               />
             ) : (
-              <Image
+              <RemoteImageWithSkeleton
                 source={resolveSlideSource(0, cardImages[0]?.source ?? { uri: COMING_SOON_IMAGE_URI })}
                 style={styles.heroImage}
                 contentFit="cover"

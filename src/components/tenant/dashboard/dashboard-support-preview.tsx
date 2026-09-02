@@ -61,11 +61,38 @@ function TicketPreviewRow({ ticket }: { ticket: SupportTicket }) {
   );
 }
 
+function RaiseRequestButton({
+  onPress,
+  iconOnRight = false,
+}: {
+  onPress: () => void;
+  iconOnRight?: boolean;
+}) {
+  const icon = (
+    <HwSymbol
+      name="plus"
+      size={16}
+      tintColor={iconOnRight ? palette.lime[700] : palette.gray[800]}
+    />
+  );
+
+  return (
+    <Pressable style={styles.raiseButton} onPress={onPress} accessibilityRole="button">
+      {iconOnRight ? null : icon}
+      <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]}>
+        Raise New Request
+      </Typography>
+      {iconOnRight ? icon : null}
+    </Pressable>
+  );
+}
+
 export function DashboardSupportPreview({ tickets, onRaiseRequest }: DashboardSupportPreviewProps) {
   const router = useRouter();
   const previewTickets = tickets
     .filter((ticket) => isActiveTicket(ticket.status))
     .slice(0, DASHBOARD_TICKETS_PAGE_SIZE);
+  const isEmpty = previewTickets.length === 0;
 
   return (
     <View style={styles.section}>
@@ -76,19 +103,25 @@ export function DashboardSupportPreview({ tickets, onRaiseRequest }: DashboardSu
       />
 
       <View style={styles.card}>
-        {previewTickets.map((ticket, index) => (
-          <View key={ticket.id}>
-            <TicketPreviewRow ticket={ticket} />
-            {index < previewTickets.length - 1 ? <View style={styles.divider} /> : null}
+        {isEmpty ? (
+          <View style={styles.emptyContent}>
+            <Typography variant="text" size="lg" weight="bold" color={palette.gray[900]}>
+              Everything's working?
+            </Typography>
+            <Typography variant="text" size="sm" color={palette.gray[500]}>
+              Great! Raise a request if something needs fixing
+            </Typography>
           </View>
-        ))}
+        ) : (
+          previewTickets.map((ticket, index) => (
+            <View key={ticket.id}>
+              <TicketPreviewRow ticket={ticket} />
+              {index < previewTickets.length - 1 ? <View style={styles.divider} /> : null}
+            </View>
+          ))
+        )}
 
-        <Pressable style={styles.raiseButton} onPress={onRaiseRequest} accessibilityRole="button">
-          <HwSymbol name="plus" size={16} tintColor={palette.gray[800]} />
-          <Typography variant="text" size="sm" weight="medium" color={palette.gray[800]}>
-            Raise New Request
-          </Typography>
-        </Pressable>
+        <RaiseRequestButton onPress={onRaiseRequest} iconOnRight={isEmpty} />
       </View>
     </View>
   );
@@ -110,6 +143,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+  },
+  emptyContent: {
+    gap: 4,
   },
   ticketRow: {
     gap: 6,

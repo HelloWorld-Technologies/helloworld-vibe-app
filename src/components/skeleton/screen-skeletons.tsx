@@ -9,6 +9,8 @@ import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 
 const HDP_SHEET_OVERLAP = 48;
+const SRP_HERO_HEIGHT = 398;
+const SRP_SHEET_OVERLAP = 45;
 
 export function HdpScreenSkeleton() {
   const insets = useSafeAreaInsets();
@@ -117,6 +119,51 @@ export function HomeFeedSkeleton() {
           <Skeleton height={268} borderRadius={Radius.md} />
         </View>
       ))}
+    </View>
+  );
+}
+
+export function SrpScreenSkeleton() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={styles.flex}>
+      <ScrollView style={styles.flex} showsVerticalScrollIndicator={false}>
+        <View style={styles.srpHero}>
+          <Skeleton height={SRP_HERO_HEIGHT} borderRadius={0} />
+        </View>
+
+        <View style={styles.srpSheet}>
+          <View style={styles.srpSheetSection}>
+            <Skeleton width="72%" height={28} />
+            <Skeleton width="58%" height={16} />
+
+            <View style={styles.srpRatingsCard}>
+              <View style={styles.srpRatingsRow}>
+                {Array.from({ length: 4 }, (_, i) => (
+                  <View key={i} style={styles.srpRatingItem}>
+                    <Skeleton width={40} height={40} borderRadius={Radius.full} />
+                    <Skeleton width={48} height={12} />
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <Skeleton height={44} borderRadius={Radius.full} />
+
+          <View style={styles.srpTabContent}>
+            <Skeleton width="88%" height={24} />
+            <VibeGridSkeleton />
+            <SrpListSkeleton />
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={[styles.srpFooter, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <Skeleton height={48} borderRadius={Radius.sm} style={styles.srpFooterFilter} />
+        <Skeleton height={48} borderRadius={Radius.sm} style={styles.srpFooterSort} />
+      </View>
     </View>
   );
 }
@@ -393,6 +440,60 @@ const styles = StyleSheet.create({
   },
   feedCard: {
     width: 172,
+  },
+  srpHero: {
+    height: SRP_HERO_HEIGHT,
+    overflow: 'hidden',
+  },
+  srpSheet: {
+    backgroundColor: palette.white,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -SRP_SHEET_OVERLAP,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 120,
+    gap: 32,
+  },
+  srpSheetSection: {
+    gap: 16,
+  },
+  srpRatingsCard: {
+    borderRadius: 16,
+    backgroundColor: palette.gray[50],
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
+  srpRatingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  srpRatingItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  srpTabContent: {
+    gap: 16,
+  },
+  srpFooter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: palette.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.gray[200],
+  },
+  srpFooterFilter: {
+    width: 108,
+  },
+  srpFooterSort: {
+    flex: 1,
   },
   srpList: {
     gap: 20,

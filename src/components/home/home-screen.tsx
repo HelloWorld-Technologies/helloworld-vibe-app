@@ -1,8 +1,8 @@
 import { HwSymbol } from '@/components/ui/hw-symbol';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -23,9 +23,9 @@ import { NeighborhoodLocalityCard } from '@/components/locality/neighborhood-loc
 import { PropertyCard } from '@/components/property/property-card';
 import { HomePropertiesSkeleton } from '@/components/skeleton';
 import { HwCarousel, HwParallaxCarousel } from '@/components/ui/carousel';
+import { CachedRemoteImage } from '@/components/ui/cached-remote-image';
 import { EmptyState } from '@/components/ui/empty-state';
 import { GradientText } from '@/components/ui/gradient-text';
-import { HwVideoPlayer } from '@/components/ui/hw-video-player';
 import { SearchInput } from '@/components/ui/search-input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Typography } from '@/components/ui/typography';
@@ -146,6 +146,14 @@ export function HomeScreen() {
   const [feedStoryIndex, setFeedStoryIndex] = useState(0);
   const [citySheetVisible, setCitySheetVisible] = useState(false);
   const scrollBottomPadding = Platform.OS === 'ios' ? tabBarInset - 100  : tabBarInset ;
+
+  useEffect(() => {
+    void Promise.all(
+      HOME_FEED_MOMENTS.map((moment) =>
+        Image.prefetch(moment.imageUri, { cachePolicy: 'memory-disk' }),
+      ),
+    );
+  }, []);
 
   const contentWidth = width - SPACE.xl * 2;
   const visibleCards = isTablet ? 2 : 1;
@@ -337,11 +345,6 @@ export function HomeScreen() {
                 style={styles.carouselWrap}
                 paginationStyle={styles.feedPagination}
                 renderItem={({ item, index }) => {
-                  const videoPreviewUri =
-                    item.mediaType === 'video' && item.mediaUrl && !item.imageUri
-                      ? item.mediaUrl
-                      : null;
-
                   return (
                     <Pressable
                       onPress={() => {
@@ -352,21 +355,12 @@ export function HomeScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={item.label || 'Watch moment'}>
                       <View style={styles.feedCardInner}>
-                        {videoPreviewUri ? (
-                          <HwVideoPlayer
-                            uri={videoPreviewUri}
-                            playing={false}
-                            muted
-                            contentFit="cover"
-                            style={styles.feedImage}
-                          />
-                        ) : (
-                          <Image
-                            source={{ uri: item.imageUri }}
-                            style={styles.feedImage}
-                            contentFit="cover"
-                          />
-                        )}
+                        <CachedRemoteImage
+                          uri={item.imageUri}
+                          recyclingKey={item.id}
+                          style={styles.feedImage}
+                          transition={0}
+                        />
                         <LinearGradient
                           colors={['transparent', 'rgba(0,0,0,0.55)']}
                           style={styles.feedOverlay}>
@@ -579,7 +573,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -4,
   },
   feedPagination: {
-    marginTop: 8,
+    marginTop: SPACE.lg,
   },
   neighborhoodSkeletonRow: {
     flexDirection: 'row',

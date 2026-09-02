@@ -5,6 +5,16 @@ export function priceFormatter(amount: number) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
+export function formatDisplayName(value?: string | null) {
+  if (!value?.trim()) return '';
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export function toInvoiceDateString(value: unknown): string | undefined {
   if (value == null || value === '') return undefined;
 

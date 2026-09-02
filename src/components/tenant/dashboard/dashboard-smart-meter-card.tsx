@@ -1,3 +1,4 @@
+import { Image, type ImageSource } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { HwSymbol } from '@/components/ui/hw-symbol';
 import type { PlatformSymbolName } from '@/constants/symbols';
@@ -7,6 +8,7 @@ import { getSmartMeterBalance, resolveSmartMeterBookingId } from '@/api/smart-me
 import { DashboardSmartMeterSkeleton } from '@/components/skeleton';
 import { DashboardSectionHeader } from '@/components/tenant/dashboard/dashboard-section-header';
 import { Typography } from '@/components/ui/typography';
+import { SmartMeterAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
 import { Radius } from '@/constants/theme';
 import { useIsTablet } from '@/hooks/use-is-tablet';
@@ -17,7 +19,7 @@ import { priceFormatter } from '@/utils/tenant-format';
 type SmartMeterAction = {
   id: 'recharge' | 'usage' | 'history';
   label: string;
-  icon: PlatformSymbolName;
+  icon: ImageSource;
   route: '/smart-meter-recharge' | '/smart-meter-usage' | '/smart-meter-history';
 };
 
@@ -25,19 +27,19 @@ const ACTIONS: SmartMeterAction[] = [
   {
     id: 'recharge',
     label: 'Recharge',
-    icon: { ios: 'bolt.fill', android: 'bolt', web: 'bolt' },
+    icon: SmartMeterAssets.recharge,
     route: '/smart-meter-recharge',
   },
   {
     id: 'usage',
     label: 'Usage',
-    icon: { ios: 'chart.bar.fill', android: 'bar_chart', web: 'bar_chart' },
+    icon: SmartMeterAssets.usage,
     route: '/smart-meter-usage',
   },
   {
     id: 'history',
     label: 'History',
-    icon: { ios: 'clock.arrow.circlepath', android: 'history', web: 'history' },
+    icon: SmartMeterAssets.history,
     route: '/smart-meter-history',
   },
 ];
@@ -88,9 +90,7 @@ export function DashboardSmartMeterCard() {
                 onPress={() => router.push(action.route)}
                 accessibilityRole="button"
                 accessibilityLabel={action.label}>
-                <View style={styles.actionIcon}>
-                  <HwSymbol name={action.icon} size={18} tintColor={palette.blue[800]} />
-                </View>
+                <Image source={action.icon} style={styles.actionIcon} contentFit="contain" />
                 <Typography variant="label" size="xs" weight="medium" color={palette.gray[800]}>
                   {action.label}
                 </Typography>
@@ -167,9 +167,5 @@ const styles = StyleSheet.create({
   actionIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: palette.white,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

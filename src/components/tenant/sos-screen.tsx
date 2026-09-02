@@ -10,6 +10,7 @@ import { Radius } from '@/constants/theme';
 import { getPropertyManagerByBookingId } from '@/api/user';
 import { useTenantProfile } from '@/stores/tenant-store';
 import { isBookingCancelled, isMovedOut } from '@/utils/booking-details-format';
+import { formatDisplayName } from '@/utils/tenant-format';
 
 export function SosScreen() {
   const profile = useTenantProfile();
@@ -40,7 +41,7 @@ export function SosScreen() {
       ? [
           {
             id: 'pm',
-            title: pmName,
+            title: formatDisplayName(pmName),
             subtitle: 'Property Manager',
             phone: pmPhone,
           },

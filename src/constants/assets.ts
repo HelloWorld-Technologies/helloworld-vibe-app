@@ -43,13 +43,13 @@ export const ImageAssets = {
   loginLiveBetterText: require('../../assets/bundled/login/bento/live-better-text.png'),
   loginHelloWorldWordmark: require('../../assets/bundled/login/bento/hello-world-wordmark.png'),
   loginColivingBg: require('../../assets/bundled/login/bento/coliving-bg.jpg'),
-  otpIllustration: require('../../assets/bundled/login/otp-illustration.png'),
+  otpIllustration: require('../../assets/bundled/login/otp-illustration.webp'),
   chooseCityIcon: require('../../assets/bundled/login/choose-city-icon.png'),
-  contactIllustration: require('../../assets/bundled/contact/illustration.png'),
+  contactIllustration: require('../../assets/bundled/contact/illustration.webp'),
   appIcon: require('../../assets/images/icon.png'),
   paymentLogo: require('../../assets/images/icon.png'),
   splashIcon: require('../../assets/images/splash-icon.png'),
-  hdpTrophy: require('../../assets/bundled/hdp/top-choice-trophy.png'),
+  hdpTrophy: require('../../assets/bundled/hdp/top-choice-trophy.webp'),
   tourConfirmed: require('../../assets/hw-vibe/HDP/Tour Confirmed.png'),
 } as const;
 
@@ -67,28 +67,35 @@ export const TabBarIcons = {
 export const DashboardImages = {
   rentCalendar: require('../../assets/bundled/dashboard/rent-calendar.png'),
   referralIllustration: require('../../assets/bundled/dashboard/referral-illustration.png'),
-  moveInKeys: require('../../assets/bundled/dashboard/move-in-keys.png'),
+  moveInKeys: require('../../assets/bundled/dashboard/move-in-keys.webp'),
+} as const;
+
+export const SmartMeterAssets = {
+  recharge: require('../../assets/bundled/dashboard/smart-meter-recharge.webp'),
+  usage: require('../../assets/bundled/dashboard/smart-meter-usage.webp'),
+  history: require('../../assets/bundled/dashboard/smart-meter-history.webp'),
 } as const;
 
 export const VisitorAssets = {
-  noVisitors: require('../../assets/bundled/visitors/no-visitors-pagloo.png'),
+  noVisitors: require('../../assets/bundled/visitors/no-visitors-pagloo.webp'),
 } as const;
 
 export const MoveOutAssets = {
-  helpMeStay: require('../../assets/bundled/move-out/help-me-stay.png'),
+  helpMeStay: require('../../assets/bundled/move-out/help-me-stay.webp'),
 } as const;
 
 export const EmptyStateAssets = {
-  default: require('../../assets/bundled/empty-state/empty-state.png'),
+  default: require('../../assets/bundled/empty-state/empty-state.webp'),
 } as const;
 
 export const ErrorStateAssets = {
-  error500: require('../../assets/bundled/error-states/error-500.png'),
+  error500: require('../../assets/bundled/error-states/error-500.webp'),
+  noInternet: require('../../assets/bundled/error-states/no-internet.webp'),
 } as const;
 
 export const CommunityAssets = {
-  registrationConfirmed: require('../../assets/bundled/community/pagloo-confirmed-bouncer.png'),
-  confirmedStamp: require('../../assets/bundled/community/confirmed-stamp.png'),
+  registrationConfirmed: require('../../assets/bundled/community/pagloo-confirmed-bouncer.webp'),
+  confirmedStamp: require('../../assets/bundled/community/confirmed-stamp.webp'),
 } as const;
 
 export const LogoAssets = {

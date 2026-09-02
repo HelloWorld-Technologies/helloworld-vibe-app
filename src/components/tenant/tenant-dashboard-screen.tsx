@@ -104,7 +104,6 @@ export function TenantDashboardScreen() {
     })
     .join(' · ');
   const creditInfo = profile?.creditInfo;
-  const rentAmount = nextPending?.balance ?? profile?.paymentInfo?.rent ?? 0;
   const { visible: showMoveInCard } = useMoveInDashboardCard();
   const bookingCancelled = isBookingCancelled(profile);
   const showPropertyManager = Boolean(pmName) && !bookingCancelled && !isMovedOut(profile);
@@ -254,13 +253,13 @@ export function TenantDashboardScreen() {
           />
         ) : showMoveInCard ? (
           <DashboardMoveInStepsCard />
-        ) : (
+        ) : nextPending ? (
           <DashboardRentCard
             dueDate={getDashboardRentDueDate(nextPending, profile)}
-            amount={rentAmount}
+            amount={nextPending.balance ?? 0}
             onPayPress={handlePayNow}
           />
-        )}
+        ) : null}
 
         {showPropertyManager ? (
           <DashboardPmCard

@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { HwSymbol } from '@/components/ui/hw-symbol';
@@ -25,6 +24,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HwVideoPlayer } from '@/components/ui/hw-video-player';
+import { CachedRemoteImage } from '@/components/ui/cached-remote-image';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
 import type { HdpMomentItem } from '@/types/hdp-moments';
@@ -130,6 +130,7 @@ export function HdpMomentsStoryViewer({
   const [playbackIcon, setPlaybackIcon] = useState<PlaybackIcon>(null);
   const [storyEpoch, setStoryEpoch] = useState(0);
   const [canMountVideo, setCanMountVideo] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   const progress = useSharedValue(0);
   const onCloseRef = useRef(onClose);
@@ -140,7 +141,7 @@ export function HdpMomentsStoryViewer({
 
   const current = moments[index];
   const isVideo = current?.mediaType === 'video';
-  const videoUri = visible && isVideo ? current?.mediaUrl : undefined;
+  const videoUri = isVideo ? current?.mediaUrl : undefined;
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -153,11 +154,17 @@ export function HdpMomentsStoryViewer({
   useEffect(() => {
     if (!visible || !videoUri) {
       setCanMountVideo(false);
+      setVideoReady(false);
       return;
     }
     setCanMountVideo(false);
+    setVideoReady(false);
     const timer = setTimeout(() => setCanMountVideo(true), 120);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      setCanMountVideo(false);
+      setVideoReady(false);
+    };
   }, [visible, videoUri, index, storyEpoch]);
 
   useEffect(() => {
@@ -256,13 +263,25 @@ export function HdpMomentsStoryViewer({
   }, [goNext]);
 
   useEffect(() => {
-    if (!visible) return;
-    setIndex(Math.min(Math.max(initialIndex, 0), Math.max(moments.length - 1, 0)));
+    if (visible) {
+      setIndex(Math.min(Math.max(initialIndex, 0), Math.max(moments.length - 1, 0)));
+      setPaused(false);
+      setMuted(false);
+      setPlaybackIcon(null);
+      holdingRef.current = false;
+      progress.value = 0;
+      return;
+    }
+
+    setCanMountVideo(false);
     setPaused(false);
+    setMuted(false);
     setPlaybackIcon(null);
     holdingRef.current = false;
+    clearPlayIconTimer();
+    cancelAnimation(progress);
     progress.value = 0;
-  }, [visible, initialIndex, moments.length, progress]);
+  }, [visible, initialIndex, moments.length, progress, clearPlayIconTimer]);
 
   useEffect(() => {
     progress.value = 0;
@@ -338,13 +357,13 @@ export function HdpMomentsStoryViewer({
     Gesture.Exclusive(longPressGesture, tapGesture),
   );
 
-  if (!current) {
+  if (!visible || !current) {
     return null;
   }
 
   return (
     <Modal
-      visible={visible}
+      visible
       animationType="fade"
       transparent
       presentationStyle="overFullScreen"
@@ -353,25 +372,37 @@ export function HdpMomentsStoryViewer({
       <GestureHandlerRootView style={styles.root}>
         <StatusBar style="light" />
         <View style={styles.root}>
-          {videoUri && canMountVideo ? (
-            <HwVideoPlayer
-              key={`${current.id}-${storyEpoch}-${videoUri}`}
-              uri={videoUri}
-              playing={visible && !paused}
-              loop={false}
-              muted={muted}
+          {isVideo ? (
+            <>
+              {current.imageUri && !videoReady ? (
+                <CachedRemoteImage
+                  uri={current.imageUri}
+                  recyclingKey={`${current.id}-poster`}
+                  style={styles.media}
+                  transition={0}
+                />
+              ) : null}
+              {canMountVideo && videoUri ? (
+                <HwVideoPlayer
+                  key={`${current.id}-${index}-${storyEpoch}`}
+                  uri={videoUri}
+                  playing={!paused}
+                  loop={false}
+                  muted={muted}
+                  style={styles.media}
+                  timeUpdateInterval={0.05}
+                  onReady={() => setVideoReady(true)}
+                  onProgress={handleVideoProgress}
+                  onEnded={goNext}
+                  onError={goNext}
+                />
+              ) : null}
+            </>
+          ) : (
+            <CachedRemoteImage
+              uri={current.mediaUrl || current.imageUri}
+              recyclingKey={current.id}
               style={styles.media}
-              timeUpdateInterval={0.05}
-              onProgress={handleVideoProgress}
-              onEnded={goNext}
-              onError={goNext}
-            />
-          ) : videoUri ? null : (
-            <Image
-              source={{ uri: current.mediaUrl || current.imageUri }}
-              style={styles.media}
-              contentFit="cover"
-              transition={200}
             />
           )}
 

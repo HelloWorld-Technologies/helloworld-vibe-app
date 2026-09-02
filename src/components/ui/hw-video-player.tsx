@@ -16,6 +16,8 @@ import palette from '@/constants/palette';
 type HwVideoPlayerProps = {
   uri: string;
   playing?: boolean;
+  /** When false, pauses playback and unmounts the native video surface. */
+  active?: boolean;
   loop?: boolean;
   muted?: boolean;
   contentFit?: 'contain' | 'cover' | 'fill';
@@ -34,11 +36,12 @@ type Size = { width: number; height: number };
  * expo-video wrapper that:
  * - sizes VideoView from onLayout (avoids black iOS layer with zero/undefined size)
  * - waits for `readyToPlay` before play()
- * - keeps poster under the video while the surface attaches
+ * - shows poster only until readyToPlay (hidden during active playback)
  */
 export function HwVideoPlayer({
   uri,
   playing = true,
+  active = true,
   loop = false,
   muted = true,
   contentFit = 'cover',
@@ -54,12 +57,14 @@ export function HwVideoPlayer({
   const [ready, setReady] = useState(false);
   const [surfaceReady, setSurfaceReady] = useState(Platform.OS !== 'ios');
   const playingRef = useRef(playing);
+  const activeRef = useRef(active);
   const onReadyRef = useRef(onReady);
   const onEndedRef = useRef(onEnded);
   const onErrorRef = useRef(onError);
   const onProgressRef = useRef(onProgress);
 
   playingRef.current = playing;
+  activeRef.current = active;
   onReadyRef.current = onReady;
   onEndedRef.current = onEnded;
   onErrorRef.current = onError;
@@ -83,8 +88,15 @@ export function HwVideoPlayer({
     );
   }
 
+  const shouldPlay = playing && active;
+
   // iOS: mount VideoView only after we have a real layout size.
   useEffect(() => {
+    if (!active) {
+      setSurfaceReady(false);
+      setReady(false);
+      return;
+    }
     if (Platform.OS !== 'ios') {
       setSurfaceReady(true);
       return;
@@ -98,7 +110,18 @@ export function HwVideoPlayer({
       setSurfaceReady(true);
     });
     return () => cancelAnimationFrame(id);
-  }, [uri, hasSize, size.width, size.height]);
+  }, [active, uri, hasSize, size.width, size.height]);
+
+  useEffect(() => {
+    if (!active) {
+      try {
+        player.pause();
+        player.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
+  }, [active, player]);
 
   useEffect(() => {
     setReady(false);
@@ -109,7 +132,7 @@ export function HwVideoPlayer({
       if (status === 'readyToPlay') {
         setReady(true);
         onReadyRef.current?.();
-        if (playingRef.current) {
+        if (playingRef.current && activeRef.current) {
           try {
             player.play();
           } catch {
@@ -140,7 +163,7 @@ export function HwVideoPlayer({
     if (player.status === 'readyToPlay') {
       setReady(true);
       onReadyRef.current?.();
-      if (playingRef.current) {
+      if (playingRef.current && activeRef.current) {
         try {
           player.play();
         } catch {
@@ -155,6 +178,7 @@ export function HwVideoPlayer({
       timeSub?.remove();
       try {
         player.pause();
+        player.currentTime = 0;
       } catch {
         // ignore
       }
@@ -162,14 +186,14 @@ export function HwVideoPlayer({
   }, [player, timeUpdateInterval]);
 
   useEffect(() => {
-    if (!ready || !surfaceReady) return;
+    if (!ready || !surfaceReady || !active) return;
     try {
-      if (playing) player.play();
+      if (shouldPlay) player.play();
       else player.pause();
     } catch {
       // ignore
     }
-  }, [playing, ready, surfaceReady, player]);
+  }, [shouldPlay, ready, surfaceReady, active, player]);
 
   useEffect(() => {
     player.muted = muted;
@@ -181,15 +205,16 @@ export function HwVideoPlayer({
 
   return (
     <View style={[styles.root, style]} onLayout={handleLayout} collapsable={false}>
-      {posterUri ? (
+      {posterUri && !ready ? (
         <Image
           source={{ uri: posterUri }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
+          cachePolicy="memory-disk"
         />
       ) : null}
 
-      {surfaceReady && hasSize ? (
+      {active && surfaceReady && hasSize ? (
         <VideoView
           style={{ width: size.width, height: size.height }}
           player={player}
@@ -199,7 +224,7 @@ export function HwVideoPlayer({
         />
       ) : null}
 
-      {!ready ? (
+      {!ready && active ? (
         <View style={styles.loading} pointerEvents="none">
           <ActivityIndicator color={palette.white} />
         </View>

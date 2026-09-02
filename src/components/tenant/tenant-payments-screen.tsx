@@ -32,6 +32,7 @@ const PAYMENTS_TABS: PaymentsTab[] = ['pending', 'past'];
 function PaymentsEmptyState() {
   return (
     <EmptyState
+      fill
       title="No payment due"
       subtitle="Your payments are sorted. Sit back and enjoy your stay."
     />
@@ -136,11 +137,13 @@ export function TenantPaymentsScreen() {
 
   function renderTabContent(tabId: PaymentsTab) {
     const list = tabId === 'pending' ? pendingInvoices : data?.paid ?? [];
+    const isEmpty = !isLoading && list.length === 0;
 
     return (
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
+          isEmpty && styles.scrollEmpty,
           {
             paddingBottom:
               tabBarInset +
@@ -179,7 +182,7 @@ export function TenantPaymentsScreen() {
         ) : tabId === 'pending' ? (
           <PaymentsEmptyState />
         ) : (
-          <EmptyState compact title="No past payments found" />
+          <EmptyState fill compact title="No past payments found" />
         )}
       </ScrollView>
     );
@@ -310,6 +313,10 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     flexGrow: 1,
     gap: 16,
+  },
+  scrollEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     gap: 16,

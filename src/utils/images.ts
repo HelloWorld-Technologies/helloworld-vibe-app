@@ -3,8 +3,16 @@ import { Image } from "react-native";
 import config from "@/config";
 import { ImageAssets } from "@/constants/assets";
 
+/** Normalize encoding so the same asset always maps to one cache key. */
 function encodeImageUrl(url: string) {
-  return url.replace(/\(/g, "%28").replace(/\)/g, "%29").replace(/ /g, "%20");
+  const normalized = url
+    .replace(/%20/gi, " ")
+    .replace(/%28/gi, "(")
+    .replace(/%29/gi, ")");
+  return normalized
+    .replace(/\(/g, "%28")
+    .replace(/\)/g, "%29")
+    .replace(/ /g, "%20");
 }
 
 /** Bundled "Image coming soon" placeholder (local asset). */

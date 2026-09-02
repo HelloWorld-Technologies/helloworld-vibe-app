@@ -1,9 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { DashboardIcon } from '@/components/dashboard/dashboard-icon';
+import { CallButton } from '@/components/ui/call-button';
 import { Typography } from '@/components/ui/typography';
 import palette from '@/constants/palette';
-import { Radius } from '@/constants/theme';
 import { openPhoneCall } from '@/utils/contact-links';
 
 type SosContactRowProps = {
@@ -24,13 +23,10 @@ export function SosContactRow({ title, subtitle, phone, isLast }: SosContactRowP
           {subtitle}
         </Typography>
       </View>
-      <Pressable
-        style={styles.callButton}
+      <CallButton
         onPress={() => openPhoneCall(phone)}
-        accessibilityRole="button"
-        accessibilityLabel={`Call ${title}`}>
-        <DashboardIcon name="call" size={18} color={palette.gray[800]} />
-      </Pressable>
+        accessibilityLabel={`Call ${title}`}
+      />
     </View>
   );
 }
@@ -50,13 +46,5 @@ const styles = StyleSheet.create({
   copy: {
     flex: 1,
     gap: 4,
-  },
-  callButton: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.full,
-    backgroundColor: palette.lime[300],
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

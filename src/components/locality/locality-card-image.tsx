@@ -1,7 +1,8 @@
-import { Image, type ImageSource } from 'expo-image';
+import { type ImageSource } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
+import { RemoteImageWithSkeleton } from '@/components/ui/remote-image-with-skeleton';
 import { ImageAssets } from '@/constants/assets';
 import { formatLocalityImageUrl } from '@/utils/images';
 
@@ -45,29 +46,27 @@ export function LocalityCardImage({ imageKey, imageUri, style }: LocalityCardIma
 
   const source = remoteSource && !failed ? remoteSource : COMING_SOON_SOURCE;
 
+  const cacheKey =
+    remoteSource && typeof remoteSource === 'object' && 'uri' in remoteSource
+      ? remoteSource.uri
+      : imageKey;
+
   return (
-    <View style={[styles.wrap, style]}>
-      <Image
-        source={source}
-        style={styles.fill}
-        contentFit="cover"
-        recyclingKey={typeof imageUri === 'string' ? imageUri : imageKey}
-        onError={() => {
-          if (remoteSource) setFailed(true);
-        }}
-      />
-    </View>
+    <RemoteImageWithSkeleton
+      source={source}
+      style={[styles.wrap, style]}
+      contentFit="cover"
+      recyclingKey={cacheKey ?? 'locality-fallback'}
+      transition={0}
+      onError={() => {
+        if (remoteSource) setFailed(true);
+      }}
+    />
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    width: '100%',
-    height: '100%',
-    overflow: 'hidden',
-  },
-  fill: {
-    ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
   },

@@ -2,6 +2,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+
+import { RequestCallbackSheet } from '@/components/callback/request-callback-sheet';
 import {
   ActivityIndicator,
   type NativeScrollEvent,
@@ -18,9 +20,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScrollRevealHeader } from '@/components/navigation/scroll-reveal-header';
 import { PropertyCard } from '@/components/property/property-card';
-import { SrpListSkeleton } from '@/components/skeleton';
+import { SrpListSkeleton, SrpScreenSkeleton } from '@/components/skeleton';
 import { CityDetailsTab, SrpContactBar } from '@/components/srp/locality-details-tab';
 import { LocalityRatingsGrid } from '@/components/srp/locality-ratings-grid';
+import { SrpNoResultsEmptyState } from '@/components/srp/srp-no-results-empty-state';
 import { SrpFiltersSheet } from '@/components/srp/srp-filters-sheet';
 import {
   SrpFilterSortBar,
@@ -32,6 +35,7 @@ import { Typography } from '@/components/ui/typography';
 import { VibeSelectionList } from '@/components/vibe/vibe-selection-list';
 import { ImageAssets } from '@/constants/assets';
 import palette from '@/constants/palette';
+import { Spacing } from '@/constants/theme';
 import { mapVibesToListItems, VIBE_OPTIONS } from '@/constants/vibes';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useIsTablet } from '@/hooks/use-is-tablet';
@@ -89,11 +93,13 @@ export function SrpScreen() {
   const [sort, setSort] = useState<SortOption>('popularity');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  const [contactCallbackOpen, setContactCallbackOpen] = useState(false);
   const [failedHeroUri, setFailedHeroUri] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const scrollY = useSharedValue(0);
   const filters = useSrpFiltersStore((state) => state.filters);
   const setFilters = useSrpFiltersStore((state) => state.setFilters);
+  const resetFilters = useSrpFiltersStore((state) => state.resetFilters);
   const activeFilterCount = countActiveSrpFilters(filters);
   const { data: apiVibes = [] } = useVibesList();
   const vibeOptions = useMemo(
@@ -115,8 +121,6 @@ export function SrpScreen() {
     if (!hasNextPage || isFetchingNextPage || refreshing) return;
     void fetchNextPage();
   }, [activeTab, fetchNextPage, hasNextPage, isFetchingNextPage, refreshing]);
-
-  const showListSkeleton = isLoading || vibesPending;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -148,6 +152,11 @@ export function SrpScreen() {
     () => data?.pages.flatMap((page) => page.listings) ?? [],
     [data],
   );
+  /** Full layout skeleton on initial fetch or when query key changes (filters/sort/vibes). */
+  const showFullSkeleton = isLoading && !refreshing;
+  /** List-only skeleton while debounced vibe filters refetch with cards still visible. */
+  const showListSkeleton = !showFullSkeleton && vibesPending;
+  const showNoResults = !showFullSkeleton && !showListSkeleton && properties.length === 0;
   const nearByProperties = isCityOnly ? [] : (firstPage?.nearByListings ?? []);
   const totalCount = firstPage?.pageInfo?.total ?? properties.length;
   const localityRent = localityInfo?.starting_rent;
@@ -195,17 +204,25 @@ export function SrpScreen() {
     setFiltersOpen(true);
   }
 
+  const handleClearFilters = useCallback(() => {
+    resetFilters();
+    clearSelectedVibes();
+  }, [clearSelectedVibes, resetFilters]);
+
   return (
     <View style={styles.root}>
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        bounces
-        alwaysBounceVertical
-        nestedScrollEnabled
-        refreshControl={refreshControl}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: scrollBottomPadding }}>
+      {showFullSkeleton ? (
+        <SrpScreenSkeleton />
+      ) : (
+        <Animated.ScrollView
+          showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          bounces
+          alwaysBounceVertical
+          nestedScrollEnabled
+          refreshControl={refreshControl}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: scrollBottomPadding }}>
         <View style={[styles.hero, { height: HERO_HEIGHT }]}>
           <Image
             source={
@@ -283,40 +300,49 @@ export function SrpScreen() {
                 <SrpListSkeleton />
               ) : (
                 <>
-                  <View style={[styles.propertyList, isTablet ? styles.propertyListTablet : null]}>
-                    {properties.map((property) => (
-                      <PropertyCard
-                        key={property.id}
-                        property={property}
-                        actionIconColor={palette.lime[900]}
-                        style={isTablet ? { width: cardWidth } : undefined}
-                        onPress={() =>
-                          router.push({
-                            pathname: '/hdp',
-                            params: {
-                              id: property.id,
-                              name: property.name,
-                              image:
-                                typeof property.images[0] === 'object' &&
-                                property.images[0] &&
-                                'uri' in property.images[0]
-                                  ? property.images[0].uri
-                                  : undefined,
-                            },
-                          })
-                        }
-                      />
-                    ))}
-                  </View>
+                  {showNoResults ? (
+                    <SrpNoResultsEmptyState
+                      onClearFilters={handleClearFilters}
+                      onContactUs={() => setContactCallbackOpen(true)}
+                    />
+                  ) : (
+                    <View style={[styles.propertyList, isTablet ? styles.propertyListTablet : null]}>
+                      {properties.map((property) => (
+                        <PropertyCard
+                          key={property.id}
+                          property={property}
+                          actionIconColor={palette.lime[900]}
+                          style={isTablet ? { width: cardWidth } : undefined}
+                          onPress={() =>
+                            router.push({
+                              pathname: '/hdp',
+                              params: {
+                                id: property.id,
+                                name: property.name,
+                                image:
+                                  typeof property.images[0] === 'object' &&
+                                  property.images[0] &&
+                                  'uri' in property.images[0]
+                                    ? property.images[0].uri
+                                    : undefined,
+                              },
+                            })
+                          }
+                        />
+                      ))}
+                    </View>
+                  )}
 
                   {nearByProperties.length > 0 ? (
                     <View style={styles.nearbySection}>
-                      <Typography variant="text" size="xl" weight="bold">
-                        Nearby Properties
-                      </Typography>
-                      <Typography variant="text" size="sm" color={palette.textSecondary}>
-                        Properties near {locality}
-                      </Typography>
+                      <View style={styles.nearbyHeader}>
+                        <Typography variant="text" size="xl" weight="bold">
+                          Nearby Properties
+                        </Typography>
+                        <Typography variant="text" size="sm" color={palette.textSecondary}>
+                          Properties near {locality}
+                        </Typography>
+                      </View>
                       <View
                         style={[styles.propertyList, isTablet ? styles.propertyListTablet : null]}>
                         {nearByProperties.map((property) => (
@@ -363,7 +389,8 @@ export function SrpScreen() {
             />
           )}
         </View>
-      </Animated.ScrollView>
+        </Animated.ScrollView>
+      )}
 
       <ScrollRevealHeader
         title={headerTitle}
@@ -383,20 +410,20 @@ export function SrpScreen() {
         rightAccessibilityLabel="Search locality or property"
       />
 
-      {activeTab === 'properties' ? (
+      {activeTab === 'properties' && !showFullSkeleton ? (
         <SrpFilterSortBar
           sort={sort}
           activeFilterCount={activeFilterCount}
           onPressFilters={handlePressFilters}
           onPressSort={() => setSortOpen(true)}
         />
-      ) : (
+      ) : activeTab === 'details' && !showFullSkeleton ? (
         <SrpContactBar
           propertyName={localityLabel ?? city}
           location={title}
           city={city}
         />
-      )}
+      ) : null}
 
       <SrpSortSheet
         visible={sortOpen}
@@ -410,6 +437,15 @@ export function SrpScreen() {
         filters={filters}
         onClose={() => setFiltersOpen(false)}
         onApply={setFilters}
+      />
+
+      <RequestCallbackSheet
+        visible={contactCallbackOpen}
+        onClose={() => setContactCallbackOpen(false)}
+        propertyName={localityLabel ?? city}
+        location={title}
+        city={city}
+        srp
       />
     </View>
   );
@@ -462,8 +498,12 @@ const styles = StyleSheet.create({
     gap: PROPERTY_GAP,
   },
   nearbySection: {
-    gap: 8,
-    marginTop: 8,
+    gap: Spacing.three,
+    marginTop: Spacing.four,
+    marginBottom: Spacing.two,
+  },
+  nearbyHeader: {
+    gap: Spacing.two,
   },
   pageFooter: {
     alignItems: 'center',

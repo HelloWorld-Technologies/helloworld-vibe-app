@@ -6,7 +6,7 @@ import type {
 } from "@/types/smart-meter";
 
 export function resolveSmartMeterBookingId(bookingId?: string | null) {
-  return "643838000353866488" || bookingId?.trim();
+  return "" || bookingId?.trim();
 }
 
 type RoomDetailsResponse = {

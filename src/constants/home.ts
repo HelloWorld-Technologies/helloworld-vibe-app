@@ -44,49 +44,53 @@ export const FEATURED_PROPERTY = {
   image: 'loginBento4' as const,
 } as const;
 
-/** Same CDN videos as helloworld-vibe homepage “Straight from the Feed!”. */
+/** Compressed feed media — hw-production-compressed-image/insta-media on CDN. */
 const INSTA_MEDIA_BASE = 'https://images.thehelloworld.com/insta-media/';
 
-function instaMediaUrl(filename: string): string {
-  return `${INSTA_MEDIA_BASE}${encodeURIComponent(filename).replace(/%2F/gi, '/')}`;
+function feedPosterUrl(slug: string) {
+  return `${INSTA_MEDIA_BASE}${slug}-poster.webp`;
 }
 
-/** Static Explore feed — matches website homepage (no API). */
+function feedVideoUrl(slug: string) {
+  return `${INSTA_MEDIA_BASE}${slug}.mp4`;
+}
+
+/** Static Explore feed — matches helloworld-vibe homepage (no API). */
 export const HOME_FEED_MOMENTS = [
   {
     id: 'feed-01-unspoken-rules',
     label: 'Unspoken Rules',
-    imageUri: '',
+    imageUri: feedPosterUrl('01-unspoken-rules'),
     mediaType: 'video' as const,
-    mediaUrl: instaMediaUrl('01_Unspoken Rules.mp4'),
+    mediaUrl: feedVideoUrl('01-unspoken-rules'),
   },
   {
     id: 'feed-02-tpl-kolkata',
     label: 'TPL Kolkata',
-    imageUri: '',
+    imageUri: feedPosterUrl('02-tpl-kolkata'),
     mediaType: 'video' as const,
-    mediaUrl: instaMediaUrl('02_TPL_Kolkata.mp4'),
+    mediaUrl: feedVideoUrl('02-tpl-kolkata'),
   },
   {
     id: 'feed-03-independence-day',
     label: 'Independence Day',
-    imageUri: '',
+    imageUri: feedPosterUrl('03-independence-day'),
     mediaType: 'video' as const,
-    mediaUrl: instaMediaUrl('03_Independence Day_HW.mp4'),
+    mediaUrl: feedVideoUrl('03-independence-day'),
   },
   {
     id: 'feed-04-we-rated-each-other',
     label: 'We rated each other',
-    imageUri: '',
+    imageUri: feedPosterUrl('04-we-rated-each-other'),
     mediaType: 'video' as const,
-    mediaUrl: instaMediaUrl('04_We rated each other.mp4'),
+    mediaUrl: feedVideoUrl('04-we-rated-each-other'),
   },
   {
     id: 'feed-05-tenants-open-mic',
     label: 'Tenants Open Mic',
-    imageUri: '',
+    imageUri: feedPosterUrl('05-tenants-open-mic'),
     mediaType: 'video' as const,
-    mediaUrl: instaMediaUrl('05_Tenants Open Mic.mp4'),
+    mediaUrl: feedVideoUrl('05-tenants-open-mic'),
   },
 ] as const;
 

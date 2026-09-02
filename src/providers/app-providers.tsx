@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { NetworkProvider } from '@/providers/network-provider';
 import { PropertyActionsProvider } from '@/providers/property-actions-provider';
 import { WishlistProvider } from '@/providers/wishlist-provider';
 import { queryClient } from '@/queries/query-client';
@@ -27,7 +28,9 @@ export function AppProviders({ children }: AppProvidersProps) {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
         <QueryClientProvider client={queryClient}>
-          <AppProvidersInner>{children}</AppProvidersInner>
+          <NetworkProvider>
+            <AppProvidersInner>{children}</AppProvidersInner>
+          </NetworkProvider>
         </QueryClientProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>

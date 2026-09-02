@@ -1,5 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  type LayoutChangeEvent,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -32,24 +38,53 @@ export function SegmentedTabToggle<T extends string>({
   tabs,
   style,
 }: SegmentedTabToggleProps<T>) {
-  const [trackWidth, setTrackWidth] = useState(0);
-  const activeIndex = useSharedValue(0);
+  const trackWidth = useSharedValue(0);
+  const tabCount = tabs.length;
   const selectedIndex = Math.max(
     0,
     tabs.findIndex((tab) => tab.id === value),
   );
+  const activeIndex = useSharedValue(selectedIndex);
+  const hasLaidOut = useRef(false);
 
   useEffect(() => {
+    if (!hasLaidOut.current) {
+      activeIndex.value = selectedIndex;
+      return;
+    }
+
     activeIndex.value = withSpring(selectedIndex, PILL_SPRING);
   }, [activeIndex, selectedIndex]);
 
+  const handleTrackLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const width = event.nativeEvent.layout.width;
+      if (width <= 0) return;
+
+      const wasZero = trackWidth.value === 0;
+      const isFirstValidLayout = !hasLaidOut.current;
+      trackWidth.value = width;
+
+      if (isFirstValidLayout) {
+        hasLaidOut.current = true;
+      }
+
+      // Snap on first layout (and when recovering from a 0-width pass) so the pill
+      // is visible on first paint inside deferred layouts (e.g. SRP ScrollView).
+      if (isFirstValidLayout || wasZero) {
+        activeIndex.value = selectedIndex;
+      }
+    },
+    [activeIndex, selectedIndex, trackWidth],
+  );
+
   const pillAnimatedStyle = useAnimatedStyle(() => {
-    const tabCount = tabs.length;
-    if (trackWidth === 0 || tabCount === 0) {
+    const width = trackWidth.value;
+    if (width <= 0 || tabCount === 0) {
       return { opacity: 0 };
     }
 
-    const innerWidth = trackWidth - TRACK_PADDING * 2;
+    const innerWidth = width - TRACK_PADDING * 2;
     const tabWidth = (innerWidth - TRACK_GAP * (tabCount - 1)) / tabCount;
 
     return {
@@ -61,12 +96,13 @@ export function SegmentedTabToggle<T extends string>({
         },
       ],
     };
-  });
+  }, [tabCount]);
 
   return (
     <View
       style={[styles.track, style]}
-      onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}>
+      onLayout={handleTrackLayout}
+      collapsable={false}>
       <Animated.View pointerEvents="none" style={[styles.activePill, pillAnimatedStyle]} />
 
       {tabs.map((tab) => {

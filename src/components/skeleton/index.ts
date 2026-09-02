@@ -33,6 +33,7 @@ export {
   MoveInPaymentSkeleton,
   ReferralScreenSkeleton,
   SrpListSkeleton,
+  SrpScreenSkeleton,
   VibeGridSkeleton,
   WishlistListSkeleton,
 } from '@/components/skeleton/screen-skeletons';
